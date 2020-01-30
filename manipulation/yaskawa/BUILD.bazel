@@ -1,0 +1,118 @@
+# -*- python -*-
+
+load(
+    "@drake//tools/skylark:drake_cc.bzl",
+    "drake_cc_googletest",
+    "drake_cc_library",
+    "drake_cc_package_library",
+)
+load("//tools/lint:lint.bzl", "add_lint_tests")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+drake_cc_package_library(
+    name = "yaskawa",
+    deps = [
+        ":yaskawa_command_receiver",
+        ":yaskawa_command_sender",
+        ":yaskawa_constants",
+        ":yaskawa_status_receiver",
+        ":yaskawa_status_sender",
+    ],
+)
+
+drake_cc_library(
+    name = "yaskawa_constants",
+    srcs = ["yaskawa_constants.cc"],
+    hdrs = ["yaskawa_constants.h"],
+    deps = [
+        "//common:essential",
+    ],
+)
+
+drake_cc_library(
+    name = "yaskawa_command_receiver",
+    srcs = ["yaskawa_command_receiver.cc"],
+    hdrs = ["yaskawa_command_receiver.h"],
+    deps = [
+        ":yaskawa_constants",
+        "//common:essential",
+        "//lcmtypes:lcmtypes_drake_cc",
+        "//systems/framework:leaf_system",
+        "//systems/lcm:lcm_pubsub_system",
+    ],
+)
+
+drake_cc_library(
+    name = "yaskawa_command_sender",
+    srcs = ["yaskawa_command_sender.cc"],
+    hdrs = ["yaskawa_command_sender.h"],
+    deps = [
+        ":yaskawa_constants",
+        "//common:essential",
+        "//lcmtypes:lcmtypes_drake_cc",
+        "//systems/framework:leaf_system",
+    ],
+)
+
+drake_cc_library(
+    name = "yaskawa_status_receiver",
+    srcs = ["yaskawa_status_receiver.cc"],
+    hdrs = ["yaskawa_status_receiver.h"],
+    deps = [
+        ":yaskawa_constants",
+        "//common:essential",
+        "//lcmtypes:lcmtypes_drake_cc",
+        "//systems/framework:leaf_system",
+    ],
+)
+
+drake_cc_library(
+    name = "yaskawa_status_sender",
+    srcs = ["yaskawa_status_sender.cc"],
+    hdrs = ["yaskawa_status_sender.h"],
+    deps = [
+        ":yaskawa_constants",
+        "//common:essential",
+        "//lcmtypes:lcmtypes_drake_cc",
+        "//systems/framework:leaf_system",
+    ],
+)
+
+# === test/ ===
+
+drake_cc_googletest(
+    name = "yaskawa_command_receiver_test",
+    deps = [
+        ":yaskawa_command_receiver",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
+    name = "yaskawa_command_sender_test",
+    deps = [
+        ":yaskawa_command_sender",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
+    name = "yaskawa_status_receiver_test",
+    deps = [
+        ":yaskawa_status_receiver",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
+    name = "yaskawa_status_sender_test",
+    deps = [
+        ":yaskawa_status_sender",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+add_lint_tests()

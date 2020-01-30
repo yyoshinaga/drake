@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+
+  <xacro:macro name="conveyor_belt_dof1" params="prefix attach">
+    <!-- LINKS -->
+    <!-- virtual link interfacing with ee_mount on robot arm-->
+    <link name="${prefix}ee_base">
+      <visual>
+        <geometry>
+          <box size="0.1 0.1 0.1"/>
+        </geometry>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </visual>
+    </link>
+
+    <!-- links of cylinder base connected with the ee_base -->
+    <link name="${prefix}conveyor_belt_dof1_link">
+      <visual>
+        <material name="white">
+          <color rgba="1.0 1.0 1.0 1.0"/>
+        </material>
+        <geometry>
+          <mesh filename="/opt/dorabot/resources/end_effectors/conveyor_belt_dof1/mesh/cbee_gripper_1st-collision.stl" />
+        </geometry>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </visual>
+      <collision>
+        <material name="blue">
+          <color rgba="0 0 1.0 1.0"/>
+        </material>
+        <geometry>
+          <mesh filename="/opt/dorabot/resources/end_effectors/conveyor_belt_dof1/mesh/cbee_gripper_1st-collision.stl" />
+        </geometry>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </collision>
+    </link>
+
+    <!-- virtual link, equivlent of TCP (Tool Center Point) -->
+    <link name="${prefix}ee_tip_0">
+      <visual>
+        <geometry>
+          <box size="0.1 0.1 0.1"/>
+        </geometry>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </visual>
+    </link>
+
+    <!-- END LINKS -->
+
+    <!-- JOINTS -->
+    <!-- virtual joint, interfacing with arm -->
+    <joint name="${prefix}ee_base_joint" type="fixed">
+      <parent link="${attach}ee_mount"/>
+      <child link="${prefix}ee_base"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- virtual joint, connect ee_base to various link in end effector -->
+    <joint name="${prefix}conveyor_belt_dof1_joint" type="fixed">
+      <parent link="${prefix}ee_base"/>
+      <child link="${prefix}conveyor_belt_dof1_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- virtual joint point to ee_tip_<number> (TCP) -->
+    <joint name="${prefix}ee_tip_0_joint" type="fixed">
+      <parent link="${prefix}ee_base"/>
+      <child link="${prefix}ee_tip_0"/>
+      <origin xyz="0.54 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- END JOINTS -->
+  </xacro:macro>
+</robot>
+

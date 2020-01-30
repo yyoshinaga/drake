@@ -1,0 +1,172 @@
+# -*- python -*-
+
+load(
+    "@drake//tools/skylark:drake_cc.bzl",
+    "drake_cc_googletest",
+    "drake_cc_library",
+    "drake_cc_package_library",
+)
+load(
+    "@drake//tools/vector_gen:vector_gen.bzl",
+    "drake_cc_vector_gen_library",
+)
+load("//tools/lint:lint.bzl", "add_lint_tests")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+# drake_cc_package_library(
+#     name = "yaskawa_conveyor_belt_dof1",
+#     deps = [
+#         ":conveyor_belt_dof1_constants",
+#         ":conveyor_belt_dof1_controller",
+#         ":conveyor_belt_dof1_lcm",
+#         ":conveyor_belt_dof1_plain_controller",
+#         ":conveyor_belt_dof1_position_controller",
+#         ":conveyor_belt_dof1_trajectory_generator",
+#         ":conveyor_belt_dof1_trajectory_generator_state_vector",
+#     ],
+# )
+
+drake_cc_library(
+    name = "conveyor_belt_dof1_constants",
+    hdrs = ["conveyor_belt_dof1_constants.h"],
+    deps = [
+        "//common:essential",
+        "//systems/primitives:matrix_gain",
+    ],
+)
+
+drake_cc_library(
+    name = "conveyor_belt_dof1_lcm",
+    srcs = ["conveyor_belt_dof1_lcm.cc"],
+    hdrs = ["conveyor_belt_dof1_lcm.h"],
+    deps = [
+        "//lcmtypes:schunk",
+        "//systems/framework:leaf_system",
+        "//systems/primitives:matrix_gain",
+    ],
+)
+
+# drake_cc_vector_gen_library(
+#     name = "conveyor_belt_dof1_trajectory_generator_state_vector",
+#     srcs = ["conveyor_belt_dof1_trajectory_generator_state_vector.named_vector"],
+#     visibility = [":__subpackages__"],
+# )
+
+# drake_cc_library(
+#     name = "conveyor_belt_dof1_trajectory_generator",
+#     srcs = ["conveyor_belt_dof1_trajectory_generator.cc"],
+#     hdrs = ["conveyor_belt_dof1_trajectory_generator.h"],
+#     deps = [
+#         ":conveyor_belt_dof1_trajectory_generator_state_vector",
+#         "//common/trajectories:piecewise_polynomial",
+#         "//common/trajectories:trajectory",
+#         "//systems/framework:leaf_system",
+#     ],
+# )
+
+# drake_cc_library(
+#     name = "conveyor_belt_dof1_plain_controller",
+#     srcs = ["conveyor_belt_dof1_plain_controller.cc"],
+#     hdrs = ["conveyor_belt_dof1_plain_controller.h"],
+#     deps = [
+#         ":conveyor_belt_dof1_constants",
+#         ":conveyor_belt_dof1_lcm",
+#         "//common:essential",
+#         "//systems/controllers:pid_controller",
+#         "//systems/framework:diagram",
+#         "//systems/framework:diagram_builder",
+#         "//systems/primitives",
+#     ],
+# )
+
+# drake_cc_library(
+#     name = "conveyor_belt_dof1_position_controller",
+#     srcs = ["conveyor_belt_dof1_position_controller.cc"],
+#     hdrs = ["conveyor_belt_dof1_position_controller.h"],
+#     deps = [
+#         "//math:saturate",
+#         "//systems/framework:leaf_system",
+#         "//systems/primitives:discrete_derivative",
+#     ],
+# )
+
+# drake_cc_library(
+#     name = "conveyor_belt_dof1_controller",
+#     srcs = ["conveyor_belt_dof1_controller.cc"],
+#     hdrs = ["conveyor_belt_dof1_controller.h"],
+#     deps = [
+#         ":conveyor_belt_dof1_constants",
+#         ":conveyor_belt_dof1_lcm",
+#         ":conveyor_belt_dof1_plain_controller",
+#         ":conveyor_belt_dof1_trajectory_generator",
+#         "//common:essential",
+#         "//systems/framework:diagram",
+#         "//systems/framework:diagram_builder",
+#     ],
+# )
+
+# # === test/ ===
+
+# drake_cc_googletest(
+#     name = "conveyor_belt_dof1_constants_test",
+#     data = [
+#         "//manipulation/models/wsg_50_description:models",
+#     ],
+#     deps = [
+#         ":conveyor_belt_dof1_constants",
+#         "//common:find_resource",
+#         "//multibody/parsing",
+#         "//multibody/plant",
+#     ],
+# )
+
+# drake_cc_googletest(
+#     name = "conveyor_belt_dof1_controller_test",
+#     deps = [
+#         ":conveyor_belt_dof1_constants",
+#         ":conveyor_belt_dof1_controller",
+#         "//systems/analysis:simulator",
+#     ],
+# )
+
+# drake_cc_googletest(
+#     name = "conveyor_belt_dof1_position_controller_test",
+#     data = [
+#         "//manipulation/models/wsg_50_description:models",
+#     ],
+#     deps = [
+#         ":conveyor_belt_dof1_position_controller",
+#         "//common/test_utilities:eigen_matrix_compare",
+#         "//multibody/parsing",
+#         "//multibody/plant",
+#         "//systems/analysis:simulator",
+#     ],
+# )
+
+# drake_cc_googletest(
+#     name = "conveyor_belt_dof1_lcm_test",
+#     data = [
+#         "//manipulation/models/wsg_50_description:models",
+#     ],
+#     deps = [
+#         ":conveyor_belt_dof1_lcm",
+#         "//common/test_utilities:eigen_matrix_compare",
+#         "//systems/analysis:simulator",
+#     ],
+# )
+
+# drake_cc_googletest(
+#     name = "conveyor_belt_dof1_trajectory_generator_test",
+#     data = [
+#         "//manipulation/models/wsg_50_description:models",
+#     ],
+#     deps = [
+#         ":conveyor_belt_dof1_trajectory_generator",
+#         "//systems/analysis:simulator",
+#     ],
+# )
+
+add_lint_tests()
