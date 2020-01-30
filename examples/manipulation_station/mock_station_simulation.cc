@@ -6,13 +6,15 @@
 #include "drake/common/find_resource.h"
 #include "drake/common/is_approx_equal_abstol.h"
 #include "drake/examples/manipulation_station/manipulation_station.h"
+// #include "drake/examples/yaskawa_arm/yaskawa_lcm.h"
+
 #include "drake/geometry/geometry_visualization.h"
 #include "drake/lcmt_iiwa_command.hpp"
 #include "drake/lcmt_iiwa_status.hpp"
 #include "drake/lcmt_schunk_wsg_command.hpp"
 #include "drake/lcmt_schunk_wsg_status.hpp"
-#include "drake/manipulation/kuka_iiwa/iiwa_command_receiver.h"
-#include "drake/manipulation/kuka_iiwa/iiwa_status_sender.h"
+#include "drake/manipulation/yaskawa/yaskawa_command_receiver.h"	
+#include "drake/manipulation/yaskawa/yaskawa_status_sender.h"
 #include "drake/manipulation/schunk_wsg/schunk_wsg_lcm.h"
 #include "drake/math/rigid_transform.h"
 #include "drake/math/rotation_matrix.h"
@@ -83,7 +85,7 @@ int do_main(int argc, char* argv[]) {
       systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_iiwa_command>(
           "IIWA_COMMAND", lcm));
   auto iiwa_command =
-      builder.AddSystem<manipulation::kuka_iiwa::IiwaCommandReceiver>();
+      builder.AddSystem<manipulation::yaskawa::YaskawaCommandReceiver>();
   builder.Connect(iiwa_command_subscriber->get_output_port(),
                   iiwa_command->get_input_port());
 
@@ -94,7 +96,7 @@ int do_main(int argc, char* argv[]) {
                   station->GetInputPort("iiwa_feedforward_torque"));
 
   auto iiwa_status =
-      builder.AddSystem<manipulation::kuka_iiwa::IiwaStatusSender>();
+      builder.AddSystem<manipulation::yaskawa::YaskawaStatusSender>();
   builder.Connect(station->GetOutputPort("iiwa_position_commanded"),
                   iiwa_status->get_position_commanded_input_port());
   builder.Connect(station->GetOutputPort("iiwa_position_measured"),
@@ -113,31 +115,31 @@ int do_main(int argc, char* argv[]) {
   builder.Connect(iiwa_status->get_output_port(),
                   iiwa_status_publisher->get_input_port());
 
-  // Receive the WSG commands.
-  auto wsg_command_subscriber = builder.AddSystem(
-      systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_schunk_wsg_command>(
-          "SCHUNK_WSG_COMMAND", lcm));
-  auto wsg_command =
-      builder.AddSystem<manipulation::schunk_wsg::SchunkWsgCommandReceiver>();
-  builder.Connect(wsg_command_subscriber->get_output_port(),
-                  wsg_command->GetInputPort("command_message"));
-  builder.Connect(wsg_command->get_position_output_port(),
-                  station->GetInputPort("wsg_position"));
-  builder.Connect(wsg_command->get_force_limit_output_port(),
-                  station->GetInputPort("wsg_force_limit"));
+//   // Receive the WSG commands.
+//   auto wsg_command_subscriber = builder.AddSystem(
+//       systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_schunk_wsg_command>(
+//           "SCHUNK_WSG_COMMAND", lcm));
+//   auto wsg_command =
+//       builder.AddSystem<manipulation::schunk_wsg::SchunkWsgCommandReceiver>();
+//   builder.Connect(wsg_command_subscriber->get_output_port(),
+//                   wsg_command->GetInputPort("command_message"));
+//   builder.Connect(wsg_command->get_position_output_port(),
+//                   station->GetInputPort("wsg_position"));
+//   builder.Connect(wsg_command->get_force_limit_output_port(),
+//                   station->GetInputPort("wsg_force_limit"));
 
-  // Publish the WSG status.
-  auto wsg_status =
-      builder.AddSystem<manipulation::schunk_wsg::SchunkWsgStatusSender>();
-  builder.Connect(station->GetOutputPort("wsg_state_measured"),
-                  wsg_status->get_state_input_port());
-  builder.Connect(station->GetOutputPort("wsg_force_measured"),
-                  wsg_status->get_force_input_port());
-  auto wsg_status_publisher = builder.AddSystem(
-      systems::lcm::LcmPublisherSystem::Make<drake::lcmt_schunk_wsg_status>(
-          "SCHUNK_WSG_STATUS", lcm, 0.05 /* publish period */));
-  builder.Connect(wsg_status->get_output_port(0),
-                  wsg_status_publisher->get_input_port());
+//   // Publish the WSG status.
+//   auto wsg_status =
+//       builder.AddSystem<manipulation::schunk_wsg::SchunkWsgStatusSender>();
+//   builder.Connect(station->GetOutputPort("wsg_state_measured"),
+//                   wsg_status->get_state_input_port());
+//   builder.Connect(station->GetOutputPort("wsg_force_measured"),
+//                   wsg_status->get_force_input_port());
+//   auto wsg_status_publisher = builder.AddSystem(
+//       systems::lcm::LcmPublisherSystem::Make<drake::lcmt_schunk_wsg_status>(
+//           "SCHUNK_WSG_STATUS", lcm, 0.05 /* publish period */));
+//   builder.Connect(wsg_status->get_output_port(0),
+//                   wsg_status_publisher->get_input_port());
 
   // TODO(russt): Publish the camera outputs.
 

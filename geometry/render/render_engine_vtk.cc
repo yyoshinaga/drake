@@ -13,7 +13,7 @@
 #include <vtkPNGReader.h>
 #include <vtkPlaneSource.h>
 #include <vtkProperty.h>
-#include <vtkSphereSource.h>
+#include <vtkTexturedSphereSource.h>
 #include <vtkTransform.h>
 #include <vtkTransformPolyDataFilter.h>
 
@@ -225,16 +225,15 @@ void RenderEngineVtk::RenderLabelImage(const CameraProperties& camera,
 }
 
 void RenderEngineVtk::ImplementGeometry(const Sphere& sphere, void* user_data) {
-  vtkNew<vtkSphereSource> vtk_sphere;
-  SetSphereOptions(vtk_sphere.GetPointer(), sphere.get_radius());
+  vtkNew<vtkTexturedSphereSource> vtk_sphere;
+  SetSphereOptions(vtk_sphere.GetPointer(), sphere.radius());
   ImplementGeometry(vtk_sphere.GetPointer(), user_data);
 }
 
 void RenderEngineVtk::ImplementGeometry(const Cylinder& cylinder,
                                         void* user_data) {
   vtkNew<vtkCylinderSource> vtk_cylinder;
-  SetCylinderOptions(vtk_cylinder, cylinder.get_length(),
-                     cylinder.get_radius());
+  SetCylinderOptions(vtk_cylinder, cylinder.length(), cylinder.radius());
 
   // Since the cylinder in vtkCylinderSource is y-axis aligned, we need
   // to rotate it to be z-axis aligned because that is what Drake uses.
@@ -262,10 +261,12 @@ void RenderEngineVtk::ImplementGeometry(const Box& box, void* user_data) {
 
 void RenderEngineVtk::ImplementGeometry(const Capsule& capsule,
                                         void* user_data) {
-  vtkNew<vtkTransformPolyDataFilter> transform_filter;
-  CreateVtkCapsule(transform_filter, capsule.get_radius(),
-                   capsule.get_length());
-  ImplementGeometry(transform_filter.GetPointer(), user_data);
+  ImplementGeometry(CreateVtkCapsule(capsule).GetPointer(), user_data);
+}
+
+void RenderEngineVtk::ImplementGeometry(const Ellipsoid& ellipsoid,
+                                        void* user_data) {
+  ImplementGeometry(CreateVtkEllipsoid(ellipsoid).GetPointer(), user_data);
 }
 
 void RenderEngineVtk::ImplementGeometry(const Mesh& mesh, void* user_data) {
@@ -387,6 +388,15 @@ void RenderEngineVtk::InitializePipelines() {
   const vtkSmartPointer<vtkTransform> vtk_identity =
       ConvertToVtkTransform(RigidTransformd::Identity());
 
+  // TODO(SeanCurtis-TRI): Things like configuring lights should *not* be part
+  //  of initializing the pipelines. When we support light declaration, this
+  //  will get moved out.
+  light_->SetLightTypeToCameraLight();
+  light_->SetConeAngle(45.0);
+  light_->SetAttenuationValues(1.0, 0.0, 0.0);
+  light_->SetIntensity(1);
+  light_->SetTransformMatrix(vtk_identity->GetMatrix());
+
   // Generic configuration of pipelines.
   for (auto& pipeline : pipelines_) {
     // Multisampling disabled by design for label and depth. It's turned off for
@@ -417,6 +427,8 @@ void RenderEngineVtk::InitializePipelines() {
     pipeline->filter->SetInputBufferTypeToRGBA();
     pipeline->exporter->SetInputData(pipeline->filter->GetOutput());
     pipeline->exporter->ImageLowerLeftOff();
+
+    pipeline->renderer->AddLight(light_);
   }
 
   // Pipeline-specific tweaks.
@@ -515,18 +527,23 @@ void RenderEngineVtk::ImplementGeometry(vtkPolyDataAlgorithm* source,
   // Legacy support for *implied* texture maps. If we have mesh.obj, we look for
   // mesh.png (unless one has been specifically called out in the properties).
   // TODO(SeanCurtis-TRI): Remove this legacy texture when objects and materials
-  // are coherently specified by SDF/URDF/obj/mtl, etc.
+  //  are coherently specified by SDF/URDF/obj/mtl, etc.
   std::string texture_name;
   std::ifstream file_exist(diffuse_map_name);
   if (file_exist) {
     texture_name = diffuse_map_name;
-  } else if (diffuse_map_name.empty() && data.mesh_filename) {
-    // This is the hack to search for mesh.png as a possible texture.
-    const std::string
-        alt_texture_name(RemoveFileExtension(*data.mesh_filename) +
-        ".png");
-    std::ifstream alt_file_exist(alt_texture_name);
-    if (alt_file_exist) texture_name = alt_texture_name;
+  } else {
+    if (!diffuse_map_name.empty()) {
+      log()->warn("Requested diffuse map could not be found: {}",
+                  diffuse_map_name);
+    }
+    if (diffuse_map_name.empty() && data.mesh_filename) {
+      // This is the hack to search for mesh.png as a possible texture.
+      const std::string alt_texture_name(
+          RemoveFileExtension(*data.mesh_filename) + ".png");
+      std::ifstream alt_file_exist(alt_texture_name);
+      if (alt_file_exist) texture_name = alt_texture_name;
+    }
   }
   if (!texture_name.empty()) {
     vtkNew<vtkPNGReader> texture_reader;
@@ -555,6 +572,10 @@ void RenderEngineVtk::ImplementGeometry(vtkPolyDataAlgorithm* source,
 
   // Take ownership of the actors.
   actors_.insert({data.id, std::move(actors)});
+}
+
+void RenderEngineVtk::SetDefaultLightPosition(const Vector3<double>& X_DL) {
+  light_->SetPosition(X_DL[0], X_DL[1], X_DL[2]);
 }
 
 void RenderEngineVtk::PerformVtkUpdate(const RenderingPipeline& p) {

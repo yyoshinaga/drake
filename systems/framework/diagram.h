@@ -129,6 +129,7 @@ class Diagram : public System<T>, internal::SystemParentServiceInterface {
 
   void SetDefaultState(const Context<T>& context,
                        State<T>* state) const override {
+    this->ValidateContext(context);
     auto diagram_context = dynamic_cast<const DiagramContext<T>*>(&context);
     DRAKE_DEMAND(diagram_context != nullptr);
 
@@ -145,6 +146,7 @@ class Diagram : public System<T>, internal::SystemParentServiceInterface {
 
   void SetDefaultParameters(const Context<T>& context,
                             Parameters<T>* params) const override {
+    this->ValidateContext(context);
     auto diagram_context = dynamic_cast<const DiagramContext<T>*>(&context);
     DRAKE_DEMAND(diagram_context != nullptr);
 
@@ -194,6 +196,7 @@ class Diagram : public System<T>, internal::SystemParentServiceInterface {
 
   void SetRandomState(const Context<T>& context, State<T>* state,
                       RandomGenerator* generator) const override {
+    this->ValidateContext(context);
     auto diagram_context = dynamic_cast<const DiagramContext<T>*>(&context);
     DRAKE_DEMAND(diagram_context != nullptr);
 
@@ -210,6 +213,7 @@ class Diagram : public System<T>, internal::SystemParentServiceInterface {
 
   void SetRandomParameters(const Context<T>& context, Parameters<T>* params,
                            RandomGenerator* generator) const override {
+    this->ValidateContext(context);
     auto diagram_context = dynamic_cast<const DiagramContext<T>*>(&context);
     DRAKE_DEMAND(diagram_context != nullptr);
 
@@ -391,6 +395,7 @@ class Diagram : public System<T>, internal::SystemParentServiceInterface {
   /// this diagram.
   State<T>& GetMutableSubsystemState(const System<T>& subsystem,
                                      Context<T>* context) const {
+    this->ValidateContext(context);
     Context<T>& subcontext = GetMutableSubsystemContext(subsystem, context);
     return subcontext.get_mutable_state();
   }
@@ -808,6 +813,7 @@ class Diagram : public System<T>, internal::SystemParentServiceInterface {
 
       // Select the chunk of generalized_velocity belonging to subsystem i.
       const int num_v = sub_xc.get_generalized_velocity().size();
+      if (num_v == 0) continue;
       const Eigen::Ref<const VectorX<T>>& v_slice =
           generalized_velocity.segment(v_index, num_v);
 
@@ -855,6 +861,7 @@ class Diagram : public System<T>, internal::SystemParentServiceInterface {
 
       // Select the chunk of qdot belonging to subsystem i.
       const int num_q = sub_xc.get_generalized_position().size();
+      if (num_q == 0) continue;
       const Eigen::Ref<const VectorX<T>>& dq_slice =
           qdot.segment(q_index, num_q);
 
@@ -1091,16 +1098,26 @@ class Diagram : public System<T>, internal::SystemParentServiceInterface {
     return false;
   }
 
+  // Allocates a collection of homogeneous events (e.g., publish events) for
+  // this Diagram.
+  // @param allocator_func A function for allocating an event collection of the
+  //                       given type, thus allowing this method to allocate
+  //                       collections for publish events, discrete update
+  //                       events, or unrestricted update events using a
+  //                       single mechanism.
   template <typename EventType>
   std::unique_ptr<EventCollection<EventType>> AllocateForcedEventCollection(
       std::function<
-      std::unique_ptr<EventCollection<EventType>>(const System<T>*)>
-  allocater_func) const {
+          std::unique_ptr<EventCollection<EventType>>(const System<T>*)>
+          allocator_func) const {
     const int num_systems = num_subsystems();
     auto ret = std::make_unique<DiagramEventCollection<EventType>>(num_systems);
     for (SubsystemIndex i(0); i < num_systems; ++i) {
       std::unique_ptr<EventCollection<EventType>> subevent_collection =
-          allocater_func(registered_systems_[i].get());
+          allocator_func(registered_systems_[i].get());
+
+      // The DiagramEventCollection should own these subevents- this function
+      // will not maintain its own references to them.
       ret->set_and_own_subevent_collection(i, std::move(subevent_collection));
     }
     return ret;

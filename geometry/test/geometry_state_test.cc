@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 
 #include "drake/common/eigen_types.h"
+#include "drake/common/find_resource.h"
 #include "drake/common/nice_type_name.h"
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
 #include "drake/common/test_utilities/expect_no_throw.h"
@@ -145,6 +146,18 @@ class GeometryStateTester {
   GeometryState<T>* state_;
 };
 
+namespace internal {
+
+class ProximityEngineTester {
+ public:
+  static const hydroelastic::Geometries& hydroelastic_geometries(
+      const ProximityEngine<double>& engine) {
+    return engine.hydroelastic_geometries();
+  }
+};
+
+}  // namespace internal
+
 namespace {
 
 // Class to aid in testing Shape introspection. Instantiated with a model
@@ -255,22 +268,22 @@ class ShapeMatcher final : public ShapeReifier {
 template <>
 template <>
 void ShapeMatcher<Sphere>::TestShapeParameters(const Sphere& test) {
-  if (test.get_radius() != expected_.get_radius()) {
-    error() << "\nExpected sphere radius " << expected_.get_radius() << ", "
-            << "received sphere radius " << test.get_radius();
+  if (test.radius() != expected_.radius()) {
+    error() << "\nExpected sphere radius " << expected_.radius() << ", "
+            << "received sphere radius " << test.radius();
   }
 }
 
 template <>
 template <>
 void ShapeMatcher<Cylinder>::TestShapeParameters(const Cylinder& test) {
-  if (test.get_radius() != expected_.get_radius()) {
-    error() << "\nExpected cylinder radius " << expected_.get_radius() << ", "
-            << "received cylinder radius " << test.get_radius();
+  if (test.radius() != expected_.radius()) {
+    error() << "\nExpected cylinder radius " << expected_.radius() << ", "
+            << "received cylinder radius " << test.radius();
   }
-  if (test.get_length() != expected_.get_length()) {
-    error() << "\nExpected cylinder length " << expected_.get_length()
-            << ", received cylinder length " << test.get_length();
+  if (test.length() != expected_.length()) {
+    error() << "\nExpected cylinder length " << expected_.length()
+            << ", received cylinder length " << test.length();
   }
 }
 
@@ -294,13 +307,13 @@ void ShapeMatcher<Box>::TestShapeParameters(const Box& test) {
 template <>
 template <>
 void ShapeMatcher<Capsule>::TestShapeParameters(const Capsule& test) {
-  if (test.get_radius() != expected_.get_radius()) {
-    error() << "\nExpected capsule radius " << expected_.get_radius() << ", "
-            << "received capsule radius " << test.get_radius();
+  if (test.radius() != expected_.radius()) {
+    error() << "\nExpected capsule radius " << expected_.radius() << ", "
+            << "received capsule radius " << test.radius();
   }
-  if (test.get_length() != expected_.get_length()) {
-    error() << "\nExpected capsule length " << expected_.get_length()
-            << ", received capsule length " << test.get_length();
+  if (test.length() != expected_.length()) {
+    error() << "\nExpected capsule length " << expected_.length()
+            << ", received capsule length " << test.length();
   }
 }
 
@@ -2423,6 +2436,7 @@ TEST_F(GeometryStateTest, ModifyRoleProperties) {
   props1.AddProperty("prop1", "value", 1);
   ProximityProperties props2;
   props2.AddProperty("prop2", "value", 2);
+  AddRigidHydroelasticProperties(1.0, &props2);
 
   // Case: Can't reassign when it hasn't been assigned.
   DRAKE_EXPECT_THROWS_MESSAGE(
@@ -2433,6 +2447,13 @@ TEST_F(GeometryStateTest, ModifyRoleProperties) {
       " role.*");
 
   // Case: Try reassigning the properties.
+  // We need to confirm that GeometryState gives ProximityEngine the chance to
+  // update its representation based on the proximity properties. Currently,
+  // the only way to do that is by looking at the hydroelastic representation.
+  // Originally, it should have none, after the update, it should.
+  const auto& hydroelastic_geometries =
+      internal::ProximityEngineTester::hydroelastic_geometries(
+          gs_tester_.proximity_engine());
 
   // Configure and confirm initial state.
   geometry_state_.AssignRole(source_id_, geometries_[0], props1);
@@ -2445,20 +2466,24 @@ TEST_F(GeometryStateTest, ModifyRoleProperties) {
   EXPECT_TRUE(props->HasProperty("prop1", "value"));
   EXPECT_EQ(props->GetProperty<int>("prop1", "value"),
             props1.GetProperty<int>("prop1", "value"));
+  EXPECT_EQ(hydroelastic_geometries.hydroelastic_type(geometries_[0]),
+            internal::HydroelasticType::kUndefined);
 
   DRAKE_EXPECT_NO_THROW(geometry_state_.AssignRole(
       source_id_, geometries_[0], props2, RoleAssign::kReplace));
+
   // Confirm modification doesn't introduce duplicates; should still be one.
   EXPECT_EQ(gs_tester_.proximity_engine().num_geometries(), 1);
 
-  props =
-      geometry_state_.GetProximityProperties(geometries_[0]);
+  props = geometry_state_.GetProximityProperties(geometries_[0]);
   EXPECT_NE(props, nullptr);
   EXPECT_TRUE(props->HasGroup("prop2"));
   EXPECT_FALSE(props->HasGroup("prop1"));
   EXPECT_TRUE(props->HasProperty("prop2", "value"));
   EXPECT_EQ(props->GetProperty<int>("prop2", "value"),
             props2.GetProperty<int>("prop2", "value"));
+  EXPECT_EQ(hydroelastic_geometries.hydroelastic_type(geometries_[0]),
+            internal::HydroelasticType::kRigid);
 
   // Case: confirm throw for perception and illustration properties.
   PerceptionProperties perception_props =
@@ -2834,25 +2859,6 @@ TEST_F(GeometryStateTest, ChildGeometryRoleCount) {
   geometry_state_.AssignRole(source_id_, anchored_geometry_,
                              IllustrationProperties());
   ASSERT_TRUE(expected_roles(world_id, 1, 1, 1));
-}
-
-// Confirms that assigning a proximity role to a mesh is a no-op. If it
-// *weren't* no-op, the ProximityEngine would abort; so not aborting is
-// correlated with its no-op-ness. This test will go away when meshes are fully
-// supported in collision.
-TEST_F(GeometryStateTest, ProximityRoleOnMesh) {
-  SetUpSingleSourceTree();
-
-  // Add a mesh to a frame.
-  const GeometryId mesh_id = geometry_state_.RegisterGeometry(
-      source_id_, frames_[0],
-      make_unique<GeometryInstance>(RigidTransformd::Identity(),
-                                    make_unique<Mesh>("path", 1.0), "mesh"));
-  const InternalGeometry* mesh = gs_tester_.GetGeometry(mesh_id);
-  ASSERT_NE(mesh, nullptr);
-  ASSERT_FALSE(mesh->has_proximity_role());
-  geometry_state_.AssignRole(source_id_, mesh_id, ProximityProperties());
-  ASSERT_FALSE(mesh->has_proximity_role());
 }
 
 // Confirms that attempting to remove the "unassigned" role has no effect.

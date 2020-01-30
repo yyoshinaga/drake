@@ -330,8 +330,9 @@ void DirectTranscription::AddAutodiffDynamicConstraints(
     }
 
     // Provide a fixed value for the input port and keep an alias around.
-    input_port_value_ = &context_->FixInputPort(
-        input_port_->get_index(), system_->AllocateInputVector(*input_port_));
+    input_port_value_ = &input_port_->FixValue(
+        context_.get(),
+        system_->AllocateInputVector(*input_port_)->get_value());
   }
 
   // For N-1 timesteps, add a constraint which depends on the knot
@@ -358,8 +359,7 @@ void DirectTranscription::ConstrainEqualInputAtFinalTwoTimesteps() {
 void DirectTranscription::ValidateSystem(
     const System<double>& system, const Context<double>& context,
     std::variant<InputPortSelection, InputPortIndex> input_port_index) {
-  DRAKE_DEMAND(context.has_only_discrete_state());
-  DRAKE_DEMAND(context.num_discrete_state_groups() == 1);
+  DRAKE_DEMAND(system.IsDifferenceEquationSystem());
   DRAKE_DEMAND(num_states() == context.get_discrete_state(0).size());
   if (context.num_input_ports() > 0) {
     DRAKE_DEMAND(num_inputs() ==

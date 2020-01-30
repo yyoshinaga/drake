@@ -164,20 +164,26 @@ bool ImplicitEulerIntegrator<T>::StepAbstract(
   // convergence.
   T last_dx_norm = std::numeric_limits<double>::infinity();
 
-  // TODO(edrumwri) Consider computing the Jacobian matrix around tf.
   // Calculate Jacobian and iteration matrices (and factorizations), as needed,
-  // around (t0, xt0).
-  // TODO(edrumwri) Consider computing the Jacobian matrix around xtplus. This
-  //                would give a better Jacobian, but would complicate the
-  //                logic, since the Jacobian would no longer (necessarily) be
-  //                fresh upon fallback to a smaller step size.
-  if (!this->MaybeFreshenMatrices(t0, xt0, h, trial,
-      compute_and_factor_iteration_matrix, iteration_matrix)) {
+  // around (t0, xt0). We do not do this calculation if full Newton is in use;
+  // the calculation will be performed at the beginning of the loop instead.
+  // TODO(edrumwri) Consider computing the Jacobian matrix around tf and/or
+  //                xtplus. This would give a better Jacobian, but would
+  //                complicate the logic, since the Jacobian would no longer
+  //                (necessarily) be fresh upon fallback to a smaller step size.
+  if (!this->get_use_full_newton() &&
+      !this->MaybeFreshenMatrices(t0, xt0, h, trial,
+                                  compute_and_factor_iteration_matrix,
+                                  iteration_matrix)) {
     return false;
   }
 
   // Do the Newton-Raphson iterations.
   for (int i = 0; i < this->max_newton_raphson_iterations(); ++i) {
+    this->FreshenMatricesIfFullNewton(tf, *xtplus, h,
+                                      compute_and_factor_iteration_matrix,
+                                      iteration_matrix);
+
     // Evaluate the residual error using:
     // g(x(t0+h)) = x(t0+h) - x(t0) - h f(t0+h,x(t0+h)).
     VectorX<T> goutput = g();
@@ -194,50 +200,22 @@ bool ImplicitEulerIntegrator<T>::StepAbstract(
     dx_state_->get_mutable_vector().SetFromVector(dx);
     T dx_norm = this->CalcStateChangeNorm(*dx_state_);
 
-    // The check below looks for convergence by identifying cases where the
-    // update to the state results in no change. We do this check only after
-    // at least one Newton-Raphson update has been applied to ensure that there
-    // is at least some change to the state, no matter how small, on a
-    // non-stationary system.
-    if (i > 0 && this->IsUpdateZero(*xtplus, dx)) {
-      DRAKE_LOGGER_DEBUG("Converged with zero update. xt+: {}",
-          xtplus->transpose());
-      return true;
-    }
-
     // Update the state vector.
     *xtplus += dx;
     context->SetTimeAndContinuousState(tf, *xtplus);
 
-    // Compute the convergence rate and check convergence.
-    // [Hairer, 1996] notes that this convergence strategy should only be
-    // applied after *at least* two iterations (p. 121).
-    if (i > 1) {
-      const T theta = dx_norm / last_dx_norm;
-      const T eta = theta / (1 - theta);
-      DRAKE_LOGGER_DEBUG("Newton-Raphson loop {} theta: {}, eta: {}",
-          i, theta, eta);
-
-      // Look for divergence.
-      if (theta > 1) {
-        DRAKE_LOGGER_DEBUG("Newton-Raphson divergence detected for "
-            "h={}", h);
-        break;
-      }
-
-      // Look for convergence using Equation 8.10 from [Hairer, 1996].
-      // [Hairer, 1996] determined values of kappa in [0.01, 0.1] work most
-      // efficiently on a number of test problems with Radau5 (a fifth order
-      // implicit integrator), p. 121. We select a value halfway in-between.
-      const double kappa = 0.05;
-      const double k_dot_tol = kappa * this->get_accuracy_in_use();
-      if (eta * dx_norm < k_dot_tol) {
-        DRAKE_LOGGER_DEBUG(
-            "Newton-Raphson converged; η = {}, h = {}, xt+ = {}",
-            eta, h, xtplus->transpose());
-        return true;
-      }
-    }
+    // Check for Newton-Raphson convergence.
+    typename ImplicitIntegrator<T>::ConvergenceStatus status =
+        this->CheckNewtonConvergence(i, *xtplus, dx, dx_norm, last_dx_norm);
+    // If it converged, we're done.
+    if (status == ImplicitIntegrator<T>::ConvergenceStatus::kConverged)
+      return true;
+    // If it diverged, we have to abort and try again.
+    if (status == ImplicitIntegrator<T>::ConvergenceStatus::kDiverged)
+      break;
+    // Otherwise, continue to the next Newton-Raphson iteration.
+    DRAKE_DEMAND(status ==
+                 ImplicitIntegrator<T>::ConvergenceStatus::kNotConverged);
 
     // Update the norm of the state update.
     last_dx_norm = dx_norm;
@@ -246,7 +224,9 @@ bool ImplicitEulerIntegrator<T>::StepAbstract(
   DRAKE_LOGGER_DEBUG("StepAbstract() convergence failed");
 
   // If Jacobian and iteration matrix factorizations are not reused, there
-  // is nothing else we can try.
+  // is nothing else we can try.  Note that get_reuse() returns false if
+  // "full Newton-Raphson" mode is activated (see
+  // ImplicitIntegrator::get_use_full_newton()).
   if (!this->get_reuse())
     return false;
 

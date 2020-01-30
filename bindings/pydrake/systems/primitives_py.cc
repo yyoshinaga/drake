@@ -93,6 +93,13 @@ PYBIND11_MODULE(primitives, m) {
             doc.TimeVaryingAffineSystem.get_output_port.doc)
         .def("time_period", &AffineSystem<T>::time_period,
             doc.TimeVaryingAffineSystem.time_period.doc)
+        .def("configure_default_state",
+            &TimeVaryingAffineSystem<T>::configure_default_state, py::arg("x0"),
+            doc.TimeVaryingAffineSystem.configure_default_state.doc)
+        .def("configure_random_state",
+            &TimeVaryingAffineSystem<T>::configure_random_state,
+            py::arg("covariance"),
+            doc.TimeVaryingAffineSystem.configure_random_state.doc)
         // Need to specifically redeclare the System to have both overloads
         // available.
         .def("get_input_port", &System<T>::get_input_port,
@@ -254,7 +261,10 @@ PYBIND11_MODULE(primitives, m) {
             py::arg("dynamics") = Vector0<Expression>{},
             py::arg("output") = Vector0<Expression>{},
             py::arg("time_period") = 0.0,
-            doc.SymbolicVectorSystem.ctor.doc_7args);
+            doc.SymbolicVectorSystem.ctor.doc_7args)
+        .def("dynamics_for_variable",
+            &SymbolicVectorSystem<T>::dynamics_for_variable, py::arg("var"),
+            doc.SymbolicVectorSystem.dynamics_for_variable.doc);
 
     DefineTemplateClassWithDefault<WrapToSystem<T>, LeafSystem<T>>(
         m, "WrapToSystem", GetPyParam<T>(), doc.WrapToSystem.doc)

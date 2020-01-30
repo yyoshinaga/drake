@@ -9,6 +9,7 @@ import unittest
 import numpy as np
 
 from pydrake.autodiffutils import AutoDiffXd
+from pydrake.common import RandomGenerator
 from pydrake.examples.pendulum import PendulumPlant
 from pydrake.examples.rimless_wheel import RimlessWheel
 from pydrake.symbolic import Expression
@@ -111,6 +112,10 @@ class TestGeneral(unittest.TestCase):
             context.get_continuous_state_vector(), VectorBase)
         self.assertIsInstance(
             context.get_mutable_continuous_state_vector(), VectorBase)
+        system.SetDefaultContext(context)
+
+        # Check random context method.
+        system.SetRandomContext(context=context, generator=RandomGenerator())
 
         context = system.CreateDefaultContext()
         self.assertIsInstance(
@@ -226,11 +231,16 @@ class TestGeneral(unittest.TestCase):
         self.assertIsInstance(periodic_data.Clone(), PeriodicEventData)
         periodic_data.period_sec()
         periodic_data.offset_sec()
+        is_diff_eq, period = system1.IsDifferenceEquationSystem()
+        self.assertTrue(is_diff_eq)
+        self.assertEqual(period, periodic_data.period_sec())
 
         # Simple continuous-time system.
         system2 = LinearSystem(A=[1], B=[1], C=[1], D=[1], time_period=0.0)
         periodic_data = system2.GetUniquePeriodicDiscreteUpdateAttribute()
         self.assertIsNone(periodic_data)
+        is_diff_eq, period = system2.IsDifferenceEquationSystem()
+        self.assertFalse(is_diff_eq)
 
     def test_instantiations(self):
         # Quick check of instantiations for given types.
@@ -435,6 +445,24 @@ class TestGeneral(unittest.TestCase):
             xc_expected = (float(i) / (n - 1) * (xc_final - xc_initial) +
                            xc_initial)
             self.assertTrue(np.allclose(xc, xc_expected))
+
+    def test_simulator_context_manipulation(self):
+        system = ConstantVectorSource([1])
+        # Use default-constructed context.
+        simulator = Simulator(system)
+        self.assertTrue(simulator.has_context())
+        context_default = simulator.get_mutable_context()
+        # WARNING: Once we call `simulator.reset_context()`, it will delete the
+        # context it currently owns, which is `context_default` in this case.
+        # BE CAREFUL IN SITUATIONS LIKE THIS!
+        # TODO(eric.cousineau): Bind `release_context()`, or migrate context
+        # usage to use `shared_ptr`.
+        context = system.CreateDefaultContext()
+        simulator.reset_context(context)
+        self.assertIs(context, simulator.get_mutable_context())
+        # WARNING: This will also invalidate `context`. Be careful!
+        simulator.reset_context(None)
+        self.assertFalse(simulator.has_context())
 
     def test_simulator_integrator_manipulation(self):
         system = ConstantVectorSource([1])

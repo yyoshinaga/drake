@@ -155,6 +155,7 @@ class EmptySystemDiagram : public Diagram<double> {
         unique_updates);
     }
     builder.BuildInto(this);
+    EXPECT_FALSE(IsDifferenceEquationSystem());
   }
 };
 
@@ -355,7 +356,7 @@ adder1_: (A + input2_)       -> B, output 0
 adder2_: (A + B)             -> output 1
 integrator1_: A              -> C
 integrator2_: C              -> output 2
-It also uses an StatelessSystem to verify Diagram's ability to retrieve
+It also uses a StatelessSystem to verify Diagram's ability to retrieve
 witness functions from its subsystems.
 
              +----------------------------------------------------------+
@@ -1517,7 +1518,7 @@ class SecondOrderStateVector : public BasicVector<double> {
   void set_v(double v) { SetAtIndex(1, v); }
 
  protected:
-  DRAKE_NODISCARD SecondOrderStateVector* DoClone() const override {
+  [[nodiscard]] SecondOrderStateVector* DoClone() const override {
     return new SecondOrderStateVector;
   }
 };
@@ -1666,6 +1667,7 @@ class DiscreteStateDiagram : public Diagram<double> {
     builder.ExportInput(hold1_->get_input_port());
     builder.ExportInput(hold2_->get_input_port());
     builder.BuildInto(this);
+    EXPECT_FALSE(IsDifferenceEquationSystem());
   }
 
   ZeroOrderHold<double>* hold1() { return hold1_; }
@@ -1796,7 +1798,8 @@ TEST_F(DiscreteStateTest, UpdateDiscreteVariables) {
   // Set the time to 8.5, so only hold2 updates.
   context_->SetTime(8.5);
 
-  // Request the next update time.
+  // Request the next update time. Note that CalcNextUpdateTime() clears the
+  // event collection.
   auto events = diagram_.AllocateCompositeEventCollection();
   double time = diagram_.CalcNextUpdateTime(*context_, events.get());
   EXPECT_EQ(9.0, time);
@@ -1820,7 +1823,8 @@ TEST_F(DiscreteStateTest, UpdateDiscreteVariables) {
 
   // Restore hold2 to its original value.
   ctx2.get_mutable_discrete_state(0)[0] = 1002.0;
-  // Set the time to 11.5, so both hold1 and hold2 update.
+  // Set the time to 11.5, so both hold1 and hold2 update.  Note that
+  // CalcNextUpdateTime() clears the event collection.
   context_->SetTime(11.5);
   time = diagram_.CalcNextUpdateTime(*context_, events.get());
   EXPECT_EQ(12.0, time);
@@ -1944,6 +1948,31 @@ class TwoDiscreteSystemDiagram : public Diagram<double> {
   SystemWithDiscreteState* sys2_{nullptr};
 };
 
+GTEST_TEST(DiscreteStateDiagramTest, IsDifferenceEquationSystem) {
+  // Two unique periods, two state groups.
+  DiagramBuilder<double> builder;
+  builder.template AddSystem<SystemWithDiscreteState>(1, 2.);
+  builder.template AddSystem<SystemWithDiscreteState>(2, 3.);
+  const auto two_period_diagram = builder.Build();
+  EXPECT_FALSE(two_period_diagram->IsDifferenceEquationSystem());
+
+  // One period, one discrete state group.
+  const double period = 0.1;
+  DiagramBuilder<double> builder2;
+  builder2.template AddSystem<SystemWithDiscreteState>(1, period);
+  const auto one_period_diagram = builder2.Build();
+  double test_period = -3.94;
+  EXPECT_TRUE(one_period_diagram->IsDifferenceEquationSystem(&test_period));
+  EXPECT_EQ(test_period, period);
+
+  // One unique period, but two discrete state groups.
+  DiagramBuilder<double> builder3;
+  builder3.template AddSystem<SystemWithDiscreteState>(1, period);
+  builder3.template AddSystem<SystemWithDiscreteState>(2, period);
+  const auto one_period_two_state_diagram = builder3.Build();
+  EXPECT_FALSE(one_period_two_state_diagram->IsDifferenceEquationSystem());
+}
+
 // Tests CalcDiscreteVariableUpdates() when there are multiple subsystems and
 // only one has an event to handle (call that the "participating subsystem"). We
 // want to verify that only the participating subsystem's State gets copied,
@@ -2002,7 +2031,8 @@ GTEST_TEST(DiscreteStateDiagramTest, CalcDiscreteVariableUpdates) {
   EXPECT_EQ(context->get_discrete_state(0)[0], kSys1Id + time);  // == 3
   EXPECT_EQ(context->get_discrete_state(1)[0], kSys2Id);
 
-  // Sets time to 5.5, both systems should be updating at 6 sec.
+  // Sets time to 5.5, both systems should be updating at 6 sec.  Note that
+  // CalcNextUpdateTime() clears the event collection.
   context->SetTime(5.5);
   EXPECT_EQ(diagram.CalcNextUpdateTime(*context, events.get()), 6.);
   for (int i : {kSys1Id, kSys2Id}) {
@@ -2199,7 +2229,8 @@ TEST_F(AbstractStateDiagramTest, CalcUnrestrictedUpdate) {
   EXPECT_EQ(get_sys1_abstract_data_as_double(), kSys1Id + time);  // == 3
   EXPECT_EQ(get_sys2_abstract_data_as_double(), kSys2Id);
 
-  // Sets time to 5.5, both systems should be updating at 6 sec.
+  // Sets time to 5.5, both systems should be updating at 6 sec.  Note that
+  // CalcNextUpdateTime() clears the event collection.
   context_->SetTime(5.5);
   EXPECT_EQ(diagram_.CalcNextUpdateTime(*context_, events.get()), 6.);
   for (int i : {kSys1Id, kSys2Id}) {
@@ -2954,8 +2985,8 @@ GTEST_TEST(MyEventTest, MyEventTestLeaf) {
 // MyEventTestSystem. sys4 is configured to have per step events, and all
 // the others should have periodic publish events. Tests
 // Diagram::CalcNextUpdateTime, Diagram::GetPerStepEvents, and
-// CompositeEventCollection::Merge. The result should be sys1, sys2, sys3, sys4
-// fired their proper callbacks.
+// CompositeEventCollection::AddToEnd. The result should be sys1, sys2, sys3,
+// sys4 fired their proper callbacks.
 GTEST_TEST(MyEventTest, MyEventTestDiagram) {
   std::unique_ptr<Diagram<double>> sub_diagram;
   std::vector<const MyEventTestSystem*> sys(5);
@@ -2986,8 +3017,8 @@ GTEST_TEST(MyEventTest, MyEventTestDiagram) {
   double time = dut->CalcNextUpdateTime(*context, periodic_events.get());
   dut->GetPerStepEvents(*context, perstep_events.get());
 
-  events->Merge(*periodic_events);
-  events->Merge(*perstep_events);
+  events->AddToEnd(*periodic_events);
+  events->AddToEnd(*perstep_events);
 
   context->SetTime(time);
   dut->Publish(*context, events->get_publish_events());

@@ -909,8 +909,6 @@ class MathematicalProgram {
   /**
    * Adds a cost term of the form 0.5*x'*Q*x + b'x + c
    * Applied to subset of the variables.
-   *
-   * @exclude_from_pydrake_mkdoc{Not bound in pydrake.}
    */
   Binding<QuadraticCost> AddQuadraticCost(
       const Eigen::Ref<const Eigen::MatrixXd>& Q,
@@ -1137,8 +1135,7 @@ class MathematicalProgram {
    * only be used if a more specific type of constraint is not
    * available, as it may require the use of a significantly more
    * expensive solver.
-   *
-   * @exclude_from_pydrake_mkdoc{Not bound in pydrake.}
+   * @pydrake_mkdoc_identifier{2args_con_vars}
    */
   template <typename C>
   auto AddConstraint(std::shared_ptr<C> con,
@@ -2636,6 +2633,32 @@ class MathematicalProgram {
     return y;
   }
 
+  /**
+   * Given the value of all decision variables, namely
+   * this.decision_variable(i) takes the value prog_var_vals(i), returns the
+   * vector that contains the value of the variables in binding.variables().
+   * @param binding binding.variables() must be decision variables in this
+   * MathematicalProgram.
+   * @param prog_var_vals The value of ALL the decision variables in this
+   * program.
+   * @return binding_variable_vals binding_variable_vals(i) is the value of
+   * binding.variables()(i) in prog_var_vals.
+   */
+  template <typename C, typename DerivedX>
+  typename std::enable_if<is_eigen_vector<DerivedX>::value,
+                          VectorX<typename DerivedX::Scalar>>::type
+  GetBindingVariableValues(
+      const Binding<C>& binding,
+      const Eigen::MatrixBase<DerivedX>& prog_var_vals) const {
+    DRAKE_DEMAND(prog_var_vals.rows() == num_vars());
+    VectorX<typename DerivedX::Scalar> result(binding.GetNumElements());
+    for (int i = 0; i < static_cast<int>(binding.GetNumElements()); ++i) {
+      result(i) =
+          prog_var_vals(FindDecisionVariableIndex(binding.variables()(i)));
+    }
+    return result;
+  }
+
   /** Evaluates all visualization callbacks registered with the
    * MathematicalProgram.
    *
@@ -2703,13 +2726,58 @@ class MathematicalProgram {
   }
 
   /**
-   * Returns the mapping from a decision variable to its index in the vector,
-   * containing all the decision variables in the optimization program.
+   * Returns the mapping from a decision variable ID to its index in the vector
+   * containing all the decision variables in the mathematical program.
    */
   const std::unordered_map<symbolic::Variable::Id, int>&
   decision_variable_index() const {
     return decision_variable_index_;
   }
+
+  /**
+   * Returns the mapping from an indeterminate ID to its index in the vector
+   * containing all the indeterminates in the mathematical program.
+   */
+  const std::unordered_map<symbolic::Variable::Id, int>& indeterminates_index()
+      const {
+    return indeterminates_index_;
+  }
+
+  /**
+   * @anchor variable_scaling
+   * @name Variable scaling
+   * Some solvers (e.g. SNOPT) work better if the decision variables values
+   * are on the same scale. Hence, internally we scale the variable as
+   * snopt_var_value = var_value / scaling_factor.
+   * This scaling factor is only used inside the solve, so
+   * users don't need to manually scale the variables every time they appears in
+   * cost and constraints. When the users set the initial guess, or getting the
+   * result from MathematicalProgramResult::GetSolution(), the values are
+   * unscaled. Namely, MathematicalProgramResult::GetSolution(var) returns the
+   * value of var, not var_value / scaling_factor.
+   *
+   * The feature of variable scaling is currently only implemented for SNOPT.
+   */
+  //@{
+  /**
+   * Returns the mapping from a decision variable index to its scaling factor.
+   *
+   * See @ref variable_scaling "Variable scaling" for more information.
+   */
+  const std::unordered_map<int, double>& GetVariableScaling() const {
+    return var_scaling_map_;
+  }
+
+  /**
+   * Setter for the scaling of decision variables starting from index @p
+   * idx_start to @p idx_end (including @p idx_end).
+   * @param var the decision variable to be scaled.
+   * @param s scaling factor (must be positive).
+   *
+   * See @ref variable_scaling "Variable scaling" for more information.
+   */
+  void SetVariableScaling(const symbolic::Variable& var, double s);
+  //@}
 
  private:
   static void AppendNanToEnd(int new_var_size, Eigen::VectorXd* vector);
@@ -2960,6 +3028,8 @@ class MathematicalProgram {
     NewVariables_impl(type, names, true, decision_variable_matrix);
     return decision_variable_matrix;
   }
+
+  std::unordered_map<int, double> var_scaling_map_{};
 };
 
 }  // namespace solvers

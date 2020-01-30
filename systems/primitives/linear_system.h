@@ -180,7 +180,7 @@ class TimeVaryingLinearSystem : public TimeVaryingAffineSystem<T> {
 /// @note All _vector_ inputs in the system must be connected, either to the
 /// output of some upstream System within a Diagram (e.g., if system is a
 /// reference to a subsystem in a Diagram), or to a constant value using, e.g.
-/// `context->FixInputPort(0,default_input)`. Any _abstract_ inputs in the
+/// `port.FixValue(context, default_input)`. Any _abstract_ inputs in the
 /// system must be unconnected (the port must be both optional and unused).
 ///
 /// @note The inputs, states, and outputs of the returned system are NOT the
@@ -188,6 +188,9 @@ class TimeVaryingLinearSystem : public TimeVaryingAffineSystem<T> {
 /// defined by the Context, and y0 as the value of the output at (x0,u0),
 /// then the created systems inputs are (u-u0), states are (x-x0), and
 /// outputs are (y-y0).
+///
+/// @note This method does *not* (yet) set the initial conditions (default nor
+/// random) of the LinearSystem based on `system`.
 ///
 /// @ingroup primitive_systems
 ///
@@ -236,9 +239,12 @@ std::unique_ptr<LinearSystem<double>> Linearize(
 ///         continuous or not (only) discrete time with a single periodic
 ///         update.
 ///
-/// Note that x, u and y are in the same coordinate system as the original
+/// @note x, u and y are in the same coordinate system as the original
 /// @p system, since the terms involving @f$ x_0, u_0 @f$ reside in
 /// @f$ f_0 @f$.
+///
+/// @note This method does *not* (yet) set the initial conditions (default nor
+/// random) of the AffineSystem based on `system`.
 ///
 /// @ingroup primitive_systems
 ///

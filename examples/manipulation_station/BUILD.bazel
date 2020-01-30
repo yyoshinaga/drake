@@ -27,9 +27,11 @@ drake_cc_library(
     ],
     data = [
         ":models",
+        "//examples/kuka_iiwa_arm:models",
         "//manipulation/models/iiwa_description:models",
         "//manipulation/models/wsg_50_description:models",
         "//manipulation/models/ycb:models",
+        "//manipulation/models/yaskawa_description:models",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -89,6 +91,8 @@ drake_cc_binary(
         "//lcm",
         "//manipulation/kuka_iiwa:iiwa_command_receiver",
         "//manipulation/kuka_iiwa:iiwa_status_sender",
+      	"//manipulation/yaskawa:yaskawa_command_receiver",
+        "//manipulation/yaskawa:yaskawa_status_sender",
         "//manipulation/schunk_wsg:schunk_wsg_lcm",
         "//systems/analysis:simulator",
         "//systems/lcm",

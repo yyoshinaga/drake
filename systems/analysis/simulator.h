@@ -26,6 +26,18 @@
 namespace drake {
 namespace systems {
 
+namespace internal {
+// Default value of target_realtime_rate_.
+const double kDefaultTargetRealtimeRate = 0.0;
+
+// Default integrator used by a Simulator.
+const char* const kDefaultIntegratorName = "runge_kutta3";
+
+// Default value of both publish_every_time_step_ and
+// publish_at_initialization_.
+const bool kDefaultPublishEveryTimeStep = false;
+}  // namespace internal
+
 /** @ingroup simulation
 A class for advancing the state of hybrid dynamic systems, represented by
 `System<T>` objects, forward in time. Starting with an initial Context for a
@@ -420,11 +432,6 @@ class Simulator {
     return monitor_;
   }
 
-#ifndef DRAKE_DOXYGEN_CXX
-  DRAKE_DEPRECATED("2020-01-01", "Use AdvanceTo() instead.")
-  void StepTo(const T& boundary_time) { AdvanceTo(boundary_time); }
-#endif
-
   // TODO(sherm1): Provide options for issuing a warning or aborting the
   // simulation if the desired rate cannot be achieved.
   /// Slow the simulation down to *approximately* synchronize with real time
@@ -588,16 +595,10 @@ class Simulator {
   /// state of the system.
   IntegratorBase<T>& get_mutable_integrator() { return *integrator_.get(); }
 
-  /// Resets the integrator with a new one. An example usage is:
-  /// @code
-  /// simulator.reset_integrator(std::move(integrator));
-  /// @endcode
-  /// The %Simulator must be reinitialized after resetting the integrator to
-  /// ensure the integrator is properly initialized. You can do that explicitly
-  /// with the Initialize() method or it will be done implicitly at the first
-  /// time step.
-  /// @throws std::logic_error if `integrator` is nullptr.
   template <class U>
+  DRAKE_DEPRECATED(
+      "2020-05-01",
+      "Use void or max-step-size version of reset_integrator() instead.")
   U* reset_integrator(std::unique_ptr<U> integrator) {
     if (!integrator)
       throw std::logic_error("Integrator cannot be null.");
@@ -606,17 +607,62 @@ class Simulator {
     return static_cast<U*>(integrator_.get());
   }
 
-  /// Resets the integrator with a new one using factory construction. An
-  /// example usage is:
-  /// @code
-  /// simulator.reset_integrator<ExplicitEulerIntegrator<double>>
-  ///               (sys, DT, context).
-  /// @endcode
-  /// See the base overload for `reset_integrator` for more details.
   template <class U, typename... Args>
+  DRAKE_DEPRECATED(
+      "2020-05-01",
+      "Use void or max-step-size version of reset_integrator() instead.")
   U* reset_integrator(Args&&... args) {
     auto integrator = std::make_unique<U>(std::forward<Args>(args)...);
+    integrator->reset_context(&get_mutable_context());
     return reset_integrator(std::move(integrator));
+  }
+
+  /// Resets the integrator with a new one using factory construction.
+  /// @code
+  /// simulator.reset_integrator<RungeKutta3Integrator<double>>().
+  /// @endcode
+  /// Resetting the integrator resets the %Simulator such that it needs to be
+  /// initialized again -- see Initialize() for details.
+  /// @note Integrator needs a constructor of the form
+  ///       Integrator(const System&, Context*); this
+  ///       constructor is usually associated with error-controlled integrators.
+  template <class Integrator>
+  Integrator& reset_integrator() {
+    static_assert(
+        std::is_constructible<Integrator, const System<T>&, Context<T>*>::value,
+        "Integrator needs a constructor of the form "
+        "Integrator::Integrator(const System&, Context*); this "
+        "constructor is usually associated with error-controlled integrators.");
+    integrator_ =
+        std::make_unique<Integrator>(get_system(), &get_mutable_context());
+    initialization_done_ = false;
+    return *static_cast<Integrator*>(integrator_.get());
+  }
+
+  /// Resets the integrator with a new one using factory construction and a
+  /// maximum step size argument (which is required for constructing fixed-step
+  /// integrators).
+  /// @code
+  /// simulator.reset_integrator<RungeKutta2Integrator<double>>(0.1).
+  /// @endcode
+  /// @see argument-less version of reset_integrator() for note about
+  ///      initialization.
+  /// @note Integrator needs a constructor of the form
+  ///       Integrator(const System&, const T&, Context*); this
+  ///       constructor is usually associated with fixed-step integrators (i.e.,
+  ///       integrators which do not support error estimation).
+  template <class Integrator>
+  Integrator& reset_integrator(const T max_step_size) {
+    static_assert(
+        std::is_constructible<Integrator, const System<T>&, double,
+                              Context<T>*>::value,
+        "Integrator needs a constructor of the form "
+        "Integrator::Integrator(const System&, const T&, Context*); this "
+        "constructor is usually associated with fixed-step integrators.");
+    integrator_ = std::make_unique<Integrator>(get_system(), max_step_size,
+                                      &get_mutable_context());
+    initialization_done_ = false;
+    return *static_cast<Integrator*>(integrator_.get());
   }
 
   /// Gets the length of the interval used for witness function time isolation.
@@ -762,11 +808,11 @@ class Simulator {
   VectorX<T> w0_, wf_;
 
   // Slow down to this rate if possible (user settable).
-  double target_realtime_rate_{0.};
+  double target_realtime_rate_{internal::kDefaultTargetRealtimeRate};
 
-  bool publish_every_time_step_{false};
+  bool publish_every_time_step_{internal::kDefaultPublishEveryTimeStep};
 
-  bool publish_at_initialization_{false};
+  bool publish_at_initialization_{internal::kDefaultPublishEveryTimeStep};
 
   // These are recorded at initialization or statistics reset.
   double initial_simtime_{nan()};  // Simulated time at start of period.
@@ -861,6 +907,8 @@ Simulator<T>::Simulator(const System<T>* system,
   if (!context_) context_ = system_.CreateDefaultContext();
 
   // Create a default integrator and initialize it.
+  // N.B. Keep this in sync with systems::internal::kDefaultIntegratorName at
+  // the top of this file.
   integrator_ = std::unique_ptr<IntegratorBase<T>>(
       new RungeKutta3Integrator<T>(system_, context_.get()));
   integrator_->request_initial_step_size_target(initial_step_size);
@@ -998,9 +1046,9 @@ SimulatorStatus Simulator<T>::Initialize() {
   // events to precede any per-step or timed events in the merged collection.
   // Note that per-step and timed discrete/unrestricted update events are *not*
   // processed here; just publish events.
-  init_events->Merge(*per_step_events_);
+  init_events->AddToEnd(*per_step_events_);
   if (time_or_witness_triggered_ & kTimeTriggered)
-    init_events->Merge(*timed_events_);
+    init_events->AddToEnd(*timed_events_);
   HandlePublish(init_events->get_publish_events());
 
   // TODO(siyuan): transfer publish entirely to individual systems.
@@ -1082,13 +1130,13 @@ SimulatorStatus Simulator<T>::AdvanceTo(const T& boundary_time) {
 
   // Clear events for the loop iteration.
   merged_events->Clear();
-  merged_events->Merge(*per_step_events_);
+  merged_events->AddToEnd(*per_step_events_);
 
   // Merge in timed and witnessed events, if necessary.
   if (time_or_witness_triggered_ & kTimeTriggered)
-    merged_events->Merge(*timed_events_);
+    merged_events->AddToEnd(*timed_events_);
   if (time_or_witness_triggered_ & kWitnessTriggered)
-    merged_events->Merge(*witnessed_events_);
+    merged_events->AddToEnd(*witnessed_events_);
 
   while (true) {
     // Starting a new step on the trajectory.
@@ -1142,13 +1190,13 @@ SimulatorStatus Simulator<T>::AdvanceTo(const T& boundary_time) {
     merged_events->Clear();
 
     // Merge in per-step events.
-    merged_events->Merge(*per_step_events_);
+    merged_events->AddToEnd(*per_step_events_);
 
     // Only merge timed / witnessed events in if an event was triggered.
     if (time_or_witness_triggered_ & kTimeTriggered)
-      merged_events->Merge(*timed_events_);
+      merged_events->AddToEnd(*timed_events_);
     if (time_or_witness_triggered_ & kWitnessTriggered)
-      merged_events->Merge(*witnessed_events_);
+      merged_events->AddToEnd(*witnessed_events_);
 
     // Handle any publish events at the end of the loop.
     HandlePublish(merged_events->get_publish_events());

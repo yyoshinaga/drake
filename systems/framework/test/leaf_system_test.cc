@@ -517,6 +517,7 @@ TEST_F(LeafSystemTest, MultipleUniquePeriods) {
   auto mapping = system_.GetPeriodicEvents();
   ASSERT_EQ(mapping.size(), 1);
   EXPECT_EQ(mapping.begin()->second.size(), 2);
+  EXPECT_TRUE(system_.GetUniquePeriodicDiscreteUpdateAttribute());
 }
 
 // Tests that periodic updates with different periodic attributes are
@@ -529,6 +530,7 @@ TEST_F(LeafSystemTest, MultipleNonUniquePeriods) {
   auto mapping = system_.GetPeriodicEvents();
   ASSERT_EQ(mapping.size(), 2);
   EXPECT_FALSE(system_.GetUniquePeriodicDiscreteUpdateAttribute());
+  EXPECT_FALSE(system_.IsDifferenceEquationSystem());
 }
 
 // Tests that if the current time is smaller than the offset, the next
@@ -1688,13 +1690,13 @@ TEST_F(LeafSystemTest, CallbackAndInvalidUpdates) {
 // templated on AutoDiffXd. Protects against regression on #4431.
 GTEST_TEST(AutodiffLeafSystemTest, NextUpdateTimeAutodiff) {
   TestSystem<AutoDiffXd> system;
-  LeafContext<AutoDiffXd> context;
+  std::unique_ptr<Context<AutoDiffXd>> context = system.CreateDefaultContext();
 
-  context.SetTime(21.0);
+  context->SetTime(21.0);
   system.AddPeriodicUpdate();
 
   auto event_info = system.AllocateCompositeEventCollection();
-  auto time = system.CalcNextUpdateTime(context, event_info.get());
+  auto time = system.CalcNextUpdateTime(*context, event_info.get());
 
   EXPECT_EQ(25.0, time);
 }
@@ -2729,11 +2731,11 @@ GTEST_TEST(EventSugarTest, HandlersGetCalled) {
 
   auto per_step_events = dut.AllocateCompositeEventCollection();
   dut.GetPerStepEvents(*context, &*per_step_events);
-  all_events->Merge(*per_step_events);
+  all_events->AddToEnd(*per_step_events);
 
   auto timed_events = dut.AllocateCompositeEventCollection();
   dut.CalcNextUpdateTime(*context, &*timed_events);
-  all_events->Merge(*timed_events);
+  all_events->AddToEnd(*timed_events);
 
   dut.CalcUnrestrictedUpdate(
       *context, all_events->get_unrestricted_update_events(), &*state);

@@ -1,5 +1,7 @@
 #include "drake/systems/framework/system_base.h"
 
+#include <atomic>
+
 #include <fmt/format.h>
 
 #include "drake/systems/framework/fixed_input_port_value.h"
@@ -17,6 +19,10 @@ namespace drake {
 namespace systems {
 
 SystemBase::~SystemBase() {}
+
+internal::SystemId SystemBase::get_next_id() {
+  return internal::SystemId::get_new_id();
+}
 
 std::string SystemBase::GetSystemPathname() const {
   const std::string parent_path =
@@ -63,6 +69,8 @@ void SystemBase::InitializeContextBase(ContextBase* context_ptr) const {
 
   internal::SystemBaseContextBaseAttorney::set_system_name(
       &context, get_name());
+  internal::SystemBaseContextBaseAttorney::set_system_id(
+      &context, system_id_);
 
   // Add the independent-source trackers and wire them up appropriately. That
   // includes input ports since their dependencies are external.
