@@ -13,6 +13,7 @@ install(
         "//manipulation/models/wsg_50_description:install_data",
         "//manipulation/models/xtion_description:install_data",
         "//manipulation/models/yaskawa_description:install_data",
+	"//manipultaion/models/PB_Layout_V2_description:install_data",
         "//manipulation/models/ycb:install_data",
     ],
 )

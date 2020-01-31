@@ -6,12 +6,38 @@
 <robot name="yaskawa" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <!-- Import Rviz colors -->
 
+    <material name="blue">
+      <color rgba="0 0 1.0 1.0"/>
+    </material>
+    <material name="black">
+      <color rgba="0.0 0.0 0.0 1.0"/>
+    </material>
+
+
+
+
+
+
+
 <!-- LINKS -->
     <!-- virtual link for interfacing with base-->
     <link name="arm_base">
       <visual>
         <geometry>
           <box size="0.1 0.1 0.1"/>
+        </geometry>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </visual>
+    </link>
+
+    <!-- This link could be way more complicated if it's a mobile base, especially legged base   gp25_fixed_base_link-->
+    <link name="gp25_fixed_base_link">
+      <visual>
+        <material name="black"/>
+        <geometry>
+          <mesh filename = "../mesh/gp25_base_700.obj" />
+          <!-- alternatively, it could be a box or cylinder -->
+          <!-- <cylinder length="0.15" radius="0.025"/> -->
         </geometry>
         <origin rpy="0 0 0" xyz="0 0 0"/>
       </visual>
@@ -23,9 +49,7 @@
         <geometry>
           <mesh filename="../mesh/f-visual.obj" scale="1 1 1"/>
         </geometry>
-        <material name="red">
-          <color rgba="1.0 0 0 1.0"/>
-        </material>
+        <material name="blue"/>
       </visual>
     </link>
     <!-- Swing/Swivel , link 1 (A1) -->
@@ -35,9 +59,7 @@
         <geometry>
           <mesh filename="../mesh/s-visual.obj" scale="1 1 1"/>
         </geometry>
-        <material name="blue">
-          <color rgba="0 0 1.0 1.0"/>
-        </material>
+        <material name="blue"/>
       </visual>
     </link>
     <!-- Lower arm, link 2 -->
@@ -47,9 +69,7 @@
         <geometry>
           <mesh filename="../mesh/l-visual.obj" scale="1 1 1"/>
         </geometry>
-        <material name="red">
-          <color rgba="1.0 0 0 1.0"/>
-        </material>
+        <material name="blue"/>
       </visual>
     </link>
     <!-- Upper arm, link 3 -->
@@ -59,9 +79,7 @@
         <geometry>
           <mesh filename="../mesh/u-visual.obj" scale="1 1 1"/>
         </geometry>
-        <material name="blue">
-          <color rgba="0 0 1.0 1.0"/>
-        </material>
+        <material name="blue"/>
       </visual>
     </link>
     <!-- arm Roll/wrist Rotation, link 4  -->
@@ -71,9 +89,7 @@
         <geometry>
           <mesh filename="../mesh/r-visual.obj" scale="1 1 1"/>
         </geometry>
-        <material name="red">
-          <color rgba="1.0 0 0 1.0"/>
-        </material>
+        <material name="blue"/>
       </visual>
     </link>
     <!-- wrist Bend, link 5 -->
@@ -83,9 +99,7 @@
         <geometry>
           <mesh filename="../mesh/b-visual.obj" scale="1 1 1"/>
         </geometry>
-        <material name="blue">
-          <color rgba="0 0 1.0 1.0"/>
-        </material>
+        <material name="blue"/>
       </visual>
     </link>
     <!-- Tool flange/wrist Turning, link 6 -->
@@ -95,9 +109,7 @@
         <geometry>
           <mesh filename="../mesh/t-visual.obj" scale="1 1 1"/>
         </geometry>
-        <material name="red">
-          <color rgba="1.0 0 0 1.0"/>
-        </material>
+        <material name="blue"/>
       </visual>
     </link>
     <!-- virtual link for interfacing with end effector-->
@@ -119,11 +131,19 @@
       <child link="arm_base"/>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
     </joint> -->
+
+    <!-- JOINTS -->
+    <!-- virtual joint, connect fixed_base_footprint to various link in base -->
+    <joint name="mh25_fixed_base_link_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="arm_base"/>
+      <child link="gp25_fixed_base_link"/>
+    </joint>
     <!-- virtual joint -->
     <joint name="f_joint" type="fixed">
-      <parent link="arm_base"/>
+      <origin xyz="0.0 0.0 0.7" rpy="0 0 0"/>
+      <parent link="gp25_fixed_base_link"/>
       <child link="f_link"/>
-      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
     </joint>
     <!-- joint 1 (A1) -->
     <joint name="s_joint" type="revolute">

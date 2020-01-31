@@ -147,6 +147,7 @@ multibody::ModelInstanceIndex AddAndWeldModelFrom(
       parser.AddModelFromFile(model_path, model_name);
   const auto& child_frame = plant->GetFrameByName(child_frame_name, new_model);
   plant->WeldFrames(parent, child_frame, X_PC);
+  drake::log()->info("AddAndWeldModelFrom 1");
   return new_model;
 }
 
@@ -170,6 +171,7 @@ ManipulationStation<T>::ManipulationStation(double time_step)
   plant_->set_name("plant");
 
   this->set_name("manipulation_station");
+  drake::log()->info("ManipulationStation 2");
 }
 
 template <typename T>
@@ -186,6 +188,8 @@ void ManipulationStation<T>::AddManipulandFromFile(
   object_ids_.push_back(indices[0]);
 
   object_poses_.push_back(X_WObject);
+  drake::log()->info("AddManipulandFromFile 3");
+
 }
 
 template <typename T>
@@ -238,6 +242,8 @@ void ManipulationStation<T>::SetupClutterClearingStation(
 
   AddDefaultIiwa(collision_model);
   // AddDefaultWsg();
+  drake::log()->info("SetupClutterClearingStation 4");
+
 }
 
 template <typename T>
@@ -252,7 +258,7 @@ void ManipulationStation<T>::SetupManipulationClassStation(
     const double dz_table_top_robot_base = 0.0127;
     const std::string sdf_path = FindResourceOrThrow(
         "drake/examples/manipulation_station/models/"
-        "amazon_table_simplified.sdf");
+        "amazon_table_floor_only.sdf");
 
     RigidTransform<double> X_WT(
         Vector3d(dx_table_center_to_robot_base, 0, -dz_table_top_robot_base));
@@ -263,21 +269,21 @@ void ManipulationStation<T>::SetupManipulationClassStation(
   // Add the cupboard.
   {
     const double dx_table_center_to_robot_base = 0.3257;
-    const double dz_table_top_robot_base = 0.0127;
+    // const double dz_table_top_robot_base = 0.0127;
     const double dx_cupboard_to_table_center = 0.43 + 0.15;
-    const double dz_cupboard_to_table_center = 0.02;
-    const double cupboard_height = 0.815;
+    // const double dz_cupboard_to_table_center = 0.02;
+    // const double cupboard_height = 0.815;
 
     const std::string sdf_path = FindResourceOrThrow(
-        "drake/examples/manipulation_station/models/cupboard.sdf");
+        "drake/manipulation/models/PB_Layout_V2_description/sdf/PB_Layout_V2.sdf");
 
     RigidTransform<double> X_WC(
         RotationMatrix<double>::MakeZRotation(M_PI),
-        Vector3d(dx_table_center_to_robot_base + dx_cupboard_to_table_center, 0,
-                 dz_cupboard_to_table_center + cupboard_height / 2.0 -
-                     dz_table_top_robot_base));
-    internal::AddAndWeldModelFrom(sdf_path, "cupboard", plant_->world_frame(),
-                                  "cupboard_body", X_WC, plant_);
+        Vector3d(dx_table_center_to_robot_base + dx_cupboard_to_table_center, 0,-0.4));
+                //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
+                //      dz_table_top_robot_base));
+    internal::AddAndWeldModelFrom(sdf_path, "cabinet", plant_->world_frame(),
+                                  "PB_Layout_V2", X_WC, plant_);
   }
 
   // Add the default iiwa/wsg models.
@@ -308,6 +314,7 @@ void ManipulationStation<T>::SetupManipulationClassStation(
                          camera_pair.second, camera_properties);
     }
   }
+  drake::log()->info("SetupManipulationClassStation 5");
 }
 
 template <typename T>
@@ -345,11 +352,14 @@ void ManipulationStation<T>::SetupPlanarIiwaStation() {
 
   // Add the default wsg model.
   // AddDefaultWsg();
+  drake::log()->info("SetupPlanarIiwaStation 6");
 }
 
 template <typename T>
 int ManipulationStation<T>::num_iiwa_joints() const {
   DRAKE_DEMAND(iiwa_model_.model_instance.is_valid());
+  drake::log()->info("num_iiwa_joints 7");
+  drake::log()->info(plant_->num_positions(iiwa_model_.model_instance));
   return plant_->num_positions(iiwa_model_.model_instance);
 }
 
@@ -375,10 +385,14 @@ void ManipulationStation<T>::SetDefaultState(
 
   // Use SetIiwaPosition to make sure the controller state is initialized to
   // the IIWA state.
+  drake::log()->info("default state bug");
+
   SetIiwaPosition(station_context, state, GetIiwaPosition(station_context));
+  drake::log()->info("The above code has a bug");
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
   // SetWsgPosition(station_context, state, q0_gripper);
   // SetWsgVelocity(station_context, state, 0);
+  drake::log()->info("SetDefaultState 8");
 }
 
 template <typename T>
@@ -410,10 +424,15 @@ void ManipulationStation<T>::SetRandomState(
 
   // Use SetIiwaPosition to make sure the controller state is initialized to
   // the IIWA state.
+  drake::log()->info("random state bug");
+
   SetIiwaPosition(station_context, state, GetIiwaPosition(station_context));
+  drake::log()->info("random state bug");
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
   // SetWsgPosition(station_context, state, GetWsgPosition(station_context));
   // SetWsgVelocity(station_context, state, 0);   
+  drake::log()->info("SetRandomState 9");
+
 }
 
 template <typename T>
@@ -422,7 +441,7 @@ void ManipulationStation<T>::MakeIiwaControllerModel() {
   // IIWA and the equivalent inertia of the gripper.
   multibody::Parser parser(owned_controller_plant_.get());
   const auto controller_iiwa_model =
-      parser.AddModelFromFile(iiwa_model_.model_path, "iiwa");
+      parser.AddModelFromFile(iiwa_model_.model_path, "yaskawa");
 
   owned_controller_plant_->WeldFrames(
       owned_controller_plant_->world_frame(),
@@ -447,11 +466,14 @@ void ManipulationStation<T>::MakeIiwaControllerModel() {
   //                                             controller_iiwa_model),
   //     wsg_equivalent.body_frame(), wsg_model_.X_PC);
   // owned_controller_plant_->set_name("controller_plant");
+  drake::log()->info("MakeIiwaControllerModel 10");
+
 }
 
 template <typename T>
 void ManipulationStation<T>::Finalize() {
   Finalize({});
+  drake::log()->info("Finalize 11");
 }
 
 template <typename T>
@@ -476,7 +498,7 @@ void ManipulationStation<T>::Finalize(
     case Setup::kManipulationClass: {
       // Set the initial positions of the IIWA to a comfortable configuration
       // inside the workspace of the station.
-      q0_iiwa << 0, 0.6, 0, -1.75, 0, 1.0, 0;
+      q0_iiwa << 0, 0.6, 0, -1.75, 0, 1.0;
 
       std::uniform_real_distribution<symbolic::Expression> x(0.4, 0.65),
           y(-0.35, 0.35), z(0, 0.05);
@@ -491,7 +513,7 @@ void ManipulationStation<T>::Finalize(
     case Setup::kClutterClearing: {
       // Set the initial positions of the IIWA to a configuration right above
       // the picking bin.
-      q0_iiwa << -1.57, 0.1, 0, -1.2, 0, 1.6, 0;
+      q0_iiwa << -1.57, 0.1, 0, -1.2, 0, 1.6;
 
       std::uniform_real_distribution<symbolic::Expression> x(-.35, 0.05),
           y(-0.8, -.55), z(0.3, 0.35);
@@ -533,7 +555,8 @@ void ManipulationStation<T>::Finalize(
       joint->set_default_angle(q0_iiwa[q0_index++]);
     }
   }
-
+drake::log()->info("q0_index:");
+drake::log()->info(q0_index); 
   systems::DiagramBuilder<T> builder;
 
   builder.AddSystem(std::move(owned_plant_));
@@ -709,13 +732,18 @@ void ManipulationStation<T>::Finalize(
                        "geometry_poses");
 
   builder.BuildInto(this);
+  drake::log()->info("Finalize 12");
+
 }
 
 template <typename T>
 VectorX<T> ManipulationStation<T>::GetIiwaPosition(
     const systems::Context<T>& station_context) const {
+  drake::log()->info("Beginning of getiiwaposition");
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
+  drake::log()->info("GetIiwaPosition 13");
+
   return plant_->GetPositions(plant_context, iiwa_model_.model_instance);
 }
 
@@ -738,6 +766,8 @@ void ManipulationStation<T>::SetIiwaPosition(
       this->GetSubsystemByName("desired_state_from_position"));
   state_from_position.set_initial_position(
       &this->GetMutableSubsystemState(state_from_position, state), q);
+  drake::log()->info("SetIiwaPosition 14");
+
 }
 
 template <typename T>
@@ -745,6 +775,8 @@ VectorX<T> ManipulationStation<T>::GetIiwaVelocity(
     const systems::Context<T>& station_context) const {
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
+  drake::log()->info("GetIiwaVelocity 15");
+
   return plant_->GetVelocities(plant_context, iiwa_model_.model_instance);
 }
 
@@ -760,6 +792,8 @@ void ManipulationStation<T>::SetIiwaVelocity(
   auto& plant_state = this->GetMutableSubsystemState(*plant_, state);
   plant_->SetVelocities(plant_context, &plant_state, iiwa_model_.model_instance,
                         v);
+  drake::log()->info("SetIiwaVelocity 16");
+
 }
 
 // template <typename T>
@@ -824,6 +858,8 @@ std::vector<std::string> ManipulationStation<T>::get_camera_names() const {
   for (const auto& info : camera_information_) {
     names.emplace_back(info.first);
   }
+  drake::log()->info("get_camera_names 17");
+
   return names;
 }
 
@@ -855,6 +891,7 @@ void ManipulationStation<T>::RegisterIiwaControllerModel(
   iiwa_model_.X_PC = X_PC;
 
   iiwa_model_.model_instance = iiwa_instance;
+  drake::log()->info("RegisterIiwaControllerModel 18");
 }
 
 // template <typename T>
@@ -883,6 +920,8 @@ void ManipulationStation<T>::RegisterRgbdSensor(
   info.properties = properties;
 
   camera_information_[name] = info;
+  drake::log()->info("RegisterRgbdSensor 19");
+
 }
 
 template <typename T>
@@ -907,6 +946,7 @@ ManipulationStation<T>::GetStaticCameraPosesInWorld() const {
               info.second.X_PC);
     }
   }
+  drake::log()->info("GetStaticCameraPosesInWorld 20");
 
   return static_camera_poses;
 }
@@ -924,8 +964,8 @@ void ManipulationStation<T>::AddDefaultIiwa(
       break;
     case IiwaCollisionModel::kBoxCollision:
       sdf_path = FindResourceOrThrow(
-          "drake/manipulation/models/iiwa_description/iiwa7/"
-          "iiwa7_with_box_collision.sdf");
+          "drake/manipulation/models/yaskawa_description/urdf/"
+          "yaskawa_no_collision.urdf");
       break;
     default:
       throw std::domain_error("Unrecognized collision_model.");
@@ -936,6 +976,8 @@ void ManipulationStation<T>::AddDefaultIiwa(
   RegisterIiwaControllerModel(
       sdf_path, iiwa_instance, plant_->world_frame(),
       plant_->GetFrameByName("arm_base", iiwa_instance), X_WI);
+  drake::log()->info("AddDefaultIiwa 21");
+
 }
 
 // Add default wsg.
