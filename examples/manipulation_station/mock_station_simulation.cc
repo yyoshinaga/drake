@@ -151,15 +151,13 @@ int do_main(int argc, char* argv[]) {
   auto& station_context =
       diagram->GetMutableSubsystemContext(*station, &context);
 
-
+  //Add movements to the conveyor belt
+    // auto& state = context.get_mutable_state();
+  // auto& plant = station->get_multibody_plant();
+  // plant.SetVelocities(context, &state, station->GetConveyorBeltId(), drake::Vector1d(2));
 
   // Get the initial Iiwa pose and initialize the iiwa_command to match.
   VectorXd q0 = station->GetIiwaPosition(station_context); //Yaskawa has q0 = size 6
-
-for(int i = 0; i < q0.size(); i++){
-  drake::log()->info(q0[i]);
-}
-
 
   iiwa_command->set_initial_position(
       &diagram->GetMutableSubsystemContext(*iiwa_command, &context), q0);

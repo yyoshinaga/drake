@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.5.1-0-g916b5db  Build Version: 1.5.7152.31018
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="Motoman_GP25">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.0319149978251271 0.00217544596550133 0.0915880543364595"
+        rpy="0 0 0" />
+      <mass
+        value="9.33243357818767" />
+      <inertia
+        ixx="0.109802089962328"
+        ixy="0.00283752106032472"
+        ixz="0.00654259378745936"
+        iyy="0.148107090138437"
+        iyz="-0.00116078909593089"
+        izz="0.224476750981121" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="S_Link">
+    <inertial>
+      <origin
+        xyz="-0.0380755434147958 0.206665071388565 0.0617656984137868"
+        rpy="0 0 0" />
+      <mass
+        value="15.9588530165512" />
+      <inertia
+        ixx="0.255292944316114"
+        ixy="0.0174448216840004"
+        ixz="0.00616993340053127"
+        iyy="0.240744400537625"
+        iyz="-0.0526013409140016"
+        izz="0.217915956834648" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/S_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/S_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="S"
+    type="revolute">
+    <origin
+      xyz="0 -0.15075 0"
+      rpy="0 -1.5708 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="S_Link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="0"
+      upper="3.1416"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="L_Link">
+    <inertial>
+      <origin
+        xyz="-0.00062167024542592 0.396089506767381 0.0888002695165039"
+        rpy="0 0 0" />
+      <mass
+        value="5.70759123495902" />
+      <inertia
+        ixx="0.341163414001309"
+        ixy="0.00213891346250268"
+        ixz="-0.000234748432775255"
+        iyy="0.0193608919033307"
+        iyz="0.0114467490374037"
+        izz="0.353392510236023" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/L_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/L_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="L"
+    type="continuous">
+    <origin
+      xyz="0.15 -0.505 -0.062998"
+      rpy="3.1416 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="L_Link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="U_Link">
+    <inertial>
+      <origin
+        xyz="-0.0966401329084385 0.026110449230515 0.0938805023471361"
+        rpy="0 0 0" />
+      <mass
+        value="7.45427660382808" />
+      <inertia
+        ixx="0.0530025667071174"
+        ixy="0.000386850947829863"
+        ixz="0.0280366965681017"
+        iyy="0.0879358021221802"
+        iyz="-0.00132786474095653"
+        izz="0.0581064716045867" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/U_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/U_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="U"
+    type="continuous">
+    <origin
+      xyz="0.15 -1.265 0"
+      rpy="-1.5708 0 3.1416" />
+    <parent
+      link="base_link" />
+    <child
+      link="U_Link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="R_Link">
+    <inertial>
+      <origin
+        xyz="0.290119003886997 -0.000403943301210545 0.0258623122365105"
+        rpy="0 0 0" />
+      <mass
+        value="4.01375967312329" />
+      <inertia
+        ixx="0.0130921856774786"
+        ixy="-0.000317327796934653"
+        ixz="0.00275401335398748"
+        iyy="0.0782866282827436"
+        iyz="-0.000368105665471494"
+        izz="0.0768711343921634" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/R_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/R_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="R"
+    type="continuous">
+    <origin
+      xyz="0.37498 -1.465 0"
+      rpy="1.5708 0 -3.1833E-05" />
+    <parent
+      link="base_link" />
+    <child
+      link="R_Link" />
+    <axis
+      xyz="1 0 0" />
+  </joint>
+  <link
+    name="B_Link">
+    <inertial>
+      <origin
+        xyz="0.0238001365322172 0.0181989295507371 0.000562120322474158"
+        rpy="0 0 0" />
+      <mass
+        value="2.43378492894679" />
+      <inertia
+        ixx="0.00425537610433691"
+        ixy="-1.34625306615931E-05"
+        ixz="4.74640234679341E-07"
+        iyy="0.0041236918248025"
+        iyz="5.72018051761124E-05"
+        izz="0.00426589899884815" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/B_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/B_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="B"
+    type="continuous">
+    <origin
+      xyz="0.94499 -1.465 0"
+      rpy="-1.5708 0 -3.1833E-05" />
+    <parent
+      link="base_link" />
+    <child
+      link="B_Link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="T_Link">
+    <inertial>
+      <origin
+        xyz="0.0127358542673286 -3.83325724875316E-05 -1.89676785018473E-09"
+        rpy="0 0 0" />
+      <mass
+        value="0.618266430442472" />
+      <inertia
+        ixx="0.00109254006084294"
+        ixy="1.28178283791903E-07"
+        ixz="3.47035988338485E-09"
+        iyy="0.000569735260526465"
+        iyz="-6.01170536362219E-06"
+        izz="0.000560438271241415" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/T_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.831372549019608 0.670588235294118 0.129411764705882 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Motoman_GP25/meshes/T_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="T"
+    type="continuous">
+    <origin
+      xyz="1.01948460335399 -1.46502767837944 0"
+      rpy="3.14159265358979 0 -3.18329709312806E-05" />
+    <parent
+      link="base_link" />
+    <child
+      link="T_Link" />
+    <axis
+      xyz="1 0 0" />
+  </joint>
+</robot>

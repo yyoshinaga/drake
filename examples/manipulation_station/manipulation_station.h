@@ -438,6 +438,14 @@ class ManipulationStation : public systems::Diagram<T> {
     iiwa_ki_ = ki;
   }
 
+  //Used to get the id of the conveyor belt
+  const multibody::ModelInstanceIndex GetConveyorBeltId() {
+    DRAKE_THROW_UNLESS(setup_==Setup::kManipulationClass);
+    return conveyor_belt_id_;
+  }
+
+
+
  private:
   // Struct defined to store information about the how to parse and add a model.
   struct ModelInformation {
@@ -500,6 +508,10 @@ class ManipulationStation : public systems::Diagram<T> {
   // SetupManipulationClassStation()), and informs how SetDefaultState()
   // initializes the sim.
   Setup setup_{Setup::kNone};
+
+  multibody::ModelInstanceIndex conveyor_belt_id_;
+
+
 };
 
 }  // namespace manipulation_station

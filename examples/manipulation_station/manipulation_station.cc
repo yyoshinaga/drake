@@ -266,65 +266,113 @@ void ManipulationStation<T>::SetupManipulationClassStation(
                                   "amazon_table", X_WT, plant_);
   }
   
-  // Add conveyor belt 
-  { 
-    const std::string sdf_path = FindResourceOrThrow(
-      "drake/conveyor_belt_iiwa/models/"
-      "conveyor_belt_surface_only_collision.sdf"
-    );
-    multibody::Parser parser(plant_);
-    conveyor_belt_id_ = parser.AddModelFromFile(sdf_path);
+  // // Add conveyor belt 
+  // { 
+  //   const std::string sdf_path = FindResourceOrThrow(
+  //     "drake/manipulation/models/conveyor_belt_description/sdf/"
+  //     "conveyor_belt_surface_only_collision.sdf"
+  //   );
 
-    const auto& conveyor_frame = plant_->GetFrameByName("link", conveyor_belt_id_);
-    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
-                                Vector3d(2, (0.7112+0.4)/2+0.01, 0));
-    plant_->template AddJoint<PrismaticJoint>(
-      "conveyor_joint", plant_->world_body(), {}, plant_->GetRigidBodyByName(conveyor_frame.body().name()),
-      X_BM, Vector3d::UnitY()
-    );
+  //   multibody::Parser parser(plant_);
+  //   conveyor_belt_id_ = parser.AddModelFromFile(sdf_path,"conveyor_belt");
+
+  //   const auto& conveyor_frame = plant_->GetFrameByName("link", conveyor_belt_id_);
+  //   RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
+  //                               Vector3d(2, (0.7112+0.4)/2+0.01, 0));
+
+  //   plant_->template AddJoint<PrismaticJoint>(
+  //     "conveyor_joint", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
+  //      X_BM, Vector3<double>::UnitY()
+  //   );
+  // }
+
+
+// PrismaticJoint(
+//       const std::string& name, const Frame<T>& frame_on_parent,
+//       const Frame<T>& frame_on_child, const Vector3<double>& axis,
+//       double pos_lower_limit = -std::numeric_limits<double>::infinity(),
+//       double pos_upper_limit = std::numeric_limits<double>::infinity(),
+//       double damping = 0)
+
+// const WeldJoint<T>& MultibodyPlant<T>::WeldFrames(
+//     const Frame<T>& A, const Frame<T>& B,
+//     const math::RigidTransform<double>& X_AB) {
+//   const std::string joint_name = A.name() + "_welds_to_" + B.name();
+//   return AddJoint(std::make_unique<WeldJoint<T>>(joint_name, A, B, X_AB));
+
+//   multibody::ModelInstanceIndex AddAndWeldModelFrom(
+  //   const std::string& model_path, const std::string& model_name,
+  //   const multibody::Frame<T>& parent, const std::string& child_frame_name,
+  //   const RigidTransform<double>& X_PC, MultibodyPlant<T>* plant) {
+  // DRAKE_THROW_UNLESS(!plant->HasModelInstanceNamed(model_name));
+
+  // multibody::Parser parser(plant);
+  // const  new_model =
+  //     parser.AddModelFromFile(model_path, model_name);
+  // const auto& child_frame = plant->GetFrameByName(child_frame_name, new_model);
+  // plant->WeldFrames(parent, child_frame, X_PC);
+  // return new_model;
+
+  // Add the cubby.
+  {
+    const double dx_table_center_to_robot_base = 0.3257;
+    // const double dz_table_top_robot_base = 0.0127;
+    const double dx_cupboard_to_table_center = 0.43 + 0.15;
+    // const double dz_cupboard_to_table_center = 0.02;
+    // const double cupboard_height = 0.815;
+
+    const std::string sdf_path = FindResourceOrThrow(
+        "drake/examples/manipulation_station/models/cubby.sdf");
+
+    RigidTransform<double> X_WC(
+            RotationMatrix<double>::MakeZRotation(M_PI),
+            Vector3d(
+                dx_table_center_to_robot_base + dx_cupboard_to_table_center, 0, 0));
+    internal::AddAndWeldModelFrom(sdf_path, "cupboard", plant_->world_frame(),
+                                  "cupboard_body", X_WC, plant_);
   }
 
 
 
   // Add the cupboard.
-  {
-    const double dx_table_center_to_robot_base = 0.3257;
-    // const double dz_table_top_robot_base = 0.0127;
-    // const double dx_cupboard_to_table_center = 0.43 + 0.15;
-    // const double dz_cupboard_to_table_center = 0.02;
-    // const double cupboard_height = 0.815;
+  // {
+  //   const double dx_table_center_to_robot_base = 0.3257;
+  //   // const double dz_table_top_robot_base = 0.0127;
+  //   // const double dx_cupboard_to_table_center = 0.43 + 0.15;
+  //   // const double dz_cupboard_to_table_center = 0.02;
+  //   // const double cupboard_height = 0.815;
 
-    const std::string sdf_path = FindResourceOrThrow(
-        "drake/manipulation/models/PB_Layout_V2_description/sdf/PB_Layout_V2.sdf");
+  //   const std::string sdf_path = FindResourceOrThrow(
+  //       "drake/manipulation/models/PB_Layout_V2_description/sdf/PB_Layout_V2.sdf");
 
-    RigidTransform<double> X_WC(
-        RotationMatrix<double>::MakeZRotation(M_PI),
-        Vector3d(dx_table_center_to_robot_base, 0,-0.4));
-                //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
-                //      dz_table_top_robot_base));
-    internal::AddAndWeldModelFrom(sdf_path, "cabinetRight", plant_->world_frame(),
-                                  "PB_Layout_V2", X_WC, plant_);
-  }
+  //   RigidTransform<double> X_WC(
+  //       RotationMatrix<double>::MakeZRotation(M_PI),
+  //       Vector3d(dx_table_center_to_robot_base, 0,-0.4));
+  //               //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
+  //               //      dz_table_top_robot_base));
+  //   internal::AddAndWeldModelFrom(sdf_path, "cabinetRight", plant_->world_frame(),
+  //                                 "PB_Layout_V2", X_WC, plant_);
+  // }
 
-  // Add the cupboard.
-  {
-    const double dx_table_center_to_robot_base = 0.3257;
-    // const double dz_table_top_robot_base = 0.0127;
-    // const double dx_cupboard_to_table_center = 0.43 + 0.15;
-    // const double dz_cupboard_to_table_center = 0.02;
-    // const double cupboard_height = 0.815;
+  // // Add the cupboard.
+  // {
+  //   const double dx_table_center_to_robot_base = 0.3257;
+  //   // const double dz_table_top_robot_base = 0.0127;
+  //   // const double dx_cupboard_to_table_center = 0.43 + 0.15;
+  //   // const double dz_cupboard_to_table_center = 0.02;
+  //   // const double cupboard_height = 0.815;
 
-    const std::string sdf_path = FindResourceOrThrow(
-        "drake/manipulation/models/PB_Layout_V2_description/sdf/PB_Layout_V2.sdf");
+  //   const std::string sdf_path = FindResourceOrThrow(
+  //       "drake/manipulation/models/PB_Layout_V2_description/sdf/PB_Layout_V2.sdf");
 
-    RigidTransform<double> X_WC(
-        RotationMatrix<double>::MakeZRotation(0),
-        Vector3d(dx_table_center_to_robot_base, 0,-0.4));
-                //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
-                //      dz_table_top_robot_base));
-    internal::AddAndWeldModelFrom(sdf_path, "cabinetLeft", plant_->world_frame(),
-                                  "PB_Layout_V2", X_WC, plant_);
-  }
+  //   RigidTransform<double> X_WC(
+  //       RotationMatrix<double>::MakeZRotation(0),
+  //       Vector3d(dx_table_center_to_robot_base, 0,-0.4));
+  //               //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
+  //               //      dz_table_top_robot_base));
+  //   internal::AddAndWeldModelFrom(sdf_path, "cabinetLeft", plant_->world_frame(),
+  //                                 "PB_Layout_V2", X_WC, plant_);
+  // }
 
   // Add the cupboard.
   {
@@ -558,7 +606,7 @@ void ManipulationStation<T>::Finalize(
     case Setup::kManipulationClass: {
       // Set the initial positions of the IIWA to a comfortable configuration
       // inside the workspace of the station.
-      q0_iiwa << 0, 0, 0, 0, 0, 0;
+      q0_iiwa << 1.57, 0, 0, 0, 0, 0;
 
       std::uniform_real_distribution<symbolic::Expression> x(0.4, 0.65),
           y(-0.35, 0.35), z(0, 0.05);
@@ -1021,8 +1069,8 @@ void ManipulationStation<T>::AddDefaultIiwa(
     case IiwaCollisionModel::kNoCollision:
       sdf_path = FindResourceOrThrow(
           "drake/manipulation/models/yaskawa_description/urdf/"
-          "yaskawa_no_collision.urdf");
-
+            "Motoman_GP25.urdf");
+          // "yaskawa_no_collision.urdf");
           // "iiwa7_no_world_joint.urdf");
       break;
     case IiwaCollisionModel::kBoxCollision:
