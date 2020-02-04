@@ -8,7 +8,7 @@ VectorX<double> get_iiwa_max_joint_velocities() {
   // These are the maximum joint velocities given on the website for yaskawa sgp25 series
   // That document is available here:
   // https://www.motoman.com/en-us/products/robots/industrial/assembly-handling/gp-series/gp25
-  return (VectorX<double>(7) << 
+  return (VectorX<double>(6) << 
           3.14159,                         // 180°/s in rad/s
           2.70526,                         // 155°/s in rad/s ~ TODO: Fix this number to +155/-105
           2.79253,                         // 160°/s in rad/s ~ TODO: Fix this number to +160/-86

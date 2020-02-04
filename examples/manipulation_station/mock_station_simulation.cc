@@ -74,6 +74,7 @@ int do_main(int argc, char* argv[]) {
   }
   // TODO(russt): Load sdf objects specified at the command line.  Requires
   // #9747.
+  drake::log()->info("going to finalize ");
   station->Finalize();
 
   geometry::ConnectDrakeVisualizer(&builder, station->get_scene_graph(),
@@ -111,7 +112,7 @@ int do_main(int argc, char* argv[]) {
                   iiwa_status->get_torque_external_input_port());
   auto iiwa_status_publisher = builder.AddSystem(
       systems::lcm::LcmPublisherSystem::Make<drake::lcmt_iiwa_status>(
-          "IIWA_STATUSs", lcm, 0.005 /* publish period */));
+          "IIWA_STATUS", lcm, 0.005 /* publish period */));
   builder.Connect(iiwa_status->get_output_port(),
                   iiwa_status_publisher->get_input_port());
 

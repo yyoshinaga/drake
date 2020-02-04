@@ -7,6 +7,10 @@ namespace yaskawa {
 YaskawaStatusSender::YaskawaStatusSender(int num_joints)
     : num_joints_(num_joints),
       zero_vector_(Eigen::VectorXd::Zero(num_joints)) {
+
+drake::log()->info("number of joints ni status sender");
+drake::log()->info(num_joints);
+
   this->DeclareInputPort(
       "position_commanded", systems::kVectorValued, num_joints_);
   this->DeclareInputPort(
@@ -125,6 +129,10 @@ void YaskawaStatusSender::CalcOutput(
     status.joint_torque_measured[i] = torque_measured[i];
     status.joint_torque_external[i] = torque_external[i];
   }
+  drake::log()->info("status . num jojints ");
+
+  drake::log()->info(status.num_joints);
+
 }
 
 }  // namespace yaskawa

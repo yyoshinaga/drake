@@ -265,12 +265,32 @@ void ManipulationStation<T>::SetupManipulationClassStation(
     internal::AddAndWeldModelFrom(sdf_path, "table", plant_->world_frame(),
                                   "amazon_table", X_WT, plant_);
   }
+  
+  // Add conveyor belt 
+  { 
+    const std::string sdf_path = FindResourceOrThrow(
+      "drake/conveyor_belt_iiwa/models/"
+      "conveyor_belt_surface_only_collision.sdf"
+    );
+    multibody::Parser parser(plant_);
+    conveyor_belt_id_ = parser.AddModelFromFile(sdf_path);
+
+    const auto& conveyor_frame = plant_->GetFrameByName("link", conveyor_belt_id_);
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
+                                Vector3d(2, (0.7112+0.4)/2+0.01, 0));
+    plant_->template AddJoint<PrismaticJoint>(
+      "conveyor_joint", plant_->world_body(), {}, plant_->GetRigidBodyByName(conveyor_frame.body().name()),
+      X_BM, Vector3d::UnitY()
+    );
+  }
+
+
 
   // Add the cupboard.
   {
     const double dx_table_center_to_robot_base = 0.3257;
     // const double dz_table_top_robot_base = 0.0127;
-    const double dx_cupboard_to_table_center = 0.43 + 0.15;
+    // const double dx_cupboard_to_table_center = 0.43 + 0.15;
     // const double dz_cupboard_to_table_center = 0.02;
     // const double cupboard_height = 0.815;
 
@@ -279,10 +299,50 @@ void ManipulationStation<T>::SetupManipulationClassStation(
 
     RigidTransform<double> X_WC(
         RotationMatrix<double>::MakeZRotation(M_PI),
-        Vector3d(dx_table_center_to_robot_base + dx_cupboard_to_table_center, 0,-0.4));
+        Vector3d(dx_table_center_to_robot_base, 0,-0.4));
                 //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
                 //      dz_table_top_robot_base));
-    internal::AddAndWeldModelFrom(sdf_path, "cabinet", plant_->world_frame(),
+    internal::AddAndWeldModelFrom(sdf_path, "cabinetRight", plant_->world_frame(),
+                                  "PB_Layout_V2", X_WC, plant_);
+  }
+
+  // Add the cupboard.
+  {
+    const double dx_table_center_to_robot_base = 0.3257;
+    // const double dz_table_top_robot_base = 0.0127;
+    // const double dx_cupboard_to_table_center = 0.43 + 0.15;
+    // const double dz_cupboard_to_table_center = 0.02;
+    // const double cupboard_height = 0.815;
+
+    const std::string sdf_path = FindResourceOrThrow(
+        "drake/manipulation/models/PB_Layout_V2_description/sdf/PB_Layout_V2.sdf");
+
+    RigidTransform<double> X_WC(
+        RotationMatrix<double>::MakeZRotation(0),
+        Vector3d(dx_table_center_to_robot_base, 0,-0.4));
+                //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
+                //      dz_table_top_robot_base));
+    internal::AddAndWeldModelFrom(sdf_path, "cabinetLeft", plant_->world_frame(),
+                                  "PB_Layout_V2", X_WC, plant_);
+  }
+
+  // Add the cupboard.
+  {
+    const double dx_table_center_to_robot_base = 0.3257;
+    // const double dz_table_top_robot_base = 0.0127;
+    // const double dx_cupboard_to_table_center = 0.43 + 0.15;
+    // const double dz_cupboard_to_table_center = 0.02;
+    // const double cupboard_height = 0.815;
+
+    const std::string sdf_path = FindResourceOrThrow(
+        "drake/manipulation/models/PB_Layout_V2_description/sdf/PB_Layout_V2.sdf");
+
+    RigidTransform<double> X_WC(
+        RotationMatrix<double>::MakeZRotation(M_PI/2),
+        Vector3d(dx_table_center_to_robot_base, 0,-0.4));
+                //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
+                //      dz_table_top_robot_base));
+    internal::AddAndWeldModelFrom(sdf_path, "cabinetBack", plant_->world_frame(),
                                   "PB_Layout_V2", X_WC, plant_);
   }
 
@@ -498,7 +558,7 @@ void ManipulationStation<T>::Finalize(
     case Setup::kManipulationClass: {
       // Set the initial positions of the IIWA to a comfortable configuration
       // inside the workspace of the station.
-      q0_iiwa << 0, 0.6, 0, -1.75, 0, 1.0;
+      q0_iiwa << 0, 0, 0, 0, 0, 0;
 
       std::uniform_real_distribution<symbolic::Expression> x(0.4, 0.65),
           y(-0.35, 0.35), z(0, 0.05);
@@ -620,6 +680,7 @@ drake::log()->info(q0_index);
       iiwa_ki_ = VectorXd::Constant(num_iiwa_positions, 1);
     }
     DRAKE_THROW_UNLESS(check_gains(iiwa_ki_, num_iiwa_positions));
+
 
     // Add the inverse dynamics controller.
     auto iiwa_controller = builder.template AddSystem<
@@ -961,6 +1022,8 @@ void ManipulationStation<T>::AddDefaultIiwa(
       sdf_path = FindResourceOrThrow(
           "drake/manipulation/models/yaskawa_description/urdf/"
           "yaskawa_no_collision.urdf");
+
+          // "iiwa7_no_world_joint.urdf");
       break;
     case IiwaCollisionModel::kBoxCollision:
       sdf_path = FindResourceOrThrow(
