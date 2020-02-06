@@ -72,20 +72,18 @@ void VerifyYaskawaTree(const RigidBodyTree<double>& tree) {
   std::map<std::string, int> name_to_idx = tree.computePositionNameToIndexMap();
 
   int joint_idx = 0;
-  DRAKE_DEMAND(name_to_idx.count("iiwa_joint_1"));
-  DRAKE_DEMAND(name_to_idx["iiwa_joint_1"] == joint_idx++);
-  DRAKE_DEMAND(name_to_idx.count("iiwa_joint_2"));
-  DRAKE_DEMAND(name_to_idx["iiwa_joint_2"] == joint_idx++);
-  DRAKE_DEMAND(name_to_idx.count("iiwa_joint_3"));
-  DRAKE_DEMAND(name_to_idx["iiwa_joint_3"] == joint_idx++);
-  DRAKE_DEMAND(name_to_idx.count("iiwa_joint_4"));
-  DRAKE_DEMAND(name_to_idx["iiwa_joint_4"] == joint_idx++);
-  DRAKE_DEMAND(name_to_idx.count("iiwa_joint_5"));
-  DRAKE_DEMAND(name_to_idx["iiwa_joint_5"] == joint_idx++);
-  DRAKE_DEMAND(name_to_idx.count("iiwa_joint_6"));
-  DRAKE_DEMAND(name_to_idx["iiwa_joint_6"] == joint_idx++);
-  DRAKE_DEMAND(name_to_idx.count("iiwa_joint_7"));
-  DRAKE_DEMAND(name_to_idx["iiwa_joint_7"] == joint_idx++);
+  DRAKE_DEMAND(name_to_idx.count("s_joint"));
+  DRAKE_DEMAND(name_to_idx["s_joint"] == joint_idx++);
+  DRAKE_DEMAND(name_to_idx.count("l_joint"));
+  DRAKE_DEMAND(name_to_idx["l_joint"] == joint_idx++);
+  DRAKE_DEMAND(name_to_idx.count("u_joint"));
+  DRAKE_DEMAND(name_to_idx["u_joint"] == joint_idx++);
+  DRAKE_DEMAND(name_to_idx.count("r_joint"));
+  DRAKE_DEMAND(name_to_idx["r_joint"] == joint_idx++);
+  DRAKE_DEMAND(name_to_idx.count("b_joint"));
+  DRAKE_DEMAND(name_to_idx["b_joint"] == joint_idx++);
+  DRAKE_DEMAND(name_to_idx.count("t_joint"));
+  DRAKE_DEMAND(name_to_idx["t_joint"] == joint_idx++);
 }
 
 void CreateTreedFromFixedModelAtPose(const std::string& model_file_name,

@@ -192,28 +192,41 @@ drake_cc_library(
 #     ],
 # )
 
+drake_cc_binary(
+    name = "yaskawa_plan_runner",
+    srcs = ["yaskawa_plan_runner.cc"],
+    data = [
+        ":models",
+        "//manipulation/models/yaskawa_description:models",
+    ],
+    deps = [
+        ":yaskawa_common",
+        ":yaskawa_lcm",
+        "@lcmtypes_bot2_core",
+        "@lcmtypes_robotlocomotion",
+    ],
+)
 
 
-
-# drake_cc_binary(
-#     name = "move_iiwa_ee",
-#     srcs = ["move_iiwa_ee.cc"],
-#     data = [
-#         ":models",
-#         "//manipulation/models/iiwa_description:models",
-#     ],
-#     deps = [
-#         ":yaskawa_common",
-#         "//attic/manipulation/planner:constraint_relaxing_ik",
-#         "//attic/multibody/parsers",
-#         "//common:text_logging_gflags",
-#         "//lcmtypes:iiwa",
-#         "//math:geometric_transform",
-#         "@lcm",
-#         "@lcmtypes_bot2_core",
-#         "@lcmtypes_robotlocomotion",
-#     ],
-# )
+drake_cc_binary(
+    name = "move_yaskawa_ee",
+    srcs = ["move_yaskawa_ee.cc"],
+    data = [
+        ":models",
+        "//manipulation/models/yaskawa_description:models",
+    ],
+    deps = [
+        ":yaskawa_common",
+        "//attic/manipulation/planner:constraint_relaxing_ik",
+        "//attic/multibody/parsers",
+        "//common:text_logging_gflags",
+        "//lcmtypes:iiwa",
+        "//math:geometric_transform",
+        "@lcm",
+        "@lcmtypes_bot2_core",
+        "@lcmtypes_robotlocomotion",
+    ],
+)
 
 alias(
     name = "models",

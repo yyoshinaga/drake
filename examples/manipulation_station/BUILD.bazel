@@ -32,9 +32,9 @@ drake_cc_library(
         "//manipulation/models/wsg_50_description:models",
         "//manipulation/models/ycb:models",
         "//manipulation/models/yaskawa_description:models",
+        "//manipulation/models/yaskawa_end_effector_description:models",
         "//manipulation/models/PB_Layout_V2_description:models",
         "//manipulation/models/conveyor_belt_description:models",
-
 
     ],
     visibility = ["//visibility:public"],

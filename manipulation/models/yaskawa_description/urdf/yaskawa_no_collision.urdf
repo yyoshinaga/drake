@@ -40,7 +40,20 @@
     </link>
     <!-- Foundation, link 0, sometimes referred to as base_link-->
     <link name="f_link">
-
+      <inertial>
+        <origin
+          xyz="-0.031915 0.0021754 0.091588"
+          rpy="0 0 0" />
+        <mass
+          value="9.3324" />
+        <inertia
+          ixx="0.1098"
+          ixy="0.0028375"
+          ixz="0.0065426"
+          iyy="0.14811"
+          iyz="-0.0011608"
+          izz="0.22448" />
+      </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -51,7 +64,20 @@
     </link>
     <!-- Swing/Swivel , link 1 (A1) -->
     <link name="s_link">
-
+      <inertial>
+        <origin
+          xyz="-0.038076 0.20667 0.061766"
+          rpy="0 0 0" />
+        <mass
+          value="15.959" />
+        <inertia
+          ixx="0.25529"
+          ixy="0.017445"
+          ixz="0.0061699"
+          iyy="0.24074"
+          iyz="-0.052601"
+          izz="0.21792" />
+      </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -62,7 +88,20 @@
     </link>
     <!-- Lower arm, link 2 -->
     <link name="l_link">
- 
+      <inertial>
+        <origin
+          xyz="-0.00062167 0.39609 0.0888"
+          rpy="0 0 0" />
+        <mass
+          value="5.7076" />
+        <inertia
+          ixx="0.34116"
+          ixy="0.0021389"
+          ixz="-0.00023475"
+          iyy="0.019361"
+          iyz="0.011447"
+          izz="0.35339" />
+      </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -73,7 +112,20 @@
     </link>
     <!-- Upper arm, link 3 -->
     <link name="u_link">
-
+      <inertial>
+        <origin
+          xyz="-0.09664 -0.036888 0.093881"
+          rpy="0 0 0" />
+        <mass
+          value="7.4543" />
+        <inertia
+          ixx="0.053003"
+          ixy="0.00038685"
+          ixz="0.028037"
+          iyy="0.087936"
+          iyz="-0.0013279"
+          izz="0.058106" />
+      </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -84,7 +136,19 @@
     </link>
     <!-- arm Roll/wrist Rotation, link 4  -->
     <link name="r_link">
-
+    <inertial>
+        <origin
+          xyz="0.29012 -0.00040394 0.025862"
+          rpy="0 0 0" />
+        <mass  value="4.0138" />
+        <inertia
+          ixx="0.013092"
+          ixy="-0.00031733"
+          ixz="0.002754"
+          iyy="0.078287"
+          iyz="-0.00036811"
+          izz="0.076871" />
+      </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -95,6 +159,20 @@
     </link>
     <!-- wrist Bend, link 5 -->
     <link name="b_link">
+      <inertial>
+        <origin
+          xyz="0.0238 0.018199 0.00056212"
+          rpy="0 0 0" />
+        <mass
+          value="2.4338" />
+        <inertia
+          ixx="0.0042554"
+          ixy="-1.3463E-05"
+          ixz="4.7464E-07"
+          iyy="0.0041237"
+          iyz="5.7202E-05"
+          izz="0.0042659" />
+      </inertial>
       <visual>
         <origin xyz="0 0.063 0" rpy="3.141592 0 0"/>
         <!-- <origin xyz="0 0 0" rpy="0 0 0"/> -->
@@ -106,6 +184,20 @@
     </link>
     <!-- Tool flange/wrist Turning, link 6 -->
     <link name="t_link">
+      <inertial>
+        <origin
+          xyz="0.012736 -3.8333E-05 -1.8968E-09"
+          rpy="0 0 0" />
+        <mass
+          value="0.61827" />
+        <inertia
+          ixx="0.0010925"
+          ixy="1.2818E-07"
+          ixz="3.4704E-09"
+          iyy="0.00056974"
+          iyz="-6.0117E-06"
+          izz="0.00056044" />
+      </inertial>
       <visual>
         <!-- <origin xyz="-0.09 0 0" rpy="0 0 0"/> -->
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -116,7 +208,7 @@
       </visual>
     </link>
     <!-- virtual link for interfacing with end effector-->
-    <!-- <link name="ee_mount"/> -->
+    <link name="ee_mount"/>
 
     <!-- END LINKS -->
 
@@ -190,12 +282,12 @@
       <axis xyz="-1 0 0"/>
       <!-- <limit effort="0" lower="7.94125" upper="7.94125" velocity="15.4462"/> -->
     </joint>
-   <!-- virtual joint for interfacing with end effector -->
-    <!-- <joint name="ee_mount_joint" type="fixed">
+    <!-- virtual joint for interfacing with end effector -->
+    <joint name="ee_mount_joint" type="fixed">
       <parent link="t_link"/>
       <child link="ee_mount"/>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
-    </joint> -->
+    </joint>
     <!-- END JOINTS -->
 
 

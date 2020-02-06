@@ -25,7 +25,7 @@
           <color rgba="1.0 1.0 1.0 1.0"/>
         </material>
         <geometry>
-          <mesh filename="/opt/dorabot/resources/end_effectors/conveyor_belt_dof1/mesh/cbee_gripper_1st-collision.stl" />
+          <mesh filename="../mesh/cbee_gripper_1st-collision.obj" />
         </geometry>
         <origin rpy="0 0 0" xyz="0 0 0"/>
       </visual>
@@ -34,7 +34,7 @@
           <color rgba="0 0 1.0 1.0"/>
         </material>
         <geometry>
-          <mesh filename="/opt/dorabot/resources/end_effectors/conveyor_belt_dof1/mesh/cbee_gripper_1st-collision.stl" />
+          <mesh filename="../mesh/cbee_gripper_1st-collision.obj" />
         </geometry>
         <origin rpy="0 0 0" xyz="0 0 0"/>
       </collision>
@@ -54,11 +54,11 @@
 
     <!-- JOINTS -->
     <!-- virtual joint, interfacing with arm -->
-    <joint name="ee_base_joint" type="fixed">
-      <parent link="${attach}ee_mount"/>
+    <!-- <joint name="ee_base_joint" type="fixed">
+      <parent link="ee_mount"/>
       <child link="ee_base"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
+    </joint> -->
 
     <!-- virtual joint, connect ee_base to various link in end effector -->
     <joint name="conveyor_belt_dof1_joint" type="fixed">
@@ -80,11 +80,11 @@
   <!-- Load Gazebo lib and set the robot namespace -->
   <gazebo>
     <plugin filename="libgazebo_ros_control.so" name="gazebo_ros_controller">
-      <robotNamespace>/yaskawa</robotNamespace>
+      <robotNamespace>/yaskawa_ee</robotNamespace>
     </plugin>
   </gazebo>
   <!-- Link0 -->
-  <gazebo reference="ee_base">
+  <!-- <gazebo reference="ee_base">
     <material>Gazebo/Grey</material>
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
@@ -100,10 +100,10 @@
     <material>Gazebo/Grey</material>
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
-  </gazebo>
+  </gazebo> -->
 
 
-<transmission name="yaskawa_tran_1">
+<!-- <transmission name="yaskawa_tran_1">
     <robotNamespace>/yaskawa</robotNamespace>
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="ee_base_joint">
@@ -138,7 +138,7 @@
       <hardwareInterface>PositionJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
-  </transmission>
+  </transmission> -->
 
 </robot>
 

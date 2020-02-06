@@ -51,63 +51,63 @@ namespace internal {
 // station_simulation_test.
 // @param gripper_body_frame_name Name of a frame that's attached to the
 // gripper's main body.
-// SpatialInertia<double> MakeCompositeGripperInertia(
-//     const std::string& wsg_sdf_path,
-//     const std::string& gripper_body_frame_name) {
-//   MultibodyPlant<double> plant(0.0);
-//   multibody::Parser parser(&plant);
-//   parser.AddModelFromFile(wsg_sdf_path);
-//   plant.Finalize();
-//   const auto& frame = plant.GetFrameByName(gripper_body_frame_name);
-//   const auto& gripper_body = plant.GetRigidBodyByName(frame.body().name());
-//   const auto& left_finger = plant.GetRigidBodyByName("left_finger");
-//   const auto& right_finger = plant.GetRigidBodyByName("right_finger");
-//   const auto& left_slider = plant.GetJointByName("left_finger_sliding_joint");
-//   const auto& right_slider = plant.GetJointByName("right_finger_sliding_joint");
-//   const SpatialInertia<double>& M_GGo_G =
-//       gripper_body.default_spatial_inertia();
-//   const SpatialInertia<double>& M_LLo_L = left_finger.default_spatial_inertia();
-//   const SpatialInertia<double>& M_RRo_R =
-//       right_finger.default_spatial_inertia();
-//   auto CalcFingerPoseInGripperFrame = [](const Joint<double>& slider) {
-//     // Pose of the joint's parent frame P (attached on gripper body G) in the
-//     // frame of the gripper G.
-//     const RigidTransform<double> X_GP(
-//         slider.frame_on_parent().GetFixedPoseInBodyFrame());
-//     // Pose of the joint's child frame C (attached on the slider's finger body)
-//     // in the frame of the slider's finger F.
-//     const RigidTransform<double> X_FC(
-//         slider.frame_on_child().GetFixedPoseInBodyFrame());
-//     // When the slider's translational dof is zero, then P coincides with C.
-//     // Therefore:
-//     const RigidTransform<double> X_GF = X_GP * X_FC.inverse();
-//     return X_GF;
-//   };
-//   // Pose of left finger L in gripper frame G when the slider's dof is zero.
-//   const RigidTransform<double> X_GL(CalcFingerPoseInGripperFrame(left_slider));
-//   // Pose of right finger R in gripper frame G when the slider's dof is zero.
-//   const RigidTransform<double> X_GR(CalcFingerPoseInGripperFrame(right_slider));
-//   // Helper to compute the spatial inertia of a finger F in about the gripper's
-//   // origin Go, expressed in G.
-//   auto CalcFingerSpatialInertiaInGripperFrame =
-//       [](const SpatialInertia<double>& M_FFo_F,
-//          const RigidTransform<double>& X_GF) {
-//         const auto M_FFo_G = M_FFo_F.ReExpress(X_GF.rotation());
-//         const auto p_FoGo_G = -X_GF.translation();
-//         const auto M_FGo_G = M_FFo_G.Shift(p_FoGo_G);
-//         return M_FGo_G;
-//       };
-//   // Shift and re-express in G frame the finger's spatial inertias.
-//   const auto M_LGo_G = CalcFingerSpatialInertiaInGripperFrame(M_LLo_L, X_GL);
-//   const auto M_RGo_G = CalcFingerSpatialInertiaInGripperFrame(M_RRo_R, X_GR);
-//   // With everything about the same point Go and expressed in the same frame G,
-//   // proceed to compose into composite body C:
-//   // TODO(amcastro-tri): Implement operator+() in SpatialInertia.
-//   SpatialInertia<double> M_CGo_G = M_GGo_G;
-//   M_CGo_G += M_LGo_G;
-//   M_CGo_G += M_RGo_G;
-//   return M_CGo_G;
-// }
+SpatialInertia<double> MakeCompositeGripperInertia(
+    const std::string& wsg_sdf_path,
+    const std::string& gripper_body_frame_name) {
+  MultibodyPlant<double> plant(0.0);
+  multibody::Parser parser(&plant);
+  parser.AddModelFromFile(wsg_sdf_path);
+  plant.Finalize();
+  const auto& frame = plant.GetFrameByName(gripper_body_frame_name);
+  const auto& gripper_body = plant.GetRigidBodyByName(frame.body().name());
+  const auto& left_finger = plant.GetRigidBodyByName("whisker_left_link");
+  const auto& right_finger = plant.GetRigidBodyByName("whisker_right_link");
+  const auto& left_slider = plant.GetJointByName("whisker_left_joint");
+  const auto& right_slider = plant.GetJointByName("whisker_right_joint");
+  const SpatialInertia<double>& M_GGo_G =
+      gripper_body.default_spatial_inertia();
+  const SpatialInertia<double>& M_LLo_L = left_finger.default_spatial_inertia();
+  const SpatialInertia<double>& M_RRo_R =
+      right_finger.default_spatial_inertia();
+  auto CalcFingerPoseInGripperFrame = [](const Joint<double>& slider) {
+    // Pose of the joint's parent frame P (attached on gripper body G) in the
+    // frame of the gripper G.
+    const RigidTransform<double> X_GP(
+        slider.frame_on_parent().GetFixedPoseInBodyFrame());
+    // Pose of the joint's child frame C (attached on the slider's finger body)
+    // in the frame of the slider's finger F.
+    const RigidTransform<double> X_FC(
+        slider.frame_on_child().GetFixedPoseInBodyFrame());
+    // When the slider's translational dof is zero, then P coincides with C.
+    // Therefore:
+    const RigidTransform<double> X_GF = X_GP * X_FC.inverse();
+    return X_GF;
+  };
+  // Pose of left finger L in gripper frame G when the slider's dof is zero.
+  const RigidTransform<double> X_GL(CalcFingerPoseInGripperFrame(left_slider));
+  // Pose of right finger R in gripper frame G when the slider's dof is zero.
+  const RigidTransform<double> X_GR(CalcFingerPoseInGripperFrame(right_slider));
+  // Helper to compute the spatial inertia of a finger F in about the gripper's
+  // origin Go, expressed in G.
+  auto CalcFingerSpatialInertiaInGripperFrame =
+      [](const SpatialInertia<double>& M_FFo_F,
+         const RigidTransform<double>& X_GF) {
+        const auto M_FFo_G = M_FFo_F.ReExpress(X_GF.rotation());
+        const auto p_FoGo_G = -X_GF.translation();
+        const auto M_FGo_G = M_FFo_G.Shift(p_FoGo_G);
+        return M_FGo_G;
+      };
+  // Shift and re-express in G frame the finger's spatial inertias.
+  const auto M_LGo_G = CalcFingerSpatialInertiaInGripperFrame(M_LLo_L, X_GL);
+  const auto M_RGo_G = CalcFingerSpatialInertiaInGripperFrame(M_RRo_R, X_GR);
+  // With everything about the same point Go and expressed in the same frame G,
+  // proceed to compose into composite body C:
+  // TODO(amcastro-tri): Implement operator+() in SpatialInertia.
+  SpatialInertia<double> M_CGo_G = M_GGo_G;
+  M_CGo_G += M_LGo_G;
+  M_CGo_G += M_RGo_G;
+  return M_CGo_G;
+}
 
 // TODO(russt): Get these from SDF instead of having them hard-coded (#10022).
 void get_camera_poses(std::map<std::string, RigidTransform<double>>* pose_map) {
@@ -241,7 +241,7 @@ void ManipulationStation<T>::SetupClutterClearingStation(
   }
 
   AddDefaultIiwa(collision_model);
-  // AddDefaultWsg();
+  AddDefaultWsg();
   drake::log()->info("SetupClutterClearingStation 4");
 
 }
@@ -265,100 +265,98 @@ void ManipulationStation<T>::SetupManipulationClassStation(
                                   "amazon_table", X_WT, plant_);
   }
   
-  // // Add conveyor belt 
-  // { 
-  //   const std::string sdf_path = FindResourceOrThrow(
-  //     "drake/manipulation/models/conveyor_belt_description/sdf/"
-  //     "conveyor_belt_surface_only_collision.sdf"
-  //   );
+  // Add upper conveyor belt 
+  { 
+    const std::string sdf_path = FindResourceOrThrow(
+      "drake/manipulation/models/conveyor_belt_description/sdf/"
+      "conveyor_belt_surface_only_collision.sdf"
+    );
 
-  //   multibody::Parser parser(plant_);
-  //   conveyor_belt_id_ = parser.AddModelFromFile(sdf_path,"conveyor_belt");
+    multibody::Parser parser(plant_);
+    conveyor_belt_id_ = parser.AddModelFromFile(sdf_path,"conveyor_belt_upper");
 
-  //   const auto& conveyor_frame = plant_->GetFrameByName("link", conveyor_belt_id_);
-  //   RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
-  //                               Vector3d(2, (0.7112+0.4)/2+0.01, 0));
+    const auto& conveyor_frame = plant_->GetFrameByName("link", conveyor_belt_id_);
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
+                                Vector3d(-2.32042, 1.65, -0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
+                                //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 
-  //   plant_->template AddJoint<PrismaticJoint>(
-  //     "conveyor_joint", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
-  //      X_BM, Vector3<double>::UnitY()
-  //   );
-  // }
+    plant_->template AddJoint<PrismaticJoint>(
+      "conveyor_joint_upper", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
+       X_BM, Vector3<double>::UnitY()
+    );
+  }
 
+//Height = 34 = 0.8636
+//Height = 20.5 = 0.5207
+//Width = 39.25 = 1
 
-// PrismaticJoint(
-//       const std::string& name, const Frame<T>& frame_on_parent,
-//       const Frame<T>& frame_on_child, const Vector3<double>& axis,
-//       double pos_lower_limit = -std::numeric_limits<double>::infinity(),
-//       double pos_upper_limit = std::numeric_limits<double>::infinity(),
-//       double damping = 0)
+  // Add lower conveyor belt 
+  { 
+    const std::string sdf_path = FindResourceOrThrow(
+      "drake/manipulation/models/conveyor_belt_description/sdf/"
+      "conveyor_belt_surface_only_collision_2.sdf"
+    );
 
-// const WeldJoint<T>& MultibodyPlant<T>::WeldFrames(
-//     const Frame<T>& A, const Frame<T>& B,
-//     const math::RigidTransform<double>& X_AB) {
-//   const std::string joint_name = A.name() + "_welds_to_" + B.name();
-//   return AddJoint(std::make_unique<WeldJoint<T>>(joint_name, A, B, X_AB));
+    multibody::Parser parser(plant_);
+    conveyor_belt_id_ = parser.AddModelFromFile(sdf_path,"conveyor_belt_lower");
 
-//   multibody::ModelInstanceIndex AddAndWeldModelFrom(
-  //   const std::string& model_path, const std::string& model_name,
-  //   const multibody::Frame<T>& parent, const std::string& child_frame_name,
-  //   const RigidTransform<double>& X_PC, MultibodyPlant<T>* plant) {
-  // DRAKE_THROW_UNLESS(!plant->HasModelInstanceNamed(model_name));
-
-  // multibody::Parser parser(plant);
-  // const  new_model =
-  //     parser.AddModelFromFile(model_path, model_name);
-  // const auto& child_frame = plant->GetFrameByName(child_frame_name, new_model);
-  // plant->WeldFrames(parent, child_frame, X_PC);
-  // return new_model;
+    const auto& conveyor_frame = plant_->GetFrameByName("link2", conveyor_belt_id_);
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
+                                Vector3d(0.67958, 1.85, -0.5207)); //X value is -0.82042m (2-8.3') + 1.5m (subtraction this time)
+                                //Z value is height of the belt top to the ground (0.5207) subtracted by dz_table_top_robot_base (0.0127)
+    plant_->template AddJoint<PrismaticJoint>(
+      "conveyor_joint_lower", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
+        X_BM, Vector3<double>::UnitY()
+    );
+  }
 
   // Add the sorting shelf Left.
   {
-    const double dx_table_center_to_center_robot_base = 1.99189262; //Excel calculations
-    const double shelf_angle = -0.0872665; //5 degrees
+    const double dy_table_center_to_center_robot_base = -1.99189262; //Excel calculations
+    const double shelf_angle = -0.0872665; //-5 degrees
 
     const std::string sdf_path = FindResourceOrThrow(
         "drake/examples/manipulation_station/models/sorting_shelf.sdf");
 
     RigidTransform<double> X_WC(
-            RotationMatrix<double>::MakeZRotation(M_PI+shelf_angle),
-            Vector3d(dx_table_center_to_center_robot_base, 0, 0));
+            RotationMatrix<double>::MakeZRotation(shelf_angle+M_PI/2),
+            Vector3d(0, dy_table_center_to_center_robot_base, 0));
     internal::AddAndWeldModelFrom(sdf_path, "sort_shelf_left", plant_->world_frame(),
                                   "columns", X_WC, plant_);
   }
 
   // Add the sorting shelf right.
   {
-    const double dx_table_center_to_center_robot_base = -1.99189262; //Excel calculations
+    const double dy_table_center_to_center_robot_base = 1.99189262; //Excel calculations
     const double shelf_angle = 0.0872665; //5 degrees
 
     const std::string sdf_path = FindResourceOrThrow(
         "drake/examples/manipulation_station/models/sorting_shelf.sdf");
 
     RigidTransform<double> X_WC(
-            RotationMatrix<double>::MakeZRotation(shelf_angle),
-            Vector3d(dx_table_center_to_center_robot_base, 0, 0));
+            RotationMatrix<double>::MakeZRotation(shelf_angle-M_PI/2),
+            Vector3d(0, dy_table_center_to_center_robot_base, 0));
     internal::AddAndWeldModelFrom(sdf_path, "sort_shelf_right", plant_->world_frame(),
                                   "columns", X_WC, plant_);
   }
 
   // Add the sorting shelf top.
   {
-    const double dy_table_center_to_center_robot_base = 2.05; //Excel calculations
+    const double dx_table_center_to_center_robot_base = -2.05; //Excel calculations
 
     const std::string sdf_path = FindResourceOrThrow(
         "drake/examples/manipulation_station/models/sorting_shelf.sdf");
 
     RigidTransform<double> X_WC(
-            RotationMatrix<double>::MakeZRotation(M_PI/2),
-            Vector3d(0, -dy_table_center_to_center_robot_base, 0));
+            RotationMatrix<double>::MakeZRotation(0),
+            Vector3d(dx_table_center_to_center_robot_base, 0, 0));
     internal::AddAndWeldModelFrom(sdf_path, "sort_shelf_top", plant_->world_frame(),
                                   "columns", X_WC, plant_);
   }
 
   // Add the default iiwa/wsg models.
   AddDefaultIiwa(collision_model);
-  // AddDefaultWsg();
+  AddDefaultWsg();
 
   // Add default cameras.
   {
@@ -421,7 +419,7 @@ void ManipulationStation<T>::SetupPlanarIiwaStation() {
   }
 
   // Add the default wsg model.
-  // AddDefaultWsg();
+  AddDefaultWsg();
   drake::log()->info("SetupPlanarIiwaStation 6");
 }
 
@@ -440,7 +438,7 @@ void ManipulationStation<T>::SetDefaultState(
   // Call the base class method, to initialize all systems in this diagram.
   systems::Diagram<T>::SetDefaultState(station_context, state);
 
-  // T q0_gripper{0.1};
+  T q0_gripper{0.1};
 
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
@@ -460,8 +458,8 @@ void ManipulationStation<T>::SetDefaultState(
   SetIiwaPosition(station_context, state, GetIiwaPosition(station_context));
   drake::log()->info("The above code has a bug");
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
-  // SetWsgPosition(station_context, state, q0_gripper);
-  // SetWsgVelocity(station_context, state, 0);
+  SetWsgPosition(station_context, state, q0_gripper);
+  SetWsgVelocity(station_context, state, 0);
   drake::log()->info("SetDefaultState 8");
 }
 
@@ -499,8 +497,8 @@ void ManipulationStation<T>::SetRandomState(
   SetIiwaPosition(station_context, state, GetIiwaPosition(station_context));
   drake::log()->info("random state bug");
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
-  // SetWsgPosition(station_context, state, GetWsgPosition(station_context));
-  // SetWsgVelocity(station_context, state, 0);   
+  SetWsgPosition(station_context, state, GetWsgPosition(station_context));
+  SetWsgVelocity(station_context, state, 0);   
   drake::log()->info("SetRandomState 9");
 
 }
@@ -523,19 +521,19 @@ void ManipulationStation<T>::MakeIiwaControllerModel() {
   // (according to the sdf)... and we don't believe our inertia calibration
   // on the hardware to be so precise, so we simply ignore the inertia
   // contribution from the fingers here.
-  // const multibody::RigidBody<T>& wsg_equivalent =
-  //     owned_controller_plant_->AddRigidBody(
-  //         "wsg_equivalent", controller_iiwa_model,
-  //         internal::MakeCompositeGripperInertia(
-  //             wsg_model_.model_path, wsg_model_.child_frame->name()));
+  const multibody::RigidBody<T>& wsg_equivalent =
+      owned_controller_plant_->AddRigidBody(
+          "wsg_equivalent", controller_iiwa_model,
+          internal::MakeCompositeGripperInertia(
+              wsg_model_.model_path, wsg_model_.child_frame->name()));
 
   // TODO(siyuan.feng@tri.global): when we handle multiple IIWA and WSG, this
   // part need to deal with the parent's (iiwa's) model instance id.
-  // owned_controller_plant_->WeldFrames(
-  //     owned_controller_plant_->GetFrameByName(wsg_model_.parent_frame->name(),
-  //                                             controller_iiwa_model),
-  //     wsg_equivalent.body_frame(), wsg_model_.X_PC);
-  // owned_controller_plant_->set_name("controller_plant");
+  owned_controller_plant_->WeldFrames(
+      owned_controller_plant_->GetFrameByName(wsg_model_.parent_frame->name(),
+                                              controller_iiwa_model),
+      wsg_equivalent.body_frame(), wsg_model_.X_PC);
+  owned_controller_plant_->set_name("controller_plant");
   drake::log()->info("MakeIiwaControllerModel 10");
 
 }
@@ -551,7 +549,7 @@ void ManipulationStation<T>::Finalize(
     std::map<std::string, std::unique_ptr<geometry::render::RenderEngine>>
         render_engines) {
   DRAKE_THROW_UNLESS(iiwa_model_.model_instance.is_valid());
-  // DRAKE_THROW_UNLESS(wsg_model_.model_instance.is_valid());
+  DRAKE_THROW_UNLESS(wsg_model_.model_instance.is_valid());
 
   MakeIiwaControllerModel();
 
@@ -568,7 +566,7 @@ void ManipulationStation<T>::Finalize(
     case Setup::kManipulationClass: {
       // Set the initial positions of the IIWA to a comfortable configuration
       // inside the workspace of the station.
-      q0_iiwa << 1.57, 0, 0, 0, 0, 0;
+      q0_iiwa << 0, 0, 0, 0, 0, 0;
 
       std::uniform_real_distribution<symbolic::Expression> x(0.4, 0.65),
           y(-0.35, 0.35), z(0, 0.05);
@@ -725,34 +723,34 @@ drake::log()->info(q0_index);
     builder.ExportOutput(adder->get_output_port(), "iiwa_torque_measured");
   }
 
-  // {
-  //   auto wsg_controller = builder.template AddSystem<
-  //       manipulation::schunk_wsg::SchunkWsgPositionController>(
-  //       manipulation::schunk_wsg::kSchunkWsgLcmStatusPeriod, wsg_kp_, wsg_kd_);
-  //   wsg_controller->set_name("wsg_controller");
+  {
+    auto wsg_controller = builder.template AddSystem<
+        manipulation::schunk_wsg::SchunkWsgPositionController>(
+        manipulation::schunk_wsg::kSchunkWsgLcmStatusPeriod, wsg_kp_, wsg_kd_);
+    wsg_controller->set_name("wsg_controller");
 
-  //   builder.Connect(
-  //       wsg_controller->get_generalized_force_output_port(),
-  //       plant_->get_actuation_input_port(wsg_model_.model_instance));
-  //   builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
-  //                   wsg_controller->get_state_input_port());
+    builder.Connect(
+        wsg_controller->get_generalized_force_output_port(),
+        plant_->get_actuation_input_port(wsg_model_.model_instance));
+    builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
+                    wsg_controller->get_state_input_port());
 
-  //   builder.ExportInput(wsg_controller->get_desired_position_input_port(),
-  //                       "wsg_position");
-  //   builder.ExportInput(wsg_controller->get_force_limit_input_port(),
-  //                       "wsg_force_limit");
+    builder.ExportInput(wsg_controller->get_desired_position_input_port(),
+                        "wsg_position");
+    builder.ExportInput(wsg_controller->get_force_limit_input_port(),
+                        "wsg_force_limit");
 
-  //   auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
-  //       manipulation::schunk_wsg::MakeMultibodyStateToWsgStateSystem<double>());
-  //   builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
-  //                   wsg_mbp_state_to_wsg_state->get_input_port());
+    auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
+        manipulation::schunk_wsg::MakeMultibodyStateToWsgStateSystem<double>());
+    builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
+                    wsg_mbp_state_to_wsg_state->get_input_port());
 
-  //   builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
-  //                        "wsg_state_measured");
+    builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
+                         "wsg_state_measured");
 
-  //   builder.ExportOutput(wsg_controller->get_grip_force_output_port(),
-  //                        "wsg_force_measured");
-  // }
+    builder.ExportOutput(wsg_controller->get_grip_force_output_port(),
+                         "wsg_force_measured");
+  }
 
   builder.ExportOutput(plant_->get_generalized_contact_forces_output_port(
                            iiwa_model_.model_instance),
@@ -867,60 +865,60 @@ void ManipulationStation<T>::SetIiwaVelocity(
 
 }
 
-// template <typename T>
-// T ManipulationStation<T>::GetWsgPosition(
-//     const systems::Context<T>& station_context) const {
-//   const auto& plant_context =
-//       this->GetSubsystemContext(*plant_, station_context);
+template <typename T>
+T ManipulationStation<T>::GetWsgPosition(
+    const systems::Context<T>& station_context) const {
+  const auto& plant_context =
+      this->GetSubsystemContext(*plant_, station_context);
 
-//   Vector2<T> positions =
-//       plant_->GetPositions(plant_context, wsg_model_.model_instance);
-//   return positions(1) - positions(0);
-// }
+  Vector2<T> positions =
+      plant_->GetPositions(plant_context, wsg_model_.model_instance);
+  return positions(1) - positions(0);
+}
 
-// template <typename T>
-// T ManipulationStation<T>::GetWsgVelocity(
-//     const systems::Context<T>& station_context) const {
-//   const auto& plant_context =
-//       this->GetSubsystemContext(*plant_, station_context);
+template <typename T>
+T ManipulationStation<T>::GetWsgVelocity(
+    const systems::Context<T>& station_context) const {
+  const auto& plant_context =
+      this->GetSubsystemContext(*plant_, station_context);
 
-//   Vector2<T> velocities =
-//       plant_->GetVelocities(plant_context, wsg_model_.model_instance);
-//   return velocities(1) - velocities(0);
-// }
+  Vector2<T> velocities =
+      plant_->GetVelocities(plant_context, wsg_model_.model_instance);
+  return velocities(1) - velocities(0);
+}
 
-// template <typename T>
-// void ManipulationStation<T>::SetWsgPosition(
-//     const drake::systems::Context<T>& station_context, systems::State<T>* state,
-//     const T& q) const {
-//   DRAKE_DEMAND(state != nullptr);
-//   auto& plant_context = this->GetSubsystemContext(*plant_, station_context);
-//   auto& plant_state = this->GetMutableSubsystemState(*plant_, state);
+template <typename T>
+void ManipulationStation<T>::SetWsgPosition(
+    const drake::systems::Context<T>& station_context, systems::State<T>* state,
+    const T& q) const {
+  DRAKE_DEMAND(state != nullptr);
+  auto& plant_context = this->GetSubsystemContext(*plant_, station_context);
+  auto& plant_state = this->GetMutableSubsystemState(*plant_, state);
 
-//   const Vector2<T> positions(-q / 2, q / 2);
-//   plant_->SetPositions(plant_context, &plant_state, wsg_model_.model_instance,
-//                        positions);
+  const Vector2<T> positions(-q / 2, q / 2);
+  plant_->SetPositions(plant_context, &plant_state, wsg_model_.model_instance,
+                       positions);
 
-//   // Set the position history in the state interpolator to match.
-//   const auto& wsg_controller = dynamic_cast<
-//       const manipulation::schunk_wsg::SchunkWsgPositionController&>(
-//       this->GetSubsystemByName("wsg_controller"));
-//   wsg_controller.set_initial_position(
-//       &this->GetMutableSubsystemState(wsg_controller, state), q);
-// }
+  // Set the position history in the state interpolator to match.
+  const auto& wsg_controller = dynamic_cast<
+      const manipulation::schunk_wsg::SchunkWsgPositionController&>(
+      this->GetSubsystemByName("wsg_controller"));
+  wsg_controller.set_initial_position(
+      &this->GetMutableSubsystemState(wsg_controller, state), q);
+}
 
-// template <typename T>
-// void ManipulationStation<T>::SetWsgVelocity(
-//     const drake::systems::Context<T>& station_context, systems::State<T>* state,
-//     const T& v) const {
-//   DRAKE_DEMAND(state != nullptr);
-//   auto& plant_context = this->GetSubsystemContext(*plant_, station_context);
-//   auto& plant_state = this->GetMutableSubsystemState(*plant_, state);
+template <typename T>
+void ManipulationStation<T>::SetWsgVelocity(
+    const drake::systems::Context<T>& station_context, systems::State<T>* state,
+    const T& v) const {
+  DRAKE_DEMAND(state != nullptr);
+  auto& plant_context = this->GetSubsystemContext(*plant_, station_context);
+  auto& plant_state = this->GetMutableSubsystemState(*plant_, state);
 
-//   const Vector2<T> velocities(-v / 2, v / 2);
-//   plant_->SetVelocities(plant_context, &plant_state, wsg_model_.model_instance,
-//                         velocities);
-// }
+  const Vector2<T> velocities(-v / 2, v / 2);
+  plant_->SetVelocities(plant_context, &plant_state, wsg_model_.model_instance,
+                        velocities);
+}
 
 template <typename T>
 std::vector<std::string> ManipulationStation<T>::get_camera_names() const {
@@ -934,13 +932,13 @@ std::vector<std::string> ManipulationStation<T>::get_camera_names() const {
   return names;
 }
 
-// template <typename T>
-// void ManipulationStation<T>::SetWsgGains(const double kp, const double kd) {
-//   DRAKE_THROW_UNLESS(!plant_->is_finalized());
-//   DRAKE_THROW_UNLESS(kp >= 0 && kd >= 0);
-//   wsg_kp_ = kp;
-//   wsg_kd_ = kd;
-// }
+template <typename T>
+void ManipulationStation<T>::SetWsgGains(const double kp, const double kd) {
+  DRAKE_THROW_UNLESS(!plant_->is_finalized());
+  DRAKE_THROW_UNLESS(kp >= 0 && kd >= 0);
+  wsg_kp_ = kp;
+  wsg_kd_ = kd;
+}
 
 template <typename T>
 void ManipulationStation<T>::RegisterIiwaControllerModel(
@@ -965,20 +963,20 @@ void ManipulationStation<T>::RegisterIiwaControllerModel(
   drake::log()->info("RegisterIiwaControllerModel 18");
 }
 
-// template <typename T>
-// void ManipulationStation<T>::RegisterWsgControllerModel(
-//     const std::string& model_path,
-//     const multibody::ModelInstanceIndex wsg_instance,
-//     const multibody::Frame<T>& parent_frame,
-//     const multibody::Frame<T>& child_frame,
-//     const RigidTransform<double>& X_PC) {
-//   wsg_model_.model_path = model_path;
-//   wsg_model_.parent_frame = &parent_frame;
-//   wsg_model_.child_frame = &child_frame;
-//   wsg_model_.X_PC = X_PC;
+template <typename T>
+void ManipulationStation<T>::RegisterWsgControllerModel(
+    const std::string& model_path,
+    const multibody::ModelInstanceIndex wsg_instance,
+    const multibody::Frame<T>& parent_frame,
+    const multibody::Frame<T>& child_frame,
+    const RigidTransform<double>& X_PC) {
+  wsg_model_.model_path = model_path;
+  wsg_model_.parent_frame = &parent_frame;
+  wsg_model_.child_frame = &child_frame;
+  wsg_model_.X_PC = X_PC;
 
-//   wsg_model_.model_instance = wsg_instance;
-// }
+  wsg_model_.model_instance = wsg_instance;
+}
 
 template <typename T>
 void ManipulationStation<T>::RegisterRgbdSensor(
@@ -1031,9 +1029,8 @@ void ManipulationStation<T>::AddDefaultIiwa(
     case IiwaCollisionModel::kNoCollision:
       sdf_path = FindResourceOrThrow(
           "drake/manipulation/models/yaskawa_description/urdf/"
-            "Motoman_GP25.urdf");
-          // "yaskawa_no_collision.urdf");
-          // "iiwa7_no_world_joint.urdf");
+            "yaskawa_no_collision.urdf"); 
+            //"Motoman_GP25.urdf");
       break;
     case IiwaCollisionModel::kBoxCollision:
       sdf_path = FindResourceOrThrow(
@@ -1054,20 +1051,23 @@ void ManipulationStation<T>::AddDefaultIiwa(
 }
 
 // Add default wsg.
-// template <typename T>
-// void ManipulationStation<T>::AddDefaultWsg() {
-//   const std::string sdf_path = FindResourceOrThrow(
-//       "drake/manipulation/models/wsg_50_description/sdf/schunk_wsg_50.sdf");
-//   const multibody::Frame<T>& link7 =
-//       plant_->GetFrameByName("iiwa_link_7", iiwa_model_.model_instance);
-//   const RigidTransform<double> X_7G(RollPitchYaw<double>(M_PI_2, 0, M_PI_2),
-//                                     Vector3d(0, 0, 0.114));
-//   auto wsg_instance = internal::AddAndWeldModelFrom(sdf_path, "gripper", link7,
-//                                                     "body", X_7G, plant_);
-//   RegisterWsgControllerModel(sdf_path, wsg_instance, link7,
-//                              plant_->GetFrameByName("body", wsg_instance),
-//                              X_7G);
-// }
+template <typename T>
+void ManipulationStation<T>::AddDefaultWsg() {
+  const std::string sdf_path = FindResourceOrThrow(
+      "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector_2.urdf");
+
+  const multibody::Frame<T>& link6 =
+      plant_->GetFrameByName("ee_mount", iiwa_model_.model_instance);
+  const RigidTransform<double> X_6G(RollPitchYaw<double>(0, 0, 0),
+                                    Vector3d(0, 0, 0.114));
+  auto wsg_instance = internal::AddAndWeldModelFrom(sdf_path, "gripper", link6,
+                                                    "ee_base", X_6G, plant_);
+  RegisterWsgControllerModel(sdf_path, wsg_instance, link6,
+                             plant_->GetFrameByName("ee_base", wsg_instance),
+                             X_6G);
+  drake::log()->info("add default wsg");
+
+}
 
 }  // namespace manipulation_station
 }  // namespace examples
