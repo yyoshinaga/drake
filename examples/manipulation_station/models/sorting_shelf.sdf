@@ -1,0 +1,684 @@
+<sdf version='1.6'>
+  <model name='sorting_shelf'>
+
+  <link name='columns'>
+    <pose> 0 0 0 0 0 0</pose>
+
+    <visual name='right_wall'>
+      <pose> 0 1.27075 1.284 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.0415 2.568</size>
+        </box>
+      </geometry>    
+      <material>
+        <diffuse>1 0 0 1.0</diffuse>
+      </material>
+    </visual>
+
+    <visual name='left_wall'>
+      <pose> 0 -1.27075 1.284 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.0415 2.568</size>
+        </box>
+      </geometry>
+      <material>
+        <diffuse>1 0 0 1.0</diffuse>
+      </material>
+    </visual>
+
+    <collision name='right_wall'>
+      <pose> 0 1.27075 1.284 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.0415 2.568</size>
+        </box>
+      </geometry> 
+    </collision>
+
+    <collision name='left_wall'>
+      <pose> 0 -1.27075 1.284 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.0415 2.568</size>
+        </box>
+      </geometry>
+    </collision>
+  
+
+    <!-- Columns : There are 4 in total -->
+    <!-- 
+    Use this as a guide...
+
+      |-------------------------------|
+      |   |  |   |  |   |  |   |  |   |
+      |---|  |---|  |---|  |---|  |---|
+      |   |  |   |  |   |  |   |  |   |
+      |---|  |---|  |---|  |---|  |---|
+      |   |ab|   |bc|   |cd|   |de|   |
+      |---|  |---|  |---|  |---|  |---|
+      |   |  |   |  |   |  |   |  |   |
+      |---|  |---|  |---|  |---|  |---|
+      |   ----   ----   ----   ----   |
+      |                               |
+
+    -->
+
+    <visual name='ab_col'>
+      <pose> 0 0.75 1.627 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.002 1.79889</size>
+        </box>
+      </geometry>
+      <material>
+        <diffuse>1 1 0 1.0</diffuse>
+      </material>
+    </visual>
+
+    <visual name='bc_col'>
+      <pose> 0 0.25 1.627 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.002 1.79889</size>
+        </box>
+      </geometry>
+      <material>
+        <diffuse>1 1 0 1.0</diffuse>
+      </material>
+    </visual>
+
+    <visual name='cd_col'>
+      <pose> 0 -0.25 1.627 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.002 1.79889</size>
+        </box>
+      </geometry>
+      <material>
+        <diffuse>1 1 0 1.0</diffuse>
+      </material>
+    </visual>
+
+    <visual name='de_col'>
+      <pose> 0 -0.75 1.627 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.002 1.79889</size>
+        </box>
+      </geometry>
+      <material>
+        <diffuse>1 1 0 1.0</diffuse>
+      </material>
+    </visual>
+
+    <collision name='ab_col'>
+      <pose> 0 0.75 1.627 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.002 1.79889</size>
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='bc_col'>
+      <pose> 0 0.25 1.627 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.002 1.79889</size>
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='cd_col'>
+      <pose> 0 -0.25 1.627 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.002 1.79889</size>
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='de_col'>
+      <pose> 0 -0.75 1.627 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 0.002 1.79889</size>
+        </box>
+      </geometry>
+    </collision>      
+  </link>
+
+
+
+
+  <!-- Dividers -->
+
+  <link name='rows'>
+    <pose> 0 0 0 0 0 0</pose>
+
+  <!-- 
+  Use this as a guide... they correspond to the row dividors, not the cubby space
+
+    ||================ top =================||
+    ||      ||      ||      ||      ||      ||
+    ||--1a--||--1b--||--1c--||--1d--||--1e--||
+    ||      ||      ||      ||      ||      ||
+    ||--2a--||--2b--||--2c--||--2d--||--2e--||
+    ||      ||      ||      ||      ||      ||
+    ||--3a--||--3b--||--3c--||--3d--||--3e--||
+    ||      ||      ||      ||      ||      ||
+    ||--4a--||--4b--||--4c--||--4d--||--4e--||
+    ||      ||      ||      ||      ||      ||  
+    ||--5a--||--5b--||--5c--||--5d--||--5e--||
+    ||                                      ||
+    ||                                      ||
+
+  -->
+
+    <visual name='top'>
+      <pose> 0 0 2.54725 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 2.5 0.0415</size>
+        </box>
+      </geometry>
+    </visual>
+
+    <collision name='top'>
+      <pose> 0 0 2.54725 0 0 0</pose>
+      <geometry>
+        <box>
+        <size>1.14 2.5 0.0415</size>
+        </box>
+      </geometry>
+    </collision>
+
+    <!-- Row 1 -->
+
+    <visual name='1a'>
+      <pose> 0 -1.0008 1.940653121 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='1b'>
+      <pose> 0 -0.5004 1.940653121 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='1c'>
+      <pose> 0 0 1.940653121 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='1d'>
+      <pose> 0 0.5004 1.940653121 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='1e'>
+      <pose> 0 1.0008 1.940653121 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+
+  <!-- Row 2 -->
+
+    <visual name='2a'>
+      <pose> 0 -1.0008 1.630449743 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='2b'>
+      <pose> 0 -0.5004 1.630449743 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='2c'>
+      <pose> 0 0 1.630449743 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='2d'>
+      <pose> 0 0.5004 1.630449743 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='2e'>
+      <pose> 0 1.0008 1.630449743 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+  <!-- Row 3 -->
+
+    <visual name='3a'>
+      <pose> 0 -1.0008 1.320246365 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='3b'>
+      <pose> 0 -0.5004 1.320246365 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='3c'>
+      <pose> 0 0 1.320246365 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='3d'>
+      <pose> 0 0.5004 1.320246365 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='3e'>
+      <pose> 0 1.0008 1.320246365 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <!-- Row 4 -->
+
+    <visual name='4a'>
+      <pose> 0 -1.0008 1.010042987 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='4b'>
+      <pose> 0 -0.5004 1.010042987 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='4c'>
+      <pose> 0 0 1.010042987 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='4d'>
+      <pose> 0 0.5004 1.010042987 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='4e'>
+      <pose> 0 1.0008 1.010042987 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+
+  <!-- Row 5 -->
+
+    <visual name='5a'>
+      <pose> 0 -1.0008 0.6998396091 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='5b'>
+      <pose> 0 -0.5004 0.6998396091 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='5c'>
+      <pose> 0 0 0.6998396091 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='5d'>
+      <pose> 0 0.5004 0.6998396091 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+    <visual name='5e'>
+      <pose> 0 1.0008 0.6998396091 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </visual>
+
+
+    <!-- COLLISIONS -->
+    <!-- Row 1 -->
+
+    <collision name='1a'>
+      <pose> 0 -1.0008 1.940653121 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='1b'>
+      <pose> 0 -0.5004 1.940653121 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='1c'>
+      <pose> 0 0 1.940653121 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='1d'>
+      <pose> 0 0.5004 1.940653121 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='1e'>
+      <pose> 0 1.0008 1.940653121 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+
+  <!-- Row 2 -->
+
+    <collision name='2a'>
+      <pose> 0 -1.0008 1.630449743 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='2b'>
+      <pose> 0 -0.5004 1.630449743 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='2c'>
+      <pose> 0 0 1.630449743 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='2d'>
+      <pose> 0 0.5004 1.630449743 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='2e'>
+      <pose> 0 1.0008 1.630449743 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+  <!-- Row 3 -->
+
+    <collision name='3a'>
+      <pose> 0 -1.0008 1.320246365 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='3b'>
+      <pose> 0 -0.5004 1.320246365 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='3c'>
+      <pose> 0 0 1.320246365 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='3d'>
+      <pose> 0 0.5004 1.320246365 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='3e'>
+      <pose> 0 1.0008 1.320246365 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <!-- Row 4 -->
+
+    <collision name='4a'>
+      <pose> 0 -1.0008 1.010042987 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='4b'>
+      <pose> 0 -0.5004 1.010042987 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='4c'>
+      <pose> 0 0 1.010042987 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='4d'>
+      <pose> 0 0.5004 1.010042987 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='4e'>
+      <pose> 0 1.0008 1.010042987 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+
+  <!-- Row 5 -->
+
+    <collision name='5a'>
+      <pose> 0 -1.0008 0.6998396091 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='5b'>
+      <pose> 0 -0.5004 0.6998396091 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='5c'>
+      <pose> 0 0 0.6998396091 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='5d'>
+      <pose> 0 0.5004 0.6998396091 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+
+    <collision name='5e'>
+      <pose> 0 1.0008 0.6998396091 0 -0.436332 0</pose>
+      <geometry>
+        <box>
+        <size>1.25785 0.4984 0.001</size>  <!-- width, length, thickness -->
+        </box>
+      </geometry>
+    </collision>
+  </link>
+
+
+  <!-- joint between bottom_top and world -->
+  <joint name='fixed_joint' type='fixed'>
+    <child>rows</child>
+    <parent>columns</parent>
+    <pose>0 0 0 0 0 0 </pose>
+  </joint>
+
+  </model>
+</sdf>

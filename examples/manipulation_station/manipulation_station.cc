@@ -254,14 +254,13 @@ void ManipulationStation<T>::SetupManipulationClassStation(
 
   // Add the table and 80/20 workcell frame.
   {
-    const double dx_table_center_to_robot_base = 0.3257;
     const double dz_table_top_robot_base = 0.0127;
     const std::string sdf_path = FindResourceOrThrow(
         "drake/examples/manipulation_station/models/"
         "amazon_table_floor_only.sdf");
 
     RigidTransform<double> X_WT(
-        Vector3d(dx_table_center_to_robot_base, 0, -dz_table_top_robot_base));
+        Vector3d(0, 0, -dz_table_top_robot_base));
     internal::AddAndWeldModelFrom(sdf_path, "table", plant_->world_frame(),
                                   "amazon_table", X_WT, plant_);
   }
@@ -313,85 +312,48 @@ void ManipulationStation<T>::SetupManipulationClassStation(
   // plant->WeldFrames(parent, child_frame, X_PC);
   // return new_model;
 
-  // Add the cubby.
+  // Add the sorting shelf Left.
   {
-    const double dx_table_center_to_robot_base = 0.3257;
-    // const double dz_table_top_robot_base = 0.0127;
-    const double dx_cupboard_to_table_center = 0.43 + 0.15;
-    // const double dz_cupboard_to_table_center = 0.02;
-    // const double cupboard_height = 0.815;
+    const double dx_table_center_to_center_robot_base = 1.99189262; //Excel calculations
+    const double shelf_angle = -0.0872665; //5 degrees
 
     const std::string sdf_path = FindResourceOrThrow(
-        "drake/examples/manipulation_station/models/cubby.sdf");
+        "drake/examples/manipulation_station/models/sorting_shelf.sdf");
 
     RigidTransform<double> X_WC(
-            RotationMatrix<double>::MakeZRotation(M_PI),
-            Vector3d(
-                dx_table_center_to_robot_base + dx_cupboard_to_table_center, 0, 0));
-    internal::AddAndWeldModelFrom(sdf_path, "cupboard", plant_->world_frame(),
-                                  "cupboard_body", X_WC, plant_);
+            RotationMatrix<double>::MakeZRotation(M_PI+shelf_angle),
+            Vector3d(dx_table_center_to_center_robot_base, 0, 0));
+    internal::AddAndWeldModelFrom(sdf_path, "sort_shelf_left", plant_->world_frame(),
+                                  "columns", X_WC, plant_);
   }
 
-
-
-  // Add the cupboard.
-  // {
-  //   const double dx_table_center_to_robot_base = 0.3257;
-  //   // const double dz_table_top_robot_base = 0.0127;
-  //   // const double dx_cupboard_to_table_center = 0.43 + 0.15;
-  //   // const double dz_cupboard_to_table_center = 0.02;
-  //   // const double cupboard_height = 0.815;
-
-  //   const std::string sdf_path = FindResourceOrThrow(
-  //       "drake/manipulation/models/PB_Layout_V2_description/sdf/PB_Layout_V2.sdf");
-
-  //   RigidTransform<double> X_WC(
-  //       RotationMatrix<double>::MakeZRotation(M_PI),
-  //       Vector3d(dx_table_center_to_robot_base, 0,-0.4));
-  //               //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
-  //               //      dz_table_top_robot_base));
-  //   internal::AddAndWeldModelFrom(sdf_path, "cabinetRight", plant_->world_frame(),
-  //                                 "PB_Layout_V2", X_WC, plant_);
-  // }
-
-  // // Add the cupboard.
-  // {
-  //   const double dx_table_center_to_robot_base = 0.3257;
-  //   // const double dz_table_top_robot_base = 0.0127;
-  //   // const double dx_cupboard_to_table_center = 0.43 + 0.15;
-  //   // const double dz_cupboard_to_table_center = 0.02;
-  //   // const double cupboard_height = 0.815;
-
-  //   const std::string sdf_path = FindResourceOrThrow(
-  //       "drake/manipulation/models/PB_Layout_V2_description/sdf/PB_Layout_V2.sdf");
-
-  //   RigidTransform<double> X_WC(
-  //       RotationMatrix<double>::MakeZRotation(0),
-  //       Vector3d(dx_table_center_to_robot_base, 0,-0.4));
-  //               //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
-  //               //      dz_table_top_robot_base));
-  //   internal::AddAndWeldModelFrom(sdf_path, "cabinetLeft", plant_->world_frame(),
-  //                                 "PB_Layout_V2", X_WC, plant_);
-  // }
-
-  // Add the cupboard.
+  // Add the sorting shelf right.
   {
-    const double dx_table_center_to_robot_base = 0.3257;
-    // const double dz_table_top_robot_base = 0.0127;
-    // const double dx_cupboard_to_table_center = 0.43 + 0.15;
-    // const double dz_cupboard_to_table_center = 0.02;
-    // const double cupboard_height = 0.815;
+    const double dx_table_center_to_center_robot_base = -1.99189262; //Excel calculations
+    const double shelf_angle = 0.0872665; //5 degrees
 
     const std::string sdf_path = FindResourceOrThrow(
-        "drake/manipulation/models/PB_Layout_V2_description/sdf/PB_Layout_V2.sdf");
+        "drake/examples/manipulation_station/models/sorting_shelf.sdf");
 
     RigidTransform<double> X_WC(
-        RotationMatrix<double>::MakeZRotation(M_PI/2),
-        Vector3d(dx_table_center_to_robot_base, 0,-0.28));
-                //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
-                //      dz_table_top_robot_base));
-    internal::AddAndWeldModelFrom(sdf_path, "cabinetBack", plant_->world_frame(),
-                                  "PB_Layout_V2", X_WC, plant_);
+            RotationMatrix<double>::MakeZRotation(shelf_angle),
+            Vector3d(dx_table_center_to_center_robot_base, 0, 0));
+    internal::AddAndWeldModelFrom(sdf_path, "sort_shelf_right", plant_->world_frame(),
+                                  "columns", X_WC, plant_);
+  }
+
+  // Add the sorting shelf top.
+  {
+    const double dy_table_center_to_center_robot_base = 2.05; //Excel calculations
+
+    const std::string sdf_path = FindResourceOrThrow(
+        "drake/examples/manipulation_station/models/sorting_shelf.sdf");
+
+    RigidTransform<double> X_WC(
+            RotationMatrix<double>::MakeZRotation(M_PI/2),
+            Vector3d(0, -dy_table_center_to_center_robot_base, 0));
+    internal::AddAndWeldModelFrom(sdf_path, "sort_shelf_top", plant_->world_frame(),
+                                  "columns", X_WC, plant_);
   }
 
   // Add the default iiwa/wsg models.
