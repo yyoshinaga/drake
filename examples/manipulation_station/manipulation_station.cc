@@ -387,7 +387,7 @@ void ManipulationStation<T>::SetupManipulationClassStation(
 
     RigidTransform<double> X_WC(
         RotationMatrix<double>::MakeZRotation(M_PI/2),
-        Vector3d(dx_table_center_to_robot_base, 0,-0.4));
+        Vector3d(dx_table_center_to_robot_base, 0,-0.28));
                 //  dz_cupboard_to_table_center + cupboard_height / 2.0 -
                 //      dz_table_top_robot_base));
     internal::AddAndWeldModelFrom(sdf_path, "cabinetBack", plant_->world_frame(),
