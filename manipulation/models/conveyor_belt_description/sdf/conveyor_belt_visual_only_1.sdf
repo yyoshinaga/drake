@@ -1,0 +1,34 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='conveyor_belt_visual_only_1'>
+    <!--
+    This model is identical to the extra heavy duty table in nearly
+    every respect except that the collision tags are present only for
+    the surface link. This leads to a large speedup in simulations
+    involving the table due to a decrease in number of collision
+    checks needed.
+    -->
+    <link name='link'>
+      <pose frame=''>0 0 0 0 -0 0</pose>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+     
+      <visual name='visual1'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <box>
+            <!-- <size>0.7112 0.762 0.057</size> -->
+            <size>3 0.6096 0.02</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+
+    <!-- <frame name='top_center'>
+      <pose frame='world'>0 0 0.7645 0 -0 0</pose>
+    </frame> -->
+<!-- 
+    <static>1</static>
+    <allow_auto_disable>1</allow_auto_disable> -->
+  </model>
+</sdf>

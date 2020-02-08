@@ -185,8 +185,8 @@ void ManipulationStation<T>::AddManipulandFromFile(
   // Note: this could be generalized fairly easily... would just want to
   // set default/random positions for the non-floating-base elements below.
   DRAKE_DEMAND(indices.size() == 1);
+  object_indexes_.push_back(model_index); //Store this variable to use to move the objects in simulation
   object_ids_.push_back(indices[0]);
-
   object_poses_.push_back(X_WObject);
   drake::log()->info("AddManipulandFromFile 3");
 
@@ -269,13 +269,13 @@ void ManipulationStation<T>::SetupManipulationClassStation(
   { 
     const std::string sdf_path = FindResourceOrThrow(
       "drake/manipulation/models/conveyor_belt_description/sdf/"
-      "conveyor_belt_surface_only_collision.sdf"
+      "conveyor_belt_visual_only_1.sdf"
     );
 
     multibody::Parser parser(plant_);
-    conveyor_belt_id_ = parser.AddModelFromFile(sdf_path,"conveyor_belt_upper");
+    conveyor_belt_id_upper = parser.AddModelFromFile(sdf_path,"conveyor_belt_upper");
 
-    const auto& conveyor_frame = plant_->GetFrameByName("link", conveyor_belt_id_);
+    const auto& conveyor_frame = plant_->GetFrameByName("link", conveyor_belt_id_upper);
     RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
                                 Vector3d(-2.32042, 1.65, -0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
                                 //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
@@ -286,21 +286,17 @@ void ManipulationStation<T>::SetupManipulationClassStation(
     );
   }
 
-//Height = 34 = 0.8636
-//Height = 20.5 = 0.5207
-//Width = 39.25 = 1
-
   // Add lower conveyor belt 
   { 
     const std::string sdf_path = FindResourceOrThrow(
       "drake/manipulation/models/conveyor_belt_description/sdf/"
-      "conveyor_belt_surface_only_collision_2.sdf"
+      "conveyor_belt_visual_only_2.sdf"
     );
 
     multibody::Parser parser(plant_);
-    conveyor_belt_id_ = parser.AddModelFromFile(sdf_path,"conveyor_belt_lower");
+    conveyor_belt_id_lower = parser.AddModelFromFile(sdf_path,"conveyor_belt_lower");
 
-    const auto& conveyor_frame = plant_->GetFrameByName("link2", conveyor_belt_id_);
+    const auto& conveyor_frame = plant_->GetFrameByName("link2", conveyor_belt_id_lower);
     RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
                                 Vector3d(0.67958, 1.85, -0.5207)); //X value is -0.82042m (2-8.3') + 1.5m (subtraction this time)
                                 //Z value is height of the belt top to the ground (0.5207) subtracted by dz_table_top_robot_base (0.0127)
@@ -309,6 +305,70 @@ void ManipulationStation<T>::SetupManipulationClassStation(
         X_BM, Vector3<double>::UnitY()
     );
   }
+
+  // // Add 1st conveyor belt collision
+  // { 
+  //   const std::string sdf_path = FindResourceOrThrow(
+  //     "drake/manipulation/models/conveyor_belt_description/sdf/"
+  //     "conveyor_belt_collision_only_1.sdf"
+  //   );
+
+  //   multibody::Parser parser(plant_);
+  //   conveyor_belt_id_1 = parser.AddModelFromFile(sdf_path,"conveyor_belt_collision_only_1");
+
+  //   const auto& conveyor_frame = plant_->GetFrameByName("front", conveyor_belt_id_1);
+  //   RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
+  //                               Vector3d(-2.3, 1.65, -0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
+  //                               //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
+
+  //   plant_->template AddJoint<PrismaticJoint>(
+  //     "conveyor_joint_1", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
+  //      X_BM, Vector3<double>::UnitY()
+  //   );
+  // }
+  // // Add 2nd conveyor belt collision
+  // { 
+  //   const std::string sdf_path = FindResourceOrThrow(
+  //     "drake/manipulation/models/conveyor_belt_description/sdf/"
+  //     "conveyor_belt_collision_only_2.sdf"
+  //   );
+
+  //   multibody::Parser parser(plant_);
+  //   conveyor_belt_id_2 = parser.AddModelFromFile(sdf_path,"conveyor_belt_collision_only_2");
+
+  //   const auto& conveyor_frame = plant_->GetFrameByName("back", conveyor_belt_id_2);
+  //   RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2+1),
+  //                               Vector3d(-2.5, 1.65, -0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
+  //                               //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
+
+  //   plant_->template AddJoint<PrismaticJoint>(
+  //     "conveyor_joint_2", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
+  //      X_BM, Vector3<double>::UnitY()
+  //   );
+  // }
+  // Add conveyor belt robot
+  { 
+    const std::string sdf_path = FindResourceOrThrow(
+      "drake/manipulation/models/conveyor_belt_description/sdf/"
+      "conveyor_belt_robot.sdf"
+    );
+
+    multibody::Parser parser(plant_);
+    conveyor_belt_id_robot_1 = parser.AddModelFromFile(sdf_path,"conveyor_belt_robot_1");
+
+    const auto& conveyor_frame = plant_->GetFrameByName("base_link", conveyor_belt_id_robot_1);
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2+1),
+                                Vector3d(-2.5, 1.65, -0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
+                                //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
+
+    plant_->template AddJoint<PrismaticJoint>(
+      "conveyor_joint_1", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
+       X_BM, Vector3<double>::UnitY()
+    );
+  }
+
+
+
 
   // Add the sorting shelf Left.
   {
@@ -356,7 +416,7 @@ void ManipulationStation<T>::SetupManipulationClassStation(
 
   // Add the default iiwa/wsg models.
   AddDefaultIiwa(collision_model);
-  AddDefaultWsg();
+  // AddDefaultWsg();
 
   // Add default cameras.
   {
@@ -438,7 +498,7 @@ void ManipulationStation<T>::SetDefaultState(
   // Call the base class method, to initialize all systems in this diagram.
   systems::Diagram<T>::SetDefaultState(station_context, state);
 
-  T q0_gripper{0.1};
+  // T q0_gripper{0.1};
 
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
@@ -458,8 +518,8 @@ void ManipulationStation<T>::SetDefaultState(
   SetIiwaPosition(station_context, state, GetIiwaPosition(station_context));
   drake::log()->info("The above code has a bug");
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
-  SetWsgPosition(station_context, state, q0_gripper);
-  SetWsgVelocity(station_context, state, 0);
+  // SetWsgPosition(station_context, state, q0_gripper);
+  // SetWsgVelocity(station_context, state, 0);
   drake::log()->info("SetDefaultState 8");
 }
 
@@ -497,8 +557,8 @@ void ManipulationStation<T>::SetRandomState(
   SetIiwaPosition(station_context, state, GetIiwaPosition(station_context));
   drake::log()->info("random state bug");
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
-  SetWsgPosition(station_context, state, GetWsgPosition(station_context));
-  SetWsgVelocity(station_context, state, 0);   
+  // SetWsgPosition(station_context, state, GetWsgPosition(station_context));
+  // SetWsgVelocity(station_context, state, 0);   
   drake::log()->info("SetRandomState 9");
 
 }
@@ -521,19 +581,19 @@ void ManipulationStation<T>::MakeIiwaControllerModel() {
   // (according to the sdf)... and we don't believe our inertia calibration
   // on the hardware to be so precise, so we simply ignore the inertia
   // contribution from the fingers here.
-  const multibody::RigidBody<T>& wsg_equivalent =
-      owned_controller_plant_->AddRigidBody(
-          "wsg_equivalent", controller_iiwa_model,
-          internal::MakeCompositeGripperInertia(
-              wsg_model_.model_path, wsg_model_.child_frame->name()));
+  // const multibody::RigidBody<T>& wsg_equivalent =
+  //     owned_controller_plant_->AddRigidBody(
+  //         "wsg_equivalent", controller_iiwa_model,
+  //         internal::MakeCompositeGripperInertia(
+  //             wsg_model_.model_path, wsg_model_.child_frame->name()));
 
   // TODO(siyuan.feng@tri.global): when we handle multiple IIWA and WSG, this
   // part need to deal with the parent's (iiwa's) model instance id.
-  owned_controller_plant_->WeldFrames(
-      owned_controller_plant_->GetFrameByName(wsg_model_.parent_frame->name(),
-                                              controller_iiwa_model),
-      wsg_equivalent.body_frame(), wsg_model_.X_PC);
-  owned_controller_plant_->set_name("controller_plant");
+  // owned_controller_plant_->WeldFrames(
+  //     owned_controller_plant_->GetFrameByName(wsg_model_.parent_frame->name(),
+  //                                             controller_iiwa_model),
+  //     wsg_equivalent.body_frame(), wsg_model_.X_PC);
+  // owned_controller_plant_->set_name("controller_plant");
   drake::log()->info("MakeIiwaControllerModel 10");
 
 }
@@ -549,7 +609,7 @@ void ManipulationStation<T>::Finalize(
     std::map<std::string, std::unique_ptr<geometry::render::RenderEngine>>
         render_engines) {
   DRAKE_THROW_UNLESS(iiwa_model_.model_instance.is_valid());
-  DRAKE_THROW_UNLESS(wsg_model_.model_instance.is_valid());
+  // DRAKE_THROW_UNLESS(wsg_model_.model_instance.is_valid());
 
   MakeIiwaControllerModel();
 
@@ -723,34 +783,34 @@ drake::log()->info(q0_index);
     builder.ExportOutput(adder->get_output_port(), "iiwa_torque_measured");
   }
 
-  {
-    auto wsg_controller = builder.template AddSystem<
-        manipulation::schunk_wsg::SchunkWsgPositionController>(
-        manipulation::schunk_wsg::kSchunkWsgLcmStatusPeriod, wsg_kp_, wsg_kd_);
-    wsg_controller->set_name("wsg_controller");
+  // {
+  //   auto wsg_controller = builder.template AddSystem<
+  //       manipulation::schunk_wsg::SchunkWsgPositionController>(
+  //       manipulation::schunk_wsg::kSchunkWsgLcmStatusPeriod, wsg_kp_, wsg_kd_);
+  //   wsg_controller->set_name("wsg_controller");
 
-    builder.Connect(
-        wsg_controller->get_generalized_force_output_port(),
-        plant_->get_actuation_input_port(wsg_model_.model_instance));
-    builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
-                    wsg_controller->get_state_input_port());
+  //   builder.Connect(
+  //       wsg_controller->get_generalized_force_output_port(),
+  //       plant_->get_actuation_input_port(wsg_model_.model_instance));
+  //   builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
+  //                   wsg_controller->get_state_input_port());
 
-    builder.ExportInput(wsg_controller->get_desired_position_input_port(),
-                        "wsg_position");
-    builder.ExportInput(wsg_controller->get_force_limit_input_port(),
-                        "wsg_force_limit");
+  //   builder.ExportInput(wsg_controller->get_desired_position_input_port(),
+  //                       "wsg_position");
+  //   builder.ExportInput(wsg_controller->get_force_limit_input_port(),
+  //                       "wsg_force_limit");
 
-    auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
-        manipulation::schunk_wsg::MakeMultibodyStateToWsgStateSystem<double>());
-    builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
-                    wsg_mbp_state_to_wsg_state->get_input_port());
+  //   auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
+  //       manipulation::schunk_wsg::MakeMultibodyStateToWsgStateSystem<double>());
+  //   builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
+  //                   wsg_mbp_state_to_wsg_state->get_input_port());
 
-    builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
-                         "wsg_state_measured");
+  //   builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
+  //                        "wsg_state_measured");
 
-    builder.ExportOutput(wsg_controller->get_grip_force_output_port(),
-                         "wsg_force_measured");
-  }
+  //   builder.ExportOutput(wsg_controller->get_grip_force_output_port(),
+  //                        "wsg_force_measured");
+  // }
 
   builder.ExportOutput(plant_->get_generalized_contact_forces_output_port(
                            iiwa_model_.model_instance),

@@ -60,11 +60,11 @@ int do_main(int argc, char* argv[]) {
     station->AddManipulandFromFile(
         "drake/examples/manipulation_station/models/package1.sdf",
         math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
-                                     Eigen::Vector3d(1.75, 1.8, 1.3)));
+                                     Eigen::Vector3d(1.75, 1.8, 1.2)));
     station->AddManipulandFromFile(
         "drake/examples/manipulation_station/models/package2.sdf",
-        math::RigidTransform<double>(math::RollPitchYaw<double>(0, 0, 2),
-                                     Eigen::Vector3d(1.75, 2.4, 1.3)));
+        math::RigidTransform<double>(math::RollPitchYaw<double>(0, 0, 0.57),
+                                     Eigen::Vector3d(1.75, 2.4, 1.05)));
 
 
   } else if (FLAGS_setup == "clutter_clearing") {
@@ -122,31 +122,31 @@ int do_main(int argc, char* argv[]) {
   builder.Connect(iiwa_status->get_output_port(),
                   iiwa_status_publisher->get_input_port());
 
-    // Receive the WSG commands.
-    auto wsg_command_subscriber = builder.AddSystem(
-        systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_schunk_wsg_command>(
-            "SCHUNK_WSG_COMMAND", lcm));
-    auto wsg_command =
-        builder.AddSystem<manipulation::schunk_wsg::SchunkWsgCommandReceiver>();
-    builder.Connect(wsg_command_subscriber->get_output_port(),
-                    wsg_command->GetInputPort("command_message"));
-    builder.Connect(wsg_command->get_position_output_port(),
-                    station->GetInputPort("wsg_position"));
-    builder.Connect(wsg_command->get_force_limit_output_port(),
-                    station->GetInputPort("wsg_force_limit"));
+  // Receive the WSG commands.
+  // auto wsg_command_subscriber = builder.AddSystem(
+  //     systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_schunk_wsg_command>(
+  //         "SCHUNK_WSG_COMMAND", lcm));
+  // auto wsg_command =
+  //     builder.AddSystem<manipulation::schunk_wsg::SchunkWsgCommandReceiver>();
+  // builder.Connect(wsg_command_subscriber->get_output_port(),
+  //                 wsg_command->GetInputPort("command_message"));
+  // builder.Connect(wsg_command->get_position_output_port(),
+  //                 station->GetInputPort("wsg_position"));
+  // builder.Connect(wsg_command->get_force_limit_output_port(),
+  //                 station->GetInputPort("wsg_force_limit"));
 
-    // Publish the WSG status.
-    auto wsg_status =
-        builder.AddSystem<manipulation::schunk_wsg::SchunkWsgStatusSender>();
-    builder.Connect(station->GetOutputPort("wsg_state_measured"),
-                    wsg_status->get_state_input_port());
-    builder.Connect(station->GetOutputPort("wsg_force_measured"),
-                    wsg_status->get_force_input_port());
-    auto wsg_status_publisher = builder.AddSystem(
-        systems::lcm::LcmPublisherSystem::Make<drake::lcmt_schunk_wsg_status>(
-            "SCHUNK_WSG_STATUS", lcm, 0.05 /* publish period */));
-    builder.Connect(wsg_status->get_output_port(0),
-                    wsg_status_publisher->get_input_port());
+  // // Publish the WSG status.
+  // auto wsg_status =
+  //     builder.AddSystem<manipulation::schunk_wsg::SchunkWsgStatusSender>();
+  // builder.Connect(station->GetOutputPort("wsg_state_measured"),
+  //                 wsg_status->get_state_input_port());
+  // builder.Connect(station->GetOutputPort("wsg_force_measured"),
+  //                 wsg_status->get_force_input_port());
+  // auto wsg_status_publisher = builder.AddSystem(
+  //     systems::lcm::LcmPublisherSystem::Make<drake::lcmt_schunk_wsg_status>(
+  //         "SCHUNK_WSG_STATUS", lcm, 0.05 /* publish period */));
+  // builder.Connect(wsg_status->get_output_port(0),
+  //                 wsg_status_publisher->get_input_port());
 
   // TODO(russt): Publish the camera outputs.
 
@@ -158,9 +158,10 @@ int do_main(int argc, char* argv[]) {
       diagram->GetMutableSubsystemContext(*station, &context);
 
   //Add movements to the conveyor belt
-  // auto& state = context.get_mutable_state();
-  // auto& plant = station->get_multibody_plant();
-  // plant.SetVelocities(context, &state, station->GetConveyorBeltId(), drake::Vector1d(2));
+//   auto& state = context.get_mutable_state();
+//   auto& plant = station->get_multibody_plant();
+//   plant.SetVelocities(context, &state, station->GetConveyorBeltId1(), drake::Vector1d(-0.01));
+//   plant.SetVelocities(context, &state, station->GetConveyorBeltId2(), drake::Vector1d(-0.01));
 
   // Get the initial Iiwa pose and initialize the iiwa_command to match.
   VectorXd q0 = station->GetIiwaPosition(station_context); //Yaskawa has q0 = size 6

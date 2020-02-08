@@ -439,12 +439,16 @@ class ManipulationStation : public systems::Diagram<T> {
   }
 
   //Used to get the id of the conveyor belt
-  const multibody::ModelInstanceIndex GetConveyorBeltId() {
+  const multibody::ModelInstanceIndex GetConveyorBeltId1() {
     DRAKE_THROW_UNLESS(setup_==Setup::kManipulationClass);
-    return conveyor_belt_id_;
+    return conveyor_belt_id_1;
   }
 
-
+  //Used to get the id of the conveyor belt
+  const multibody::ModelInstanceIndex GetConveyorBeltId2() {
+    DRAKE_THROW_UNLESS(setup_==Setup::kManipulationClass);
+    return conveyor_belt_id_2;
+  }
 
  private:
   // Struct defined to store information about the how to parse and add a model.
@@ -491,6 +495,7 @@ class ManipulationStation : public systems::Diagram<T> {
   // because this is needed for MultibodyPlant::SetFreeBodyPose(), etc.
   std::vector<multibody::BodyIndex> object_ids_;
   std::vector<math::RigidTransform<T>> object_poses_;
+  std::vector<multibody::ModelInstanceIndex> object_indexes_; //Created new variable
 
   // Registered camera related information.
   std::map<std::string, CameraInformation> camera_information_;
@@ -509,7 +514,13 @@ class ManipulationStation : public systems::Diagram<T> {
   // initializes the sim.
   Setup setup_{Setup::kNone};
 
-  multibody::ModelInstanceIndex conveyor_belt_id_;
+  multibody::ModelInstanceIndex conveyor_belt_id_lower;
+  multibody::ModelInstanceIndex conveyor_belt_id_upper;
+  multibody::ModelInstanceIndex conveyor_belt_id_1;
+  multibody::ModelInstanceIndex conveyor_belt_id_2;
+  multibody::ModelInstanceIndex conveyor_belt_id_robot_1;
+
+
 
 
 };
