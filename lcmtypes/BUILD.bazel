@@ -287,6 +287,15 @@ drake_lcm_cc_library(
 )
 
 drake_lcm_cc_library(
+    name = "conveyor",
+    lcm_package = "drake",
+    lcm_srcs = [
+        "lcmt_conveyor_belt_command.lcm",
+        "lcmt_conveyor_belt_status.lcm",
+    ],
+)
+
+drake_lcm_cc_library(
     name = "iiwa",
     lcm_package = "drake",
     lcm_srcs = [
@@ -353,6 +362,7 @@ LCMTYPES_CC = [
     ":constrained_values",
     ":contact_information",
     ":contact_results_for_viz",
+    ":conveyor",
     ":desired_body_motion",
     ":desired_centroidal_momentum_dot",
     ":desired_dof_motions",

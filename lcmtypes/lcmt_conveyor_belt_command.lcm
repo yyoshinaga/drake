@@ -1,0 +1,9 @@
+package drake;
+
+struct lcmt_conveyor_belt_command
+{
+  int64_t utime;  //< The timestamp in microseconds.
+
+  double target_velocity;
+  double acceleration; //This variable is not used
+}

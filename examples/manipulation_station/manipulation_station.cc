@@ -9,6 +9,7 @@
 #include "drake/geometry/render/render_engine_vtk_factory.h"
 #include "drake/manipulation/schunk_wsg/schunk_wsg_constants.h"
 #include "drake/manipulation/schunk_wsg/schunk_wsg_position_controller.h"
+// #include "drake/manipulation/conveyor_belt/conveyor_belt_velocity_controller.h"
 #include "drake/math/rigid_transform.h"
 #include "drake/math/rotation_matrix.h"
 #include "drake/multibody/parsing/parser.h"
@@ -254,7 +255,7 @@ void ManipulationStation<T>::SetupManipulationClassStation(
 
   // Add the table and 80/20 workcell frame.
   {
-    const double dz_table_top_robot_base = 0.0127;
+    const double dz_table_top_robot_base = 0.01;
     const std::string sdf_path = FindResourceOrThrow(
         "drake/examples/manipulation_station/models/"
         "amazon_table_floor_only.sdf");
@@ -269,63 +270,71 @@ void ManipulationStation<T>::SetupManipulationClassStation(
   { 
     const std::string sdf_path = FindResourceOrThrow(
       "drake/manipulation/models/conveyor_belt_description/sdf/"
-      "conveyor_belt_visual_only_1.sdf"
+      "conveyor_belt_surface_only_collision.sdf"
     );
 
-    multibody::Parser parser(plant_);
-    conveyor_belt_id_upper = parser.AddModelFromFile(sdf_path,"conveyor_belt_upper");
+    // multibody::Parser parser(plant_);
+    // conveyor_belt_id_upper = parser.AddModelFromFile(sdf_path,"conveyor_belt_upper");
 
-    const auto& conveyor_frame = plant_->GetFrameByName("link", conveyor_belt_id_upper);
+    // const auto& conveyor_frame = plant_->GetFrameByName("link", conveyor_belt_id_upper);
     RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
-                                Vector3d(-2.32042, 1.65, -0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
+                                Vector3d(1.8, 1.65, 0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
                                 //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 
-    plant_->template AddJoint<PrismaticJoint>(
-      "conveyor_joint_upper", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
-       X_BM, Vector3<double>::UnitY()
-    );
+    // plant_->template AddJoint<PrismaticJoint>(
+    //   "conveyor_joint_upper", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
+    //    X_BM, Vector3<double>::UnitY()
+    // );
+
+    internal::AddAndWeldModelFrom(sdf_path, "conveyor_joint_upper", plant_->world_frame(),
+                              "link", X_BM, plant_);
   }
 
   // Add lower conveyor belt 
   { 
     const std::string sdf_path = FindResourceOrThrow(
       "drake/manipulation/models/conveyor_belt_description/sdf/"
-      "conveyor_belt_visual_only_2.sdf"
+      "conveyor_belt_surface_only_collision_2.sdf"
     );
-
-    multibody::Parser parser(plant_);
-    conveyor_belt_id_lower = parser.AddModelFromFile(sdf_path,"conveyor_belt_lower");
-
-    const auto& conveyor_frame = plant_->GetFrameByName("link2", conveyor_belt_id_lower);
     RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
-                                Vector3d(0.67958, 1.85, -0.5207)); //X value is -0.82042m (2-8.3') + 1.5m (subtraction this time)
+                                Vector3d(1.85, 0.67958, 0.5207)); //X value is -0.82042m (2-8.3') + 1.5m (subtraction this time)
                                 //Z value is height of the belt top to the ground (0.5207) subtracted by dz_table_top_robot_base (0.0127)
-    plant_->template AddJoint<PrismaticJoint>(
-      "conveyor_joint_lower", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
-        X_BM, Vector3<double>::UnitY()
-    );
+
+    internal::AddAndWeldModelFrom(sdf_path, "conveyor_joint_lower", plant_->world_frame(),
+                              "link2", X_BM, plant_);
+
   }
 
   // // Add 1st conveyor belt collision
-  // { 
-  //   const std::string sdf_path = FindResourceOrThrow(
-  //     "drake/manipulation/models/conveyor_belt_description/sdf/"
-  //     "conveyor_belt_collision_only_1.sdf"
-  //   );
+  { 
+    const std::string sdf_path = FindResourceOrThrow(
+      "drake/manipulation/models/conveyor_belt_description/sdf/"
+      "conveyor_belt_collision_only_1.sdf"
+    );
 
-  //   multibody::Parser parser(plant_);
-  //   conveyor_belt_id_1 = parser.AddModelFromFile(sdf_path,"conveyor_belt_collision_only_1");
+    multibody::Parser parser(plant_);
+    conveyor_belt_id_1 = parser.AddModelFromFile(sdf_path,"conveyor_belt_collision_only_1");
 
-  //   const auto& conveyor_frame = plant_->GetFrameByName("front", conveyor_belt_id_1);
-  //   RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
-  //                               Vector3d(-2.3, 1.65, -0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
-  //                               //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
+    const auto& conveyor_frame = plant_->GetFrameByName("front", conveyor_belt_id_1);
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
+                                Vector3d(1.865, 2, 1));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
+                                //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 
-  //   plant_->template AddJoint<PrismaticJoint>(
-  //     "conveyor_joint_1", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
-  //      X_BM, Vector3<double>::UnitY()
-  //   );
-  // }
+    // plant_->template AddJoint<PrismaticJoint>(
+    //   "conveyor_joint_1", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
+    //    X_BM, Vector3<double>::UnitY()
+    // );
+
+    // const auto indices = plant_->GetBodyIndices(conveyor_belt_id_1);
+    // DRAKE_DEMAND(indices.size() == 1);
+    // object_indexes_.push_back(conveyor_belt_id_1); //Store this variable to use to move the objects in simulation
+    // object_ids_.push_back(indices[0]);
+    // object_poses_.push_back(X_BM);
+    
+
+    plant_->WeldFrames(plant_->world_frame(), conveyor_frame, X_BM);
+  }
+/*
   // // Add 2nd conveyor belt collision
   // { 
   //   const std::string sdf_path = FindResourceOrThrow(
@@ -346,27 +355,40 @@ void ManipulationStation<T>::SetupManipulationClassStation(
   //      X_BM, Vector3<double>::UnitY()
   //   );
   // }
+*/
   // Add conveyor belt robot
-  { 
-    const std::string sdf_path = FindResourceOrThrow(
-      "drake/manipulation/models/conveyor_belt_description/sdf/"
-      "conveyor_belt_robot.sdf"
-    );
+  // { 
+  //   const std::string sdf_path = FindResourceOrThrow(
+  //     "drake/manipulation/models/conveyor_belt_description/sdf/"
+  //     "conveyor_belt_robot.sdf"
+  //   );
 
-    multibody::Parser parser(plant_);
-    conveyor_belt_id_robot_1 = parser.AddModelFromFile(sdf_path,"conveyor_belt_robot_1");
+  //   // multibody::Parser parser(plant_);
+  //   // conveyor_belt_id_robot_1 = parser.AddModelFromFile(sdf_path,"conveyor_belt_robot_1");
 
-    const auto& conveyor_frame = plant_->GetFrameByName("base_link", conveyor_belt_id_robot_1);
-    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2+1),
-                                Vector3d(-2.5, 1.65, -0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
-                                //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
+  //   // const auto& conveyor_frame = plant_->GetFrameByName("base_link", conveyor_belt_id_robot_1);
+  //   RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(M_PI),
+  //                               Vector3d(1.65,2.1,-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
+  //                               //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 
-    plant_->template AddJoint<PrismaticJoint>(
-      "conveyor_joint_1", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
-       X_BM, Vector3<double>::UnitY()
-    );
-  }
+  //   // plant_->template AddJoint<PrismaticJoint>(
+  //   //   "conveyor_joint_1", plant_->world_body(), std::nullopt, plant_->GetRigidBodyByName(conveyor_frame.body().name()), 
+  //   //    X_BM, Vector3<double>::UnitY()
+  //   // );
+  //   auto conveyor_instance = internal::AddAndWeldModelFrom(sdf_path, "conveyor_belt_robot_1", plant_->world_frame(),
+  //                                 "base_link", X_BM, plant_);
 
+  //                                 drake::log()->info("coems here");
+  //   RegisterConveyorControllerModel(sdf_path, conveyor_instance, plant_->world_frame(), 
+  //                                   plant_->GetFrameByName("base_link", conveyor_instance), X_BM);
+  // }
+
+  // const auto X_WI = RigidTransform<double>::Identity();
+  // auto iiwa_instance = internal::AddAndWeldModelFrom(
+  //     sdf_path, "yaskawa", plant_->world_frame(), "arm_base", X_WI, plant_);
+  // RegisterIiwaControllerModel(
+  //     sdf_path, iiwa_instance, plant_->world_frame(),
+  //     plant_->GetFrameByName("arm_base", iiwa_instance), X_WI);
 
 
 
@@ -783,6 +805,40 @@ drake::log()->info(q0_index);
     builder.ExportOutput(adder->get_output_port(), "iiwa_torque_measured");
   }
 
+  // drake::log()->info("conveyor controller section0");
+  // {
+  //   auto conveyor_controller = builder.template AddSystem<
+  //       manipulation::conveyor_belt::ConveyorBeltVelocityController>(0.05);
+  //   conveyor_controller->set_name("conveyor_controller");
+  // drake::log()->info("conveyor controller section1");
+
+  //   builder.Connect(
+  //       conveyor_controller->get_generalized_velocity_output_port(),
+  //       plant_->get_actuation_input_port(conveyor_model_.model_instance));
+        
+  // drake::log()->info("conveyor controller section2");
+
+  //   builder.Connect(plant_->get_state_output_port(conveyor_model_.model_instance),
+  //                   conveyor_controller->get_state_input_port());
+  // drake::log()->info("conveyor controller section3");
+
+  //   builder.ExportInput(conveyor_controller->get_desired_velocity_input_port(),
+  //                       "conveyor_velocity");
+  // drake::log()->info("conveyor controller section4");
+
+  //   builder.ExportOutput(plant_->get_state_output_port(conveyor_model_.model_instance),
+  //                       "generalized_velocity");
+
+  //   // auto conveyor_mbp_state_to_conveyor_state = builder.template AddSystem(
+  //   //     manipulation::conveyor_belt::MakeMultibodyStateToConveyorStateSystem<double>());
+
+  //   // builder.Connect(plant_->get_state_output_port(conveyor_belt_id_robot_1),
+  //   //                 conveyor_mbp_state_to_conveyor_state->get_input_port());
+
+  //   // builder.ExportOutput(conveyor_mbp_state_to_conveyor_state->get_output_port(),
+  //   //                      "conveyor_state_measured");
+  // }
+
   // {
   //   auto wsg_controller = builder.template AddSystem<
   //       manipulation::schunk_wsg::SchunkWsgPositionController>(
@@ -868,7 +924,7 @@ drake::log()->info(q0_index);
 template <typename T>
 VectorX<T> ManipulationStation<T>::GetIiwaPosition(
     const systems::Context<T>& station_context) const {
-  drake::log()->info("Beginning of getiiwaposition");
+
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
   drake::log()->info("GetIiwaPosition 13");
@@ -1024,6 +1080,29 @@ void ManipulationStation<T>::RegisterIiwaControllerModel(
 }
 
 template <typename T>
+void ManipulationStation<T>::RegisterConveyorControllerModel(
+    const std::string& model_path,
+    const multibody::ModelInstanceIndex conveyor_instance,
+    const multibody::Frame<T>& parent_frame,
+    const multibody::Frame<T>& child_frame,
+    const RigidTransform<double>& X_PC) {
+  // TODO(siyuan.feng@tri.global): We really only just need to make sure
+  // the parent frame is a AnchoredFrame(i.e. there is a rigid kinematic path
+  // from it to the world), and record that X_WP. However, the computation to
+  // query X_WP given a partially constructed plant is not feasible at the
+  // moment, so we are forcing the parent frame to be the world instead.
+  DRAKE_THROW_UNLESS(parent_frame.name() == plant_->world_frame().name());
+
+  conveyor_model_.model_path = model_path;
+  conveyor_model_.parent_frame = &parent_frame;
+  conveyor_model_.child_frame = &child_frame;
+  conveyor_model_.X_PC = X_PC;
+
+  conveyor_model_.model_instance = conveyor_instance;
+  drake::log()->info("RegisterConveyorControllerModel 18");
+}
+
+template <typename T>
 void ManipulationStation<T>::RegisterWsgControllerModel(
     const std::string& model_path,
     const multibody::ModelInstanceIndex wsg_instance,
@@ -1128,6 +1207,24 @@ void ManipulationStation<T>::AddDefaultWsg() {
   drake::log()->info("add default wsg");
 
 }
+
+//Fix this function
+
+template <typename T>
+void ManipulationStation<T>::FreeObjectFromConstraints(
+    systems::Context<T>* context) const {
+      
+  // const auto& plant_context =
+  //     this->GetSubsystemContext(*plant_, context);
+  RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
+                              Vector3d(1.865, 2, 1));
+  const auto& conveyor_frame = plant_->GetFrameByName("front", conveyor_belt_id_1);
+
+  plant_->SetFreeBodyPoseInWorldFrame(station_context*, plant_->GetRigidBodyByName(conveyor_frame.body().name()),
+                                      X_BM);
+
+}
+
 
 }  // namespace manipulation_station
 }  // namespace examples

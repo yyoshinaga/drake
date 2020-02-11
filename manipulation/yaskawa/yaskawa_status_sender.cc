@@ -126,10 +126,6 @@ void YaskawaStatusSender::CalcOutput(
     status.joint_torque_measured[i] = torque_measured[i];
     status.joint_torque_external[i] = torque_external[i];
   }
-  drake::log()->info("status . num jojints ");
-
-  drake::log()->info(status.num_joints);
-
 }
 
 }  // namespace yaskawa

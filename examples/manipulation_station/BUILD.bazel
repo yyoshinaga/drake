@@ -44,6 +44,8 @@ drake_cc_library(
         "//geometry/render:render_engine_vtk",
         "//manipulation/schunk_wsg:schunk_wsg_constants",
         "//manipulation/schunk_wsg:schunk_wsg_position_controller",
+        # "//manipulation/conveyor_belt:conveyor_belt_velocity_controller",
+
         "//math:geometric_transform",
         "//multibody/parsing",
         "//multibody/plant",
@@ -98,6 +100,7 @@ drake_cc_binary(
       	"//manipulation/yaskawa:yaskawa_command_receiver",
         "//manipulation/yaskawa:yaskawa_status_sender",
         "//manipulation/schunk_wsg:schunk_wsg_lcm",
+        # "//manipulation/conveyor_belt:conveyor_belt_lcm",
         "//systems/analysis:simulator",
         "//systems/lcm",
         "@gflags",

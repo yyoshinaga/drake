@@ -13,9 +13,13 @@
 #include "drake/lcmt_iiwa_status.hpp"
 #include "drake/lcmt_schunk_wsg_command.hpp"
 #include "drake/lcmt_schunk_wsg_status.hpp"
+// #include "drake/lcmt_conveyor_belt_command.hpp"
+// #include "drake/lcmt_conveyor_belt_status.hpp"
 #include "drake/manipulation/yaskawa/yaskawa_command_receiver.h"	
 #include "drake/manipulation/yaskawa/yaskawa_status_sender.h"
 #include "drake/manipulation/schunk_wsg/schunk_wsg_lcm.h"
+// #include "drake/manipulation/conveyor_belt/conveyor_belt_lcm.h"
+
 #include "drake/math/rigid_transform.h"
 #include "drake/math/rotation_matrix.h"
 #include "drake/multibody/parsing/parser.h"
@@ -64,7 +68,7 @@ int do_main(int argc, char* argv[]) {
     station->AddManipulandFromFile(
         "drake/examples/manipulation_station/models/package2.sdf",
         math::RigidTransform<double>(math::RollPitchYaw<double>(0, 0, 0.57),
-                                     Eigen::Vector3d(1.75, 2.4, 1.05)));
+                                     Eigen::Vector3d(1.75, 2.7, 1.05)));
 
 
   } else if (FLAGS_setup == "clutter_clearing") {
@@ -122,6 +126,36 @@ int do_main(int argc, char* argv[]) {
   builder.Connect(iiwa_status->get_output_port(),
                   iiwa_status_publisher->get_input_port());
 
+//   // Receive the CONVEYOR commands.
+//   auto conveyor_command_subscriber = builder.AddSystem(
+//       systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_conveyor_belt_command>(
+//           "CONVEYOR_BELT_COMMAND", lcm));
+//   auto conveyor_command =
+//       builder.AddSystem<manipulation::conveyor_belt::ConveyorBeltCommandReceiver>();
+//   builder.Connect(conveyor_command_subscriber->get_output_port(),
+//                   conveyor_command->GetInputPort("command_message"));
+//   builder.Connect(conveyor_command->get_velocity_output_port(),
+//                   station->GetInputPort("conveyor_velocity"));
+
+//   // Publish the CONVEYOR status.
+//   auto conveyor_status =
+//       builder.AddSystem<manipulation::conveyor_belt::ConveyorBeltStatusSender>();
+//   builder.Connect(station->GetOutputPort("generalized_velocity"),
+//                   conveyor_status->get_state_input_port());
+//   builder.Connect(station->GetOutputPort("generalized_velocity"),
+//                   conveyor_status->get_position_input_port());
+//   auto conveyor_status_publisher = builder.AddSystem(
+//       systems::lcm::LcmPublisherSystem::Make<drake::lcmt_conveyor_belt_status>(
+//           "CONVEYOR_BELT_STATUS", lcm, 0.05 /* publish period */));
+//   builder.Connect(conveyor_status->get_output_port(0),
+//                   conveyor_status_publisher->get_input_port());
+
+
+
+
+
+
+
   // Receive the WSG commands.
   // auto wsg_command_subscriber = builder.AddSystem(
   //     systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_schunk_wsg_command>(
@@ -157,11 +191,18 @@ int do_main(int argc, char* argv[]) {
   auto& station_context =
       diagram->GetMutableSubsystemContext(*station, &context);
 
-  //Add movements to the conveyor belt
-//   auto& state = context.get_mutable_state();
-//   auto& plant = station->get_multibody_plant();
-//   plant.SetVelocities(context, &state, station->GetConveyorBeltId1(), drake::Vector1d(-0.01));
-//   plant.SetVelocities(context, &state, station->GetConveyorBeltId2(), drake::Vector1d(-0.01));
+//   //Add movements to the conveyor belt
+  // auto& state = context.get_mutable_state();
+  // auto& plant = station->get_multibody_plant();
+
+  station->FreeObjectFromConstraints(context);
+
+
+//   plant.SetVelocities(context, &state, station->GetConveyorBeltId1(), drake::Vector1d(-0.1));
+//   auto positions = plant.GetPositions(context,station->GetConveyorBeltId1());
+
+
+  // plant.SetVelocities(context, &state, station->GetConveyorBeltId2(), drake::Vector1d(-0.01));
 
   // Get the initial Iiwa pose and initialize the iiwa_command to match.
   VectorXd q0 = station->GetIiwaPosition(station_context); //Yaskawa has q0 = size 6

@@ -9,12 +9,12 @@
     checks needed.
     -->
     <link name='link'>
-      <pose frame=''>0 0 0 0 -0 0</pose>
+      <pose frame=''>0 0 0 0 0 0</pose>
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
      
       <visual name='visual1'>
-        <pose frame=''>0 0 0 0 -0 0</pose>
+        <pose frame=''>0 0 0 0 0 0</pose>
         <geometry>
           <box>
             <!-- <size>0.7112 0.762 0.057</size> -->

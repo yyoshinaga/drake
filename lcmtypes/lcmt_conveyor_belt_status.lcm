@@ -1,0 +1,10 @@
+package drake;
+
+struct lcmt_conveyor_belt_status
+{
+  int64_t utime;  //< The timestamp in microseconds.
+  
+  double actual_position;
+
+  double actual_speed_m_per_s;
+}

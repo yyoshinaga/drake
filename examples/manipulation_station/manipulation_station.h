@@ -218,6 +218,14 @@ class ManipulationStation : public systems::Diagram<T> {
       const multibody::Frame<T>& child_frame,
       const math::RigidTransform<double>& X_PC);
 
+  void RegisterConveyorControllerModel(
+      const std::string& model_path,
+      const multibody::ModelInstanceIndex conveyor_instance,
+      const multibody::Frame<T>& parent_frame,
+      const multibody::Frame<T>& child_frame,
+      const math::RigidTransform<double>& X_PC);
+
+
   /// Notifies the ManipulationStation that the WSG gripper model instance can
   /// be identified by @p wsg_instance, as well as necessary information to
   /// reload model for the internal controller's use. Assumes @p wsg_instance
@@ -405,6 +413,12 @@ class ManipulationStation : public systems::Diagram<T> {
     SetWsgVelocity(*station_context, &station_context->get_mutable_state(), v);
   }
 
+  /// Trying to set object free from gravity
+  void FreeObjectFromConstraints(systems::Context<T>* context) const ;
+
+
+  
+
   /// Returns a map from camera name to X_WCameraBody for all the static
   /// (rigidly attached to the world body) cameras that have been registered.
   std::map<std::string, math::RigidTransform<double>>
@@ -441,7 +455,7 @@ class ManipulationStation : public systems::Diagram<T> {
   //Used to get the id of the conveyor belt
   const multibody::ModelInstanceIndex GetConveyorBeltId1() {
     DRAKE_THROW_UNLESS(setup_==Setup::kManipulationClass);
-    return conveyor_belt_id_1;
+    return conveyor_belt_id_1; //conveyor_belt_id_robot_1
   }
 
   //Used to get the id of the conveyor belt
@@ -490,6 +504,7 @@ class ManipulationStation : public systems::Diagram<T> {
   // RegisterWsgControllerModel().
   ModelInformation iiwa_model_;
   ModelInformation wsg_model_;
+  ModelInformation conveyor_model_;
 
   // Store references to objects as *body* indices instead of model indices,
   // because this is needed for MultibodyPlant::SetFreeBodyPose(), etc.
