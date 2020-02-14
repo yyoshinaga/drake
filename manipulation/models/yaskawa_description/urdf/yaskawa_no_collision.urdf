@@ -209,6 +209,7 @@
     </link>
     <!-- virtual link for interfacing with end effector-->
     <link name="ee_mount"/>
+    <frame link="ee_mount" name="yaskawa_frame_ee" rpy="0 0 0" xyz="0.09 0 0"/>
 
     <!-- END LINKS -->
 

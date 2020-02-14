@@ -94,7 +94,7 @@ int do_main(int argc, char* argv[]) {
 
   auto iiwa_command_subscriber = builder.AddSystem(
       systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_iiwa_command>(
-          "IIWA_COMMANDs", lcm));
+          "IIWA_COMMAND", lcm));
   auto iiwa_command =
       builder.AddSystem<manipulation::yaskawa::YaskawaCommandReceiver>();
   builder.Connect(iiwa_command_subscriber->get_output_port(),
@@ -195,7 +195,6 @@ int do_main(int argc, char* argv[]) {
   // auto& state = context.get_mutable_state();
   // auto& plant = station->get_multibody_plant();
 
-  station->FreeObjectFromConstraints(context);
 
 
 //   plant.SetVelocities(context, &state, station->GetConveyorBeltId1(), drake::Vector1d(-0.1));

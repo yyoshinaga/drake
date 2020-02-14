@@ -52,6 +52,10 @@ drake_cc_library(
         "//systems/controllers:inverse_dynamics_controller",
         "//systems/framework",
         "//systems/sensors:rgbd_sensor",
+
+        #Added on:
+        "//systems/controllers",
+        "//systems/primitives",
     ],
 )
 

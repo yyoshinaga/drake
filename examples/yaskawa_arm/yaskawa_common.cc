@@ -106,14 +106,14 @@ void SetPositionControlledYaskawaGains(Eigen::VectorXd* Kp,
   // All the gains are for acceleration, not directly responsible for generating
   // torques. These are set to high values to ensure good tracking. These gains
   // are picked arbitrarily.
-  Kp->resize(7);
-  *Kp << 100, 100, 100, 100, 100, 100, 100;
+  Kp->resize(6);
+  *Kp << 100, 100, 100, 100, 100, 100;
   Kd->resize(Kp->size());
   for (int i = 0; i < Kp->size(); i++) {
     // Critical damping gains.
     (*Kd)[i] = 2 * std::sqrt((*Kp)[i]);
   }
-  *Ki = Eigen::VectorXd::Zero(7);
+  *Ki = Eigen::VectorXd::Zero(6);
 }
 
 void SetTorqueControlledYaskawaGains(Eigen::VectorXd* stiffness,
@@ -123,8 +123,8 @@ void SetTorqueControlledYaskawaGains(Eigen::VectorXd* stiffness,
   // https://github.com/RobotLocomotion/drake-iiwa-driver/blob/master/kuka-driver/sunrise_1.11/DrakeFRITorqueDriver.java NOLINT
 
   // The spring stiffness in Nm/rad.
-  stiffness->resize(7);
-  *stiffness << 1000, 1000, 1000, 500, 500, 500, 500;
+  stiffness->resize(6);
+  *stiffness << 1000, 1000, 1000, 500, 500, 500;
 
   // A dimensionless damping ratio. See KukaTorqueController for details.
   damping_ratio->resize(stiffness->size());
@@ -155,7 +155,7 @@ void ApplyJointVelocityLimits(const MatrixX<double>& keyframes,
   Eigen::VectorXd velocity_ratios(velocities.rows());
 
   const VectorX<double> yaskawa_max_joint_velocities =
-      get_yaskawa_max_joint_velocities();
+      manipulation::yaskawa::get_yaskawa_max_joint_velocities();
   for (int i = 0; i < velocities.rows(); i++) {
     const double max_plan_velocity = velocities.row(i).maxCoeff();
     // Maybe don't try max velocity at first...

@@ -7,9 +7,10 @@
 #include "drake/geometry/geometry_visualization.h"
 #include "drake/geometry/scene_graph.h"
 #include "drake/lcm/drake_lcm.h"
-#include "drake/multibody/benchmarks/acrobot/make_acrobot_plant.h"
+// #include "drake/multibody/benchmarks/acrobot/make_acrobot_plant.h"
 #include "drake/multibody/parsing/parser.h"
 #include "drake/multibody/tree/revolute_joint.h"
+#include "drake/multibody/tree/prismatic_joint.h"
 #include "drake/systems/analysis/simulator.h"
 #include "drake/systems/controllers/linear_quadratic_regulator.h"
 #include "drake/systems/framework/diagram_builder.h"
@@ -20,11 +21,12 @@ namespace drake {
 
 using geometry::SceneGraph;
 using lcm::DrakeLcm;
-using multibody::benchmarks::acrobot::AcrobotParameters;
-using multibody::benchmarks::acrobot::MakeAcrobotPlant;
+// using multibody::benchmarks::acrobot::AcrobotParameters;
+// using multibody::benchmarks::acrobot::MakeAcrobotPlant;
 using multibody::MultibodyPlant;
 using multibody::Parser;
 using multibody::JointActuator;
+using multibody::PrismaticJoint;
 using multibody::RevoluteJoint;
 using systems::Context;
 using systems::InputPort;
@@ -32,7 +34,7 @@ using Eigen::Vector2d;
 
 namespace examples {
 namespace multibody {
-namespace acrobot {
+namespace conveyor_belt {
 namespace {
 
 DEFINE_double(target_realtime_rate, 1.0,
@@ -56,26 +58,26 @@ std::unique_ptr<systems::AffineSystem<double>> MakeBalancingLQRController(
   // Therefore we create a new model that meets this requirement. (a model
   // created along with a SceneGraph for simulation would also have input ports
   // to interact with that SceneGraph).
-  MultibodyPlant<double> acrobot(0.0);
-  Parser parser(&acrobot);
+  MultibodyPlant<double> belt(0.0);
+  Parser parser(&belt);
   parser.AddModelFromFile(full_name);
   // We are done defining the model.
-  acrobot.Finalize();
+  belt.Finalize();
 
-  const RevoluteJoint<double>& shoulder =
-      acrobot.GetJointByName<RevoluteJoint>("ShoulderJoint");
+  const PrismaticJoint<double>& shoulder =
+      belt.GetJointByName<PrismaticJoint>("ShoulderJoint");
   const RevoluteJoint<double>& elbow =
-      acrobot.GetJointByName<RevoluteJoint>("ElbowJoint");
-  std::unique_ptr<Context<double>> context = acrobot.CreateDefaultContext();
+      belt.GetJointByName<RevoluteJoint>("ElbowJoint");
+  std::unique_ptr<Context<double>> context = belt.CreateDefaultContext();
 
   // Set nominal actuation torque to zero.
-  const InputPort<double>& actuation_port = acrobot.get_actuation_input_port();
+  const InputPort<double>& actuation_port = belt.get_actuation_input_port();
   actuation_port.FixValue(context.get(), 0.0);
-  acrobot.get_applied_generalized_force_input_port().FixValue(
+  belt.get_applied_generalized_force_input_port().FixValue(
       context.get(), Vector2d::Constant(0.0));
 
-  shoulder.set_angle(context.get(), M_PI);
-  shoulder.set_angular_rate(context.get(), 0.0);
+  shoulder.set_translation(context.get(), M_PI);
+  shoulder.set_translation_rate(context.get(), 0.0);
   elbow.set_angle(context.get(), 0.0);
   elbow.set_angular_rate(context.get(), 0.0);
 
@@ -88,7 +90,7 @@ std::unique_ptr<systems::AffineSystem<double>> MakeBalancingLQRController(
   Vector1d R = Vector1d::Constant(1);
 
   return systems::controllers::LinearQuadraticRegulator(
-      acrobot, *context, Q, R,
+      belt, *context, Q, R,
       Eigen::Matrix<double, 0, 0>::Zero() /* No cross state/control costs */,
       actuation_port.get_index());
 }
@@ -103,51 +105,50 @@ int do_main() {
 
   // Make and add the acrobot model.
   const std::string relative_name =
-      "drake/multibody/benchmarks/acrobot/acrobot.sdf";
+      "drake/manipulation/models/conveyor_belt_description/sdf/conveyor_simple_robot.sdf";
   const std::string full_name = FindResourceOrThrow(relative_name);
-  MultibodyPlant<double>& acrobot =
+  MultibodyPlant<double>& belt =
       *builder.AddSystem<MultibodyPlant>(time_step);
 
-  Parser parser(&acrobot, &scene_graph);
+  Parser parser(&belt, &scene_graph);
   parser.AddModelFromFile(full_name);
 
   // We are done defining the model.
-  acrobot.Finalize();
+  belt.Finalize();
 
-  DRAKE_DEMAND(acrobot.num_actuators() == 1);
-  DRAKE_DEMAND(acrobot.num_actuated_dofs() == 1);
+  DRAKE_DEMAND(belt.num_actuators() == 1);
+  DRAKE_DEMAND(belt.num_actuated_dofs() == 1);
 
-  RevoluteJoint<double>& shoulder =
-      acrobot.GetMutableJointByName<RevoluteJoint>("ShoulderJoint");
+  PrismaticJoint<double>& shoulder =
+      belt.GetMutableJointByName<PrismaticJoint>("ShoulderJoint");
   RevoluteJoint<double>& elbow =
-      acrobot.GetMutableJointByName<RevoluteJoint>("ElbowJoint");
+      belt.GetMutableJointByName<RevoluteJoint>("ElbowJoint");
 
   // Drake's parser will default the name of the actuator to match the name of
   // the joint it actuates.
   const JointActuator<double>& actuator =
-      acrobot.GetJointActuatorByName("ElbowJoint");
-  DRAKE_DEMAND(actuator.joint().name() == "ElbowJoint");
+      belt.GetJointActuatorByName("ShoulderJoint");
+  const JointActuator<double>& actuator2 =
+      belt.GetJointActuatorByName("ElbowJoint");
+  DRAKE_DEMAND(actuator.joint().name() == "ShoulderJoint");
+  DRAKE_DEMAND(actuator2.joint().name() == "ElbowJoint");
 
   // For this example the controller's model of the plant exactly matches the
   // plant to be controlled (in reality there would always be a mismatch).
   auto controller = builder.AddSystem(
       MakeBalancingLQRController(relative_name));
   controller->set_name("controller");
-
-  drake::log()->info("state size");
-
-  drake::log()->info(acrobot.get_state_output_port().size());
-  builder.Connect(acrobot.get_state_output_port(),
+  builder.Connect(belt.get_state_output_port(),
                   controller->get_input_port());
   builder.Connect(controller->get_output_port(),
-                  acrobot.get_actuation_input_port());
+                  belt.get_actuation_input_port());
 
   // Sanity check on the availability of the optional source id before using it.
-  DRAKE_DEMAND(!!acrobot.get_source_id());
+  DRAKE_DEMAND(!!belt.get_source_id());
 
   builder.Connect(
-      acrobot.get_geometry_poses_output_port(),
-      scene_graph.get_source_pose_port(acrobot.get_source_id().value()));
+      belt.get_geometry_poses_output_port(),
+      scene_graph.get_source_pose_port(belt.get_source_id().value()));
 
   geometry::ConnectDrakeVisualizer(&builder, scene_graph);
   auto diagram = builder.Build();
@@ -159,7 +160,7 @@ int do_main() {
 
   // Setup distribution for random initial conditions.
   std::normal_distribution<symbolic::Expression> gaussian;
-  shoulder.set_random_angle_distribution(M_PI + 0.02*gaussian(generator));
+  shoulder.set_random_translation_distribution(0.02*gaussian(generator));
   elbow.set_random_angle_distribution(0.05*gaussian(generator));
 
   for (int i = 0; i < 5; i++) {
@@ -175,7 +176,7 @@ int do_main() {
 }
 
 }  // namespace
-}  // namespace acrobot
+}  // namespace conveyor
 }  // namespace multibody
 }  // namespace examples
 }  // namespace drake
@@ -186,5 +187,5 @@ int main(int argc, char* argv[]) {
       "LQR stabilization. "
       "Launch drake-visualizer before running this example.");
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  return drake::examples::multibody::acrobot::do_main();
+  return drake::examples::multibody::conveyor_belt::do_main();
 }

@@ -1,0 +1,100 @@
+# -*- python -*-
+# This file contains rules for Bazel; see drake/doc/bazel.rst.
+
+load(
+    "@drake//tools/skylark:drake_cc.bzl",
+    "drake_cc_binary",
+    "drake_cc_googletest",
+    "drake_cc_library",
+)
+load("//tools/lint:lint.bzl", "add_lint_tests")
+
+load("//tools/install:install_data.bzl", "install_data")
+
+
+drake_cc_binary(
+    name = "run_conveyor",
+    srcs = ["run_conveyor.cc"],
+    add_test_rule = 1,
+    data = ["//manipulation/models/conveyor_belt_description:models","//multibody/benchmarks/acrobot:models"
+    ],
+    test_rule_args = [
+        "--simulation_time=0.1",
+        "--target_realtime_rate=0.0",
+    ],
+    deps = [
+        "//common:add_text_logging_gflags",
+        "//common:find_resource",
+        "//geometry:geometry_visualization",
+        "//multibody/parsing",
+        "//systems/analysis:simulator",
+        "//systems/controllers:linear_quadratic_regulator",
+        "//systems/framework:diagram",
+        "//systems/primitives:affine_system",
+        "//systems/controllers",
+        "//systems/primitives",
+        "@gflags",
+
+
+    ],
+)
+
+drake_cc_library(
+    name = "conveyor_plant",
+    srcs = ["conveyor_plant.cc"],
+    hdrs = ["conveyor_plant.h"],
+    deps = [
+        "//common:find_resource",
+        "//common:default_scalars",
+        "//math:geometric_transform",
+        "//systems/controllers:linear_quadratic_regulator",
+        "//systems/framework:leaf_system",
+        "//systems/primitives:affine_system",
+        "//geometry:geometry_visualization",
+
+
+
+    ],
+)
+
+drake_cc_library(
+    name="conveyor_control",
+    hdrs=["conveyor_control.h"],
+    srcs=["conveyor_control.cc"],
+    visibility = ["//visibility:public"],
+    deps=[
+        "//systems/framework:leaf_system",
+        "//common:essential",
+    ]
+)
+
+drake_cc_binary(
+    name = "conveyor_simulation",
+    srcs = ["conveyor_simulation.cc"],
+    add_test_rule = 1,
+    data = ["//manipulation/models/conveyor_belt_description:models"
+    ],
+    test_rule_args = [
+        "--simulation_time=0.1",
+        "--target_realtime_rate=0.0",
+    ],
+    deps = [
+        "//common:add_text_logging_gflags",
+        "//common:find_resource",
+        "//geometry:geometry_visualization",
+        ":conveyor_plant",
+        ":conveyor_control",
+
+        "//multibody/parsing",
+        "//systems/analysis:simulator",
+        "//systems/framework:diagram",
+        "//systems/primitives:affine_system",
+        "//systems/controllers",
+        "//systems/primitives",
+        "@gflags",
+
+
+    ],
+)
+
+install_data()

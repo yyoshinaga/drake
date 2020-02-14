@@ -70,6 +70,7 @@ class MoveDemoRunner {
   void HandleStatus(const lcm::ReceiveBuffer*, const std::string&,
                     const lcmt_iiwa_status* status) {
     status_count_++;
+    DRAKE_DEMAND(status->num_joints == 6);
     Eigen::VectorXd iiwa_q(status->num_joints);
     Eigen::VectorXd iiwa_v(status->num_joints);
     for (int i = 0; i < status->num_joints; i++) {
