@@ -23,6 +23,7 @@ namespace conveyor_belt {
         int input_port_index = -1;
         int output_port_index = -1;
         int pose_output_port = -1;
+
     public:
         DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(ConveyorPlant);
         ConveyorPlant(std::vector<geometry::FrameId> _frame_ids);
@@ -34,6 +35,9 @@ namespace conveyor_belt {
                                     systems::ContinuousState<T>* derivatives) const;
 
         void CopyStateOut(const systems::Context<T>& context,
+                            systems::BasicVector<T>* output) const;
+
+        void CalcPoseOutput(const systems::Context<T>& context,
                             systems::BasicVector<T>* output) const;
 
         void SetDefaultState(const systems::Context<T>&,

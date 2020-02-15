@@ -10,31 +10,33 @@
     -->
     <link name='base_link'>
       <visual name='visual_base'>
-
-        <geometry>
-          <box>
-            <size>0.05 0.05 0.05</size>
-          </box>
-        </geometry>
-      </visual>
-
-    </link>
-
-    <link name='first_link'>
-      <!-- <pose frame=''>0 0 0 0 0 0</pose> -->
-      <visual name='visual_1'>
+      <pose frame=''>0 0 0 0 0 0</pose>
         <geometry>
           <box>
             <size>0.05 0.05 0.05</size>
           </box>
         </geometry>
         <material>
-          <diffuse>0 0 1 1.0</diffuse>
+          <diffuse>1 0 0 1.0</diffuse>
         </material>
       </visual>
     </link>
 
-    <link name='connector_link_01'>
+    <link name='first_link'>
+      <visual name='visual_1'>
+      <pose frame=''>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <!-- <link name='connector_link_01'>
       <visual name='visual_01'>
         <pose> 0 0 0.1 0 0 0</pose>
         <geometry>
@@ -43,16 +45,14 @@
           </box>
         </geometry>
         <material>
-          <diffuse>0 1 0 1.0</diffuse>
+          <diffuse>1 1 0 1.0</diffuse>
         </material>
       </visual>
-    </link>
+    </link> -->
 
     <link name='collision_link'>
-      <pose frame=''>0 0 0.1 0 0 0</pose>
       <inertial>
         <mass>53.5</mass>
-        <pose frame=''>0 0 0 0 0 0</pose>
         <inertia>
           <ixx>5.177409</ixx>
           <ixy>0</ixy>
@@ -65,10 +65,11 @@
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
        <visual name='visual_01'>
-        <pose> 0 0 0.1 0 0 0</pose>
+        <pose frame=''>0 0 0.5 0 0</pose>
+
         <geometry>
           <box>
-            <size>0.6 0.05 0.15</size>
+            <size>0.15 0.6 0.05</size>
           </box>
         </geometry>
         <material>
@@ -77,12 +78,13 @@
       </visual>
 
       <collision name='surface'>
+            <pose frame=''>0 0 0.5 0 0</pose>
+
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
-        <pose frame=''>0 0 0 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.6 0.05 0.15</size>
+            <size>0.15 0.6 0.05</size>
           </box>
         </geometry>
         <surface>
@@ -134,29 +136,41 @@
     </link> 
 
 
-    <joint name="zeroth_joint" type="prismatic">
+    <joint name="zeroth_joint" type="revolute">
       <parent>base_link</parent>
       <child>first_link</child>
       <axis>
-        <xyz>0 1 0</xyz>
+        <xyz>0 0 1</xyz>
       </axis>
     </joint>
 
-    <joint name="first_joint" type="revolute">
+    <joint name="first_joint" type="prismatic">
       <parent>first_link</parent>
-      <child>connector_link_01</child>
-      <axis>
-        <xyz>1 0 0</xyz>
-      </axis>
-    </joint>
-    <joint name="second_joint" type="fixed">   
-      <parent>connector_link_01</parent>
       <child>collision_link</child>
       <axis>
         <xyz>1 0 0</xyz>
       </axis>
     </joint>
+    <!-- <joint name="second_joint" type="fixed">   
+      <parent>connector_link_01</parent>
+      <child>collision_link</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+      </axis>
+    </joint> -->
     
+
+    <transmission name="tran_0">
+      <robotNamespace>/conveyor</robotNamespace>
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="zeroth_joint">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="motor_0">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
 
     <transmission name="tran_1">
       <robotNamespace>/conveyor</robotNamespace>
@@ -170,7 +184,7 @@
       </actuator>
     </transmission>
 
-    
+
 
 
     <!-- <frame name='top_center'>

@@ -35,7 +35,6 @@ namespace multibody {
 namespace conveyor_belt {
 namespace {
 
-
 DEFINE_double(target_realtime_rate, 1.0,
               "Desired rate relative to real time.  See documentation for "
               "Simulator::set_target_realtime_rate() for details.");
@@ -43,7 +42,7 @@ DEFINE_double(target_realtime_rate, 1.0,
 DEFINE_double(simulation_time, std::numeric_limits<double>::infinity(),
               "Desired duration of the simulation in seconds.");
 
-DEFINE_bool(time_stepping, true, "If 'true', the plant is modeled as a "
+DEFINE_bool(time_stepping, false, "If 'true', the plant is modeled as a "
     "discrete system with periodic updates. "
     "If 'false', the plant is modeled as a continuous system.");
 
@@ -53,10 +52,6 @@ class ConveyorSimulation : public systems::Diagram<double> {
   DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(ConveyorSimulation)
 
   ConveyorSimulation();
-
-  std::unique_ptr<systems::Context<double>>
-  CreateContext(double x_pos, double y_pos) const;
-
   ~ConveyorSimulation();
 };
 
@@ -74,12 +69,12 @@ ConveyorSimulation::ConveyorSimulation() {
   geometry::SourceId source_id = plant->RegisterAsSourceForSceneGraph(scene_graph);
   drake::multibody::ModelInstanceIndex modelInstanceName = parser.AddModelFromFile(path);
 
-
-drake::log()->info("FIIIIIIIIXXXXXXXXXX MEEEEEE: frame_ids is size 1 and it requires a size of 7?");
+  //For some reason, frame_ids size is 4. Is it because of the robot configuration?
   std::vector<geometry::FrameId> frame_ids;
-  for(int i = 0; i < 4; i++) {
-        frame_ids.push_back({plant->GetBodyFrameIdOrThrow(plant->GetBodyIndices(modelInstanceName)[i])});
-    }
+  for(int i = 0; i < 3; i++) {
+    frame_ids.push_back({plant->GetBodyFrameIdOrThrow(plant->GetBodyIndices(modelInstanceName)[i])});
+  }
+
   plant->RegisterVisualGeometry(plant->world_body(), math::RigidTransformd(), geometry::HalfSpace(), "Floor");
   plant->Finalize();
 
@@ -91,14 +86,14 @@ drake::log()->info("FIIIIIIIIXXXXXXXXXX MEEEEEE: frame_ids is size 1 and it requ
   builder.Connect(vector_source_system->get_output_port(0), 
                   robot_plant->get_input_port(0));
 
-  builder.Connect(robot_plant->get_output_port(0),
+  builder.Connect(robot_plant->get_output_port(1),
                   plant->get_actuation_input_port());
 
-  builder.Connect(robot_plant->get_output_port(1),
+  builder.Connect(robot_plant->get_output_port(2),
                   scene_graph->get_source_pose_port(source_id));
                   
   builder.Connect(scene_graph->get_query_output_port(),
-                    plant->get_geometry_query_input_port());
+                  plant->get_geometry_query_input_port());
 
   builder.BuildInto(this);
   
