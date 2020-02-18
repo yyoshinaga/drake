@@ -6,10 +6,24 @@ load(
     "drake_cc_binary",
     "drake_cc_googletest",
     "drake_cc_library",
+    "drake_cc_package_library",
 )
 load("//tools/lint:lint.bzl", "add_lint_tests")
 
 load("//tools/install:install_data.bzl", "install_data")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+drake_cc_package_library(
+    name = "conveyor_belt",
+    deps = [
+        ":conveyor_plant",
+        ":conveyor_control",
+        ":conveyor_station",
+    ],
+)
 
 
 drake_cc_binary(
@@ -51,6 +65,7 @@ drake_cc_library(
         "//systems/framework:leaf_system",
         "//systems/primitives:affine_system",
         "//geometry:geometry_visualization",
+        "//multibody/plant",
 
 
 
@@ -79,7 +94,6 @@ drake_cc_binary(
         "--target_realtime_rate=0.0",
     ],
     deps = [
-        "//common:add_text_logging_gflags",
         "//common:find_resource",
         "//geometry:geometry_visualization",
         ":conveyor_plant",
@@ -92,9 +106,32 @@ drake_cc_binary(
         "//systems/controllers",
         "//systems/primitives",
         "@gflags",
-
-
     ],
 )
+
+drake_cc_library(
+    name = "conveyor_station",
+    hdrs=["conveyor_station.h"],
+    srcs = ["conveyor_station.cc"],
+    data = [
+        "//manipulation/models/conveyor_belt_description:models"
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//common:find_resource",
+        "//geometry:geometry_visualization",
+        ":conveyor_plant",
+        ":conveyor_control",
+
+        "//multibody/parsing",
+        "//systems/analysis:simulator",
+        "//systems/framework:diagram",
+        "//systems/primitives:affine_system",
+        "//systems/controllers",
+        "//systems/primitives",
+        "@gflags",
+    ],
+)
+
 
 install_data()

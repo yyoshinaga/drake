@@ -113,7 +113,9 @@ InverseDynamicsController<T>::InverseDynamicsController(
   const int num_positions = multibody_plant_for_control_->num_positions();
   const int num_velocities = multibody_plant_for_control_->num_velocities();
   const int num_actuators = multibody_plant_for_control_->num_actuators();
-  DRAKE_DEMAND(num_positions == kp.size());
+    drake::log()->info("robot positions: {}; kp size: {}",num_positions,kp.size());
+
+  DRAKE_DEMAND(num_positions == kp.size());  
   DRAKE_DEMAND(num_positions == num_velocities);
   DRAKE_DEMAND(num_positions == num_actuators);
   SetUp(kp, ki, kd, *inverse_dynamics, &builder);

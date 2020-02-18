@@ -35,7 +35,6 @@ drake_cc_library(
         "//manipulation/models/yaskawa_end_effector_description:models",
         "//manipulation/models/PB_Layout_V2_description:models",
         "//manipulation/models/conveyor_belt_description:models",
-
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -56,6 +55,10 @@ drake_cc_library(
         #Added on:
         "//systems/controllers",
         "//systems/primitives",
+        "//examples/multibody/conveyor_belt:conveyor_plant",
+        "//examples/multibody/conveyor_belt:conveyor_control",
+        "//examples/multibody/conveyor_belt:conveyor_station",
+
     ],
 )
 
@@ -108,6 +111,8 @@ drake_cc_binary(
         "//systems/analysis:simulator",
         "//systems/lcm",
         "@gflags",
+        "//examples/multibody/conveyor_belt:conveyor_station",
+
     ],
 )
 

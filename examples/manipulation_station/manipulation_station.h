@@ -485,8 +485,10 @@ class ManipulationStation : public systems::Diagram<T> {
   // Assumes iiwa_model_info_ and wsg_model_info_ have already being populated.
   // Should only be called from Finalize().
   void MakeIiwaControllerModel();
+  drake::multibody::ModelInstanceIndex MakeConveyorControllerModel(drake::multibody::MultibodyPlant<T>* plant);
 
   void AddDefaultIiwa(const IiwaCollisionModel collision_model);
+  void AddDefaultConveyor(multibody::MultibodyPlant<T>* plant);
   void AddDefaultWsg();
 
   // These are only valid until Finalize() is called.
@@ -511,6 +513,10 @@ class ManipulationStation : public systems::Diagram<T> {
   std::vector<multibody::BodyIndex> object_ids_;
   std::vector<math::RigidTransform<T>> object_poses_;
   std::vector<multibody::ModelInstanceIndex> object_indexes_; //Created new variable
+
+  geometry::SourceId source_id_;
+  geometry::SourceId source_id2_;
+
 
   // Registered camera related information.
   std::map<std::string, CameraInformation> camera_information_;

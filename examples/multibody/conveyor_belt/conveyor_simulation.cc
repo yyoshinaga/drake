@@ -109,6 +109,11 @@ int do_main() {
   systems::Simulator<double> simulator(*diagram,diagram->CreateDefaultContext());
   simulator.set_target_realtime_rate(FLAGS_target_realtime_rate);
 
+  auto& context = simulator.get_mutable_context();
+
+  drake::log()->info("Context size: {}"); //Size is 21? why?
+  drake::log()->info( context.num_continuous_states());
+
   simulator.get_mutable_context().SetTime(0.0);
  
   simulator.Initialize();

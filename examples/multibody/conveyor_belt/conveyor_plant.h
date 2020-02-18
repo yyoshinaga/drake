@@ -42,6 +42,8 @@ namespace conveyor_belt {
 
         void SetDefaultState(const systems::Context<T>&,
                             systems::State<T>* state) const;
+
+
     };
 }
 }

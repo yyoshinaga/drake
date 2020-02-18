@@ -65,7 +65,7 @@
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
        <visual name='visual_01'>
-        <pose frame=''>0 0 0.5 0 0</pose>
+        <pose frame=''>0 0 0.15 0 0</pose>
 
         <geometry>
           <box>
@@ -78,7 +78,7 @@
       </visual>
 
       <collision name='surface'>
-            <pose frame=''>0 0 0.5 0 0</pose>
+        <pose frame=''>0 0 0.15 0 0</pose>
 
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>

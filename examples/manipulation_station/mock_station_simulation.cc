@@ -13,12 +13,9 @@
 #include "drake/lcmt_iiwa_status.hpp"
 #include "drake/lcmt_schunk_wsg_command.hpp"
 #include "drake/lcmt_schunk_wsg_status.hpp"
-// #include "drake/lcmt_conveyor_belt_command.hpp"
-// #include "drake/lcmt_conveyor_belt_status.hpp"
 #include "drake/manipulation/yaskawa/yaskawa_command_receiver.h"	
 #include "drake/manipulation/yaskawa/yaskawa_status_sender.h"
 #include "drake/manipulation/schunk_wsg/schunk_wsg_lcm.h"
-// #include "drake/manipulation/conveyor_belt/conveyor_belt_lcm.h"
 
 #include "drake/math/rigid_transform.h"
 #include "drake/math/rotation_matrix.h"
@@ -31,6 +28,10 @@
 #include "drake/systems/lcm/lcm_subscriber_system.h"
 #include "drake/systems/primitives/matrix_gain.h"
 
+//Add on
+// #include "drake/examples/multibody/conveyor_belt/conveyor_station.h"
+
+
 namespace drake {
 namespace examples {
 namespace manipulation_station {
@@ -42,6 +43,7 @@ namespace {
 // simulation to operating on the real robot hardware.
 
 using Eigen::VectorXd;
+// using examples::multibody::conveyor_belt::ConveyorStation;
 
 DEFINE_double(target_realtime_rate, 1.0,
               "Playback speed.  See documentation for "
@@ -59,6 +61,7 @@ int do_main(int argc, char* argv[]) {
 
   // Create the "manipulation station".
   auto station = builder.AddSystem<ManipulationStation>();
+
   if (FLAGS_setup == "manipulation_class") {
     station->SetupManipulationClassStation();
     station->AddManipulandFromFile(
@@ -90,11 +93,15 @@ int do_main(int argc, char* argv[]) {
   geometry::ConnectDrakeVisualizer(&builder, station->get_scene_graph(),
                                    station->GetOutputPort("pose_bundle"));
 
+  // geometry::ConnectDrakeVisualizer(&builder, conveyor_station->get_scene_graph(), 
+  //                                  conveyor_station->GetOutputPort("pose_bundle2"));
+
   auto lcm = builder.AddSystem<systems::lcm::LcmInterfaceSystem>();
 
   auto iiwa_command_subscriber = builder.AddSystem(
       systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_iiwa_command>(
           "IIWA_COMMAND", lcm));
+
   auto iiwa_command =
       builder.AddSystem<manipulation::yaskawa::YaskawaCommandReceiver>();
   builder.Connect(iiwa_command_subscriber->get_output_port(),
@@ -191,6 +198,10 @@ int do_main(int argc, char* argv[]) {
   auto& station_context =
       diagram->GetMutableSubsystemContext(*station, &context);
 
+  // drake::log()->info("Context output: {}", station_context.num_output_ports());
+  // drake::log()->info("Context input: {}", station_context.num_input_ports());
+
+
 //   //Add movements to the conveyor belt
   // auto& state = context.get_mutable_state();
   // auto& plant = station->get_multibody_plant();
@@ -208,6 +219,9 @@ int do_main(int argc, char* argv[]) {
 
   iiwa_command->set_initial_position(
       &diagram->GetMutableSubsystemContext(*iiwa_command, &context), q0);
+
+        drake::log()->info("Context size: {}");
+  drake::log()->info( station_context.num_continuous_states());
   simulator.set_publish_every_time_step(false);
   simulator.set_target_realtime_rate(FLAGS_target_realtime_rate);
   simulator.AdvanceTo(FLAGS_duration);                              //Failure occurs here.....

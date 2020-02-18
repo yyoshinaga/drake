@@ -18,9 +18,6 @@ ConveyorControl<T>::~ConveyorControl() {}
 template<typename T>
 void ConveyorControl<T>::CopyStateOut(const systems::Context<T>& context, systems::BasicVector<T>* output) const {
     // Get current state from context.
-    const systems::VectorBase<T>& continuous_state_vector = context.get_continuous_state_vector(); 
-
-    drake::log()->info("continuous state vector size: {}", continuous_state_vector.size());
 
     Vector1<double> vec(1);
     vec << 1;
