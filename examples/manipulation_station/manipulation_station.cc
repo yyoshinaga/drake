@@ -457,12 +457,12 @@ void ManipulationStation<T>::SetDefaultState(
                             plant_->get_body(object_ids_[i]), object_poses_[i]);
   }
 
+  drake::log()->info("continuous state size: {} ", plant_state.get_continuous_state().size());
+
   // Use SetIiwaPosition to make sure the controller state is initialized to
   // the IIWA state.
-  drake::log()->info("default state bug");
 
   SetIiwaPosition(station_context, state, GetIiwaPosition(station_context));
-  drake::log()->info("The above code has a bug");
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
   // SetWsgPosition(station_context, state, q0_gripper);
   // SetWsgVelocity(station_context, state, 0);
@@ -568,6 +568,35 @@ void ManipulationStation<T>::Finalize(
   DRAKE_THROW_UNLESS(iiwa_model_.model_instance.is_valid());
   // DRAKE_THROW_UNLESS(wsg_model_.model_instance.is_valid());
 
+//Conveyor belt stuff needs to come before belt_plant_->finalize
+
+    const std::string sdf_path = FindResourceOrThrow(
+        "drake/manipulation/models/conveyor_belt_description/sdf/"
+        "conveyor_simple_robot.sdf");
+
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(3, 2, 0.4));
+                                  //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
+                                  //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
+
+    conveyor_belt_id_1 = internal::AddAndWeldModelFrom(sdf_path, "conveyor_simple_robot", plant_->world_frame(),
+                                                      "base_link", X_BM, plant_);
+
+    RegisterConveyorControllerModel(
+        sdf_path, conveyor_belt_id_1, plant_->world_frame(),
+        plant_->GetFrameByName("base_link", conveyor_belt_id_1), X_BM);
+
+    //Frame_ids size is 3 for 3 robot links
+    std::vector<geometry::FrameId> frame_ids;
+    for(int i = 0; i < 3; i++) {
+      frame_ids.push_back({plant_->GetBodyFrameIdOrThrow(plant_->GetBodyIndices(conveyor_belt_id_1)[i])});
+    }
+
+
+
+
+
+
+
   MakeIiwaControllerModel();
   // auto modelInstanceName= MakeConveyorControllerModel(plant_);
 
@@ -647,11 +676,11 @@ void ManipulationStation<T>::Finalize(
   builder.AddSystem(std::move(owned_plant_));
   builder.AddSystem(std::move(owned_scene_graph_));
 
-  builder.Connect(
-      plant_->get_geometry_poses_output_port(),
-      scene_graph_->get_source_pose_port(plant_->get_source_id().value()));
-  builder.Connect(scene_graph_->get_query_output_port(),
-                  plant_->get_geometry_query_input_port());
+  // builder.Connect(
+  //     plant_->get_geometry_poses_output_port(),
+  //     scene_graph_->get_source_pose_port(plant_->get_source_id().value()));
+  // builder.Connect(scene_graph_->get_query_output_port(),
+  //                 plant_->get_geometry_query_input_port());
 
   const int num_iiwa_positions =
       plant_->num_positions(iiwa_model_.model_instance);
@@ -753,58 +782,62 @@ void ManipulationStation<T>::Finalize(
 
   //Conveyor belt connections
   {
-
-        const std::string sdf_path = FindResourceOrThrow(
-        "drake/manipulation/models/conveyor_belt_description/sdf/"
-        "conveyor_simple_robot.sdf");
-    auto belt_plant = builder.AddSystem(std::make_unique<drake::multibody::MultibodyPlant<double>>());
-    drake::multibody::Parser parser(belt_plant, scene_graph_);
-    source_id2_ = belt_plant->RegisterAsSourceForSceneGraph(scene_graph_);
-    drake::multibody::ModelInstanceIndex modelInstanceName = parser.AddModelFromFile(sdf_path);
-
-    // AddDefaultConveyor(belt_plant);
-
-
-
-    // RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(M_PI),
-    //                               Vector3d(1.7, 2, 0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
-    //                               //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
-
-    // conveyor_belt_id_1 = internal::AddAndWeldModelFrom(sdf_path, "conveyor_simple_robot", belt_plant->world_frame(),
-    //                                                   "base_link", X_BM, belt_plant);
-
-    // RegisterConveyorControllerModel(
-    //     sdf_path, conveyor_belt_id_1, belt_plant->world_frame(),
-    //     belt_plant->GetFrameByName("base_link", conveyor_belt_id_1), X_BM);
-
-
-
-
-
-    //Frame_ids size is 3 for 3 robot links
-    std::vector<geometry::FrameId> frame_ids;
-    for(int i = 0; i < 3; i++) {
-      frame_ids.push_back({belt_plant->GetBodyFrameIdOrThrow(belt_plant->GetBodyIndices(modelInstanceName)[i])});
-    }
-
-    belt_plant->RegisterVisualGeometry(belt_plant->world_body(), math::RigidTransformd(), geometry::HalfSpace(), "Floor");
-    belt_plant->Finalize();
-
     auto vector_source_system = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorControl<double>>());
-    auto robot_plant = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorPlant<double>>(frame_ids)); 
+    auto robot_plant = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorPlant<double>>(frame_ids));
 
     builder.Connect(vector_source_system->get_output_port(0), 
                     robot_plant->get_input_port(0));
 
-    builder.Connect(robot_plant->get_output_port(1),
-                    belt_plant->get_actuation_input_port());
+    // builder.Connect(robot_plant->get_output_port(1),
+    //                 plant_->get_actuation_input_port(conveyor_model_.model_instance));
+
+    drake::log()->info("num_actuated_dofs: {}", plant_->num_actuated_dofs());
+    drake::log()->info("num_actuators: {}", plant_->num_actuators());
+
+    // //First, split plant
+    // auto demux = builder.template AddSystem<systems::Demultiplexer>(8, 1);
+    // auto demux2 = builder.template AddSystem<systems::Demultiplexer>(2, 1);
+
+    // auto mux = builder.template AddSystem<systems::Multiplexer>(8);
+
+    // // Seperate geometry port into 8 pieces
+    // builder.Connect(plant_->get_geometry_poses_output_port(),
+    //                 demux->get_input_port(0));
+
+    // // Connect the first 6
+    // builder.Connect(demux->get_output_port(0),
+    //                 mux->get_input_port(0));
+    // builder.Connect(demux->get_output_port(1),
+    //                 mux->get_input_port(1));
+    // builder.Connect(demux->get_output_port(2),
+    //                 mux->get_input_port(2));
+    // builder.Connect(demux->get_output_port(3),
+    //                 mux->get_input_port(3));
+    // builder.Connect(demux->get_output_port(4),
+    //                 mux->get_input_port(4));
+    // builder.Connect(demux->get_output_port(5),
+    //                 mux->get_input_port(5));
+
+    // builder.Connect(robot_plant->get_output_port(2),
+    //                 demux2->get_input_port(0));
+
+    // // Then connect the last 2 pieces from robot_plant
+    // builder.Connect(demux2->get_output_port(0),
+    //                 mux->get_input_port(6));
+    // builder.Connect(demux2->get_output_port(1),
+    //                 mux->get_input_port(7));
+
+    // builder.Connect(mux->get_output_port(0),
+    //                 scene_graph_->get_source_pose_port(plant_->get_source_id().value()));  
 
     builder.Connect(robot_plant->get_output_port(2),
-                    scene_graph_->get_source_pose_port(source_id2_));
+                    scene_graph_->get_source_pose_port(plant_->get_source_id().value())); 
+
+    // builder.Connect(plant_->get_geometry_poses_output_port(),
+    //                 scene_graph_->get_source_pose_port(plant_->get_source_id().value()));   
 
     builder.Connect(scene_graph_->get_query_output_port(),
-                    belt_plant->get_geometry_query_input_port());
-
+                    plant_->get_geometry_query_input_port());
   }
 
   // {

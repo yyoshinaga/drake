@@ -502,6 +502,10 @@ class ManipulationStation : public systems::Diagram<T> {
   static constexpr const char* default_renderer_name_ =
       "manip_station_renderer";
 
+  //The conveyor belt plant
+  multibody::MultibodyPlant<T>* belt_plant_;
+
+
   // Populated by RegisterIiwaControllerModel() and
   // RegisterWsgControllerModel().
   ModelInformation iiwa_model_;

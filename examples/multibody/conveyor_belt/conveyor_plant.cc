@@ -28,17 +28,16 @@ ConveyorPlant<T>::ConveyorPlant(std::vector<geometry::FrameId> _frame_ids)
 
     // A 2D output vector for position: x_pos, V_x, theta, omega
     output_port_index = this->DeclareVectorOutputPort("conveyor_state", systems::BasicVector<T>(4),
-                                    &ConveyorPlant::CopyStateOut).get_index();
+                                    &ConveyorPlant::CopyStateOut).get_index();  //0
 
     // x_pos and theta is sent to multibody plants. Reason is because mbp doesn't want velocities
     pose_output_port = this->DeclareVectorOutputPort("pose_output", systems::BasicVector<T>(2), 
-                                    &ConveyorPlant::CalcPoseOutput).get_index();
+                                    &ConveyorPlant::CalcPoseOutput).get_index();    //1
 
     // Used for visualization purposes
     this->DeclareAbstractOutputPort("scene_graph_output",geometry::FramePoseVector<T>(),
                                     &ConveyorPlant::CalcFramePoseOutput);                    
 
-    drake::log()->info("conveyor_plant: output_port_index: {}\npose_output_port: {}", output_port_index,pose_output_port);
 }
 
 //Destructor
@@ -101,8 +100,7 @@ void ConveyorPlant<T>::CalcFramePoseOutput(const systems::Context<T>& context, g
     math::RigidTransformd pose(rotation, position_vector);
 
     *poses = {{frame_ids.at(0), pose}, {frame_ids.at(1), pose}, {frame_ids.at(2), pose}};
-    drake::log()->info("Calc frame pose output");
-    drake::log()->info(context.num_continuous_states());
+    drake::log()->info("Calc frame pose output: context numContiStates:  {} ", context.num_continuous_states());
 
 }
 
@@ -110,7 +108,6 @@ void ConveyorPlant<T>::CalcFramePoseOutput(const systems::Context<T>& context, g
 template<typename T>
 void ConveyorPlant<T>::DoCalcTimeDerivatives(const systems::Context<T>& context,
     systems::ContinuousState<T>* derivatives) const {
-    drake::log()->info("do calc time derivative ");
 
     // Get current state from context.
     const systems::VectorBase<T>& continuous_state_vector =
@@ -142,42 +139,43 @@ void ConveyorPlant<T>::DoCalcTimeDerivatives(const systems::Context<T>& context,
         //
         //              2
 
-        // bool fullCircle = false;
-        // if(theta > M_PI*2){
-        //     theta -= M_PI*2;
-        //     fullCircle = true;
-        // }
+        
+        theta = fmod(theta,M_PI*2);
+        if(theta < 0){
+            theta += M_PI*2;
+        }
+        // if(theta < 0)
+        drake::log()->info("start theta: deg {}  x_pos: {}", theta*180/M_PI, x_pos);
+        // DRAKE_DEMAND(theta >= 0);
 
         // Approximate the next position and see if it is still within the location bounds
         //Rolling left
-        if(x_pos > FLAGS_belt_length/2 && theta < M_PI){
-            // drake::log()->info("location 1");
+        if(x_pos > FLAGS_belt_length/2 && theta >= 0 && theta < M_PI){
+            drake::log()->info("location 1");
             derivatives_vector.SetAtIndex(0, 0); //V_x
             derivatives_vector.SetAtIndex(1, FLAGS_belt_velocity/FLAGS_belt_radius); //W_z    
         }            
         //Rolling right
-        else if(x_pos < -FLAGS_belt_length/2 && theta > 0){
-            // drake::log()->info("location 3");
+        else if(x_pos < -FLAGS_belt_length/2 && theta >= M_PI){
+            drake::log()->info("location 3");
             derivatives_vector.SetAtIndex(0, 0); //V_x
-            derivatives_vector.SetAtIndex(1, -FLAGS_belt_velocity/FLAGS_belt_radius); //W_z
+            derivatives_vector.SetAtIndex(1, FLAGS_belt_velocity/FLAGS_belt_radius); //W_z
         }
         else{
             //Moving rightwards
             if(theta >= M_PI){
-                // drake::log()->info("location 2");
+                drake::log()->info("location 2");
                 derivatives_vector.SetAtIndex(0, -FLAGS_belt_velocity); //V_x
                 derivatives_vector.SetAtIndex(1, 0); //W_z
             }
             //Moving leftwards
-            else if(theta <= 0){
-                // drake::log()->info("location 0");
+            else if(theta >= 0){
+                drake::log()->info("location 0");
                 derivatives_vector.SetAtIndex(0, FLAGS_belt_velocity); //V_x
                 derivatives_vector.SetAtIndex(1, 0); //W_z
             }
-
             else{
-                drake::log()->info("location ERROR");
-                
+                drake::log()->info("location ERROR - theta: {}  x_pos: {}",theta,x_pos);
             }
         }
     }    
@@ -186,7 +184,6 @@ void ConveyorPlant<T>::DoCalcTimeDerivatives(const systems::Context<T>& context,
         derivatives_vector.SetAtIndex(0, 0);    //V_x = 0
         derivatives_vector.SetAtIndex(1, 0);    //W = 0
     }
-    drake::log()->info("finished do calc derivative");
 }
 
 

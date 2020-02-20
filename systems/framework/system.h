@@ -628,8 +628,10 @@ class System : public SystemBase {
   ///                    the continuous state vector in `context`.
   void CalcTimeDerivatives(const Context<T>& context,
                            ContinuousState<T>* derivatives) const {
+
     DRAKE_DEMAND(derivatives != nullptr);
     ValidateContext(context);
+
     DoCalcTimeDerivatives(context, derivatives);
   }
 
@@ -2086,8 +2088,6 @@ class System : public SystemBase {
     // but not identical!
     const int n = qdot.size();
     // You need to override System<T>::DoMapQDottoVelocity!
-      drake::log()->info("gen vel size: {}, {}", generalized_velocity->size(),n);
-
     DRAKE_THROW_UNLESS(generalized_velocity->size() == n);
     generalized_velocity->SetFromVector(qdot);
   }

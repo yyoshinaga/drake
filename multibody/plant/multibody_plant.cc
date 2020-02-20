@@ -1187,12 +1187,14 @@ void MultibodyPlant<T>::CalcContactResultsContinuousPointPair(
 
   const std::vector<PenetrationAsPointPair<T>>& point_pairs =
       EvalPointPairPenetrations(context);
+// drake::log()->info("multibody_plant.cc: 1194");
 
   const std::vector<CoulombFriction<double>> combined_friction_pairs =
       CalcCombinedFrictionCoefficients(point_pairs);
 
   const internal::PositionKinematicsCache<T>& pc =
       EvalPositionKinematics(context);
+
   const internal::VelocityKinematicsCache<T>& vc =
       EvalVelocityKinematics(context);
 
@@ -1242,7 +1244,6 @@ void MultibodyPlant<T>::CalcContactResultsContinuousPointPair(
     const T k = penalty_method_contact_parameters_.stiffness;
     const T d = penalty_method_contact_parameters_.damping;
     const T fn_AC = k * x * (1.0 + d * vn);
-
     if (fn_AC > 0) {
       // Normal force on body A, at C, expressed in W.
       const Vector3<T> fn_AC_W = fn_AC * nhat_BA_W;
@@ -1259,6 +1260,7 @@ void MultibodyPlant<T>::CalcContactResultsContinuousPointPair(
       // Tangential friction force on A at C, expressed in W.
       Vector3<T> ft_AC_W = Vector3<T>::Zero();
       T slip_velocity = 0;
+
       if (vt_squared > kNonZeroSqd) {
         slip_velocity = sqrt(vt_squared);
         // Stribeck friction coefficient.

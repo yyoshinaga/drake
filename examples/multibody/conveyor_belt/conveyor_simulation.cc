@@ -29,7 +29,12 @@ using drake::multibody::Parser;
 using systems::Context;
 using systems::InputPort;
 using Eigen::Vector2d;
-
+using math::RigidTransform;
+using math::RigidTransformd;
+using math::RollPitchYaw;
+using math::RotationMatrix;
+using Eigen::Vector3d;
+using Eigen::VectorXd;
 namespace examples {
 namespace multibody {
 namespace conveyor_belt {
@@ -66,8 +71,14 @@ ConveyorSimulation::ConveyorSimulation() {
   const std::string path = FindResourceOrThrow(
           "drake/manipulation/models/conveyor_belt_description/sdf/conveyor_simple_robot.sdf");
 
-  geometry::SourceId source_id = plant->RegisterAsSourceForSceneGraph(scene_graph);
+  plant->RegisterAsSourceForSceneGraph(scene_graph);
   drake::multibody::ModelInstanceIndex modelInstanceName = parser.AddModelFromFile(path);
+
+
+  RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(M_PI),
+                                Vector3d(1.7, 2, 0.8));
+
+  plant->WeldFrames(plant->world_frame(), plant->GetFrameByName("base_link", modelInstanceName), X_BM);
 
   //For some reason, frame_ids size is 4. Is it because of the robot configuration?
   std::vector<geometry::FrameId> frame_ids;
@@ -75,7 +86,7 @@ ConveyorSimulation::ConveyorSimulation() {
     frame_ids.push_back({plant->GetBodyFrameIdOrThrow(plant->GetBodyIndices(modelInstanceName)[i])});
   }
 
-  plant->RegisterVisualGeometry(plant->world_body(), math::RigidTransformd(), geometry::HalfSpace(), "Floor");
+  // plant->RegisterVisualGeometry(plant->world_body(), math::RigidTransformd(), geometry::HalfSpace(), "Floor");
   plant->Finalize();
 
   auto vector_source_system = builder.AddSystem(std::make_unique<ConveyorControl<double>>());
@@ -87,11 +98,20 @@ ConveyorSimulation::ConveyorSimulation() {
                   robot_plant->get_input_port(0));
 
   builder.Connect(robot_plant->get_output_port(1),
-                  plant->get_actuation_input_port());
+                  plant->get_actuation_input_port(modelInstanceName));
 
-  builder.Connect(robot_plant->get_output_port(2),
-                  scene_graph->get_source_pose_port(source_id));
-                  
+
+
+  //IF I USE THIS LINE OF CODE, IT WORKS NORMALLY
+  // builder.Connect(robot_plant->get_output_port(2),
+  //                 scene_graph->get_source_pose_port(plant->get_source_id().value()));
+
+drake::log()->info("num actuators: {}",plant->num_actuators());
+
+  //IF I USE THIS LINE OF CODE, IT DOESN"T WORK
+  // builder.Connect(plant->get_geometry_poses_output_port(),
+  //                 scene_graph->get_source_pose_port(plant->get_source_id().value()));   
+
   builder.Connect(scene_graph->get_query_output_port(),
                   plant->get_geometry_query_input_port());
 
