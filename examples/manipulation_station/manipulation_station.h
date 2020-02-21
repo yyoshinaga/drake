@@ -503,7 +503,7 @@ class ManipulationStation : public systems::Diagram<T> {
       "manip_station_renderer";
 
   //The conveyor belt plant
-  multibody::MultibodyPlant<T>* belt_plant_;
+  // multibody::MultibodyPlant<T>* belt_plant_;
 
 
   // Populated by RegisterIiwaControllerModel() and

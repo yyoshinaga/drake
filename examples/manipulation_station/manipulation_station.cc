@@ -34,6 +34,7 @@
 
 #include "drake/examples/multibody/conveyor_belt/conveyor_plant.h"
 #include "drake/examples/multibody/conveyor_belt/conveyor_control.h"
+#include "drake/examples/multibody/conveyor_belt/conveyor_controller.h"
 
 
 
@@ -574,7 +575,7 @@ void ManipulationStation<T>::Finalize(
         "drake/manipulation/models/conveyor_belt_description/sdf/"
         "conveyor_simple_robot.sdf");
 
-    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(3, 2, 0.4));
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7, 2, 0.4));
                                   //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
                                   //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 
@@ -676,11 +677,11 @@ void ManipulationStation<T>::Finalize(
   builder.AddSystem(std::move(owned_plant_));
   builder.AddSystem(std::move(owned_scene_graph_));
 
-  // builder.Connect(
-  //     plant_->get_geometry_poses_output_port(),
-  //     scene_graph_->get_source_pose_port(plant_->get_source_id().value()));
-  // builder.Connect(scene_graph_->get_query_output_port(),
-  //                 plant_->get_geometry_query_input_port());
+  builder.Connect(
+      plant_->get_geometry_poses_output_port(),
+      scene_graph_->get_source_pose_port(plant_->get_source_id().value()));
+  builder.Connect(scene_graph_->get_query_output_port(),
+                  plant_->get_geometry_query_input_port());
 
   const int num_iiwa_positions =
       plant_->num_positions(iiwa_model_.model_instance);
@@ -782,18 +783,25 @@ void ManipulationStation<T>::Finalize(
 
   //Conveyor belt connections
   {
-    auto vector_source_system = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorControl<double>>());
-    auto robot_plant = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorPlant<double>>(frame_ids));
+    // auto vector_source_system = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorControl<double>>());
+    // auto robot_plant = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorPlant<double>>(frame_ids));
+    auto belt_controller = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids));
 
-    builder.Connect(vector_source_system->get_output_port(0), 
-                    robot_plant->get_input_port(0));
+    // builder.Connect(vector_source_system->get_output_port(0), 
+    //                 robot_plant->get_input_port(0));
 
     // builder.Connect(robot_plant->get_output_port(1),
     //                 plant_->get_actuation_input_port(conveyor_model_.model_instance));
 
+    //Velocity sending
+    builder.Connect(belt_controller->get_output_port(1),
+                    plant_->get_actuation_input_port(conveyor_model_.model_instance));
+
+
     drake::log()->info("num_actuated_dofs: {}", plant_->num_actuated_dofs());
     drake::log()->info("num_actuators: {}", plant_->num_actuators());
 
+/*
     // //First, split plant
     // auto demux = builder.template AddSystem<systems::Demultiplexer>(8, 1);
     // auto demux2 = builder.template AddSystem<systems::Demultiplexer>(2, 1);
@@ -830,14 +838,14 @@ void ManipulationStation<T>::Finalize(
     // builder.Connect(mux->get_output_port(0),
     //                 scene_graph_->get_source_pose_port(plant_->get_source_id().value()));  
 
-    builder.Connect(robot_plant->get_output_port(2),
-                    scene_graph_->get_source_pose_port(plant_->get_source_id().value())); 
+    // builder.Connect(robot_plant->get_output_port(2),
+    //                 scene_graph_->get_source_pose_port(plant_->get_source_id().value())); 
+*/
+    //Receive the states
+    builder.Connect(plant_->get_state_output_port(conveyor_model_.model_instance),
+                    belt_controller->get_input_port(0)); 
 
-    // builder.Connect(plant_->get_geometry_poses_output_port(),
-    //                 scene_graph_->get_source_pose_port(plant_->get_source_id().value()));   
 
-    builder.Connect(scene_graph_->get_query_output_port(),
-                    plant_->get_geometry_query_input_port());
   }
 
   // {

@@ -82,7 +82,26 @@ drake_cc_library(
         "//common:essential",
     ]
 )
+drake_cc_library(
+    name="conveyor_controller",
+    hdrs=["conveyor_controller.h"],
+    srcs=["conveyor_controller.cc"],
+    visibility = ["//visibility:public"],
+    deps=[
+        "//systems/framework:leaf_system",
+        "//common:essential",
 
+        "//common:find_resource",
+        "//common:default_scalars",
+        "//math:geometric_transform",
+        "//systems/primitives:affine_system",
+        "//geometry:geometry_visualization",
+        "//multibody/plant",
+
+
+
+    ]
+)
 drake_cc_binary(
     name = "conveyor_simulation",
     srcs = ["conveyor_simulation.cc"],

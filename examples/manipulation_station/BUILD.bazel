@@ -57,6 +57,8 @@ drake_cc_library(
         "//systems/primitives",
         "//examples/multibody/conveyor_belt:conveyor_plant",
         "//examples/multibody/conveyor_belt:conveyor_control",
+        "//examples/multibody/conveyor_belt:conveyor_controller",
+
         "//examples/multibody/conveyor_belt:conveyor_station",
 
     ],

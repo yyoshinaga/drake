@@ -51,7 +51,7 @@ void ConveyorPlant<T>::SetDefaultState(const systems::Context<T>&,
     DRAKE_DEMAND(state != nullptr);
 
     Vector4<T> xc0;    
-    xc0 << FLAGS_x_pos_start, FLAGS_theta_start, 0 , 0;  // initial state values.
+    xc0 << FLAGS_theta_start, FLAGS_x_pos_start, 0 , 0;  // initial state values.
     
     state->get_mutable_continuous_state().SetFromVector(xc0);
 
@@ -77,9 +77,11 @@ void ConveyorPlant<T>::CopyStateOut(const systems::Context<T>& context,
 template<typename T>
 void ConveyorPlant<T>::CalcPoseOutput(const systems::Context<T>& context,
                                          systems::BasicVector<T>* output) const {
-    const auto state_vector = context.get_continuous_state_vector().CopyToVector();
-    output->SetAtIndex(0, state_vector[0]);
-    output->SetAtIndex(1, state_vector[1]);
+     const systems::VectorBase<T>& continuous_state_vector = context.get_continuous_state_vector();
+
+
+    output->SetAtIndex(0, continuous_state_vector.GetAtIndex(3));//state_vector[3]);
+    output->SetAtIndex(1, 0.1); //state_vector[2]);
 }
 
 template<typename T>
@@ -131,7 +133,8 @@ void ConveyorPlant<T>::DoCalcTimeDerivatives(const systems::Context<T>& context,
         double x_pos = continuous_state_vector.GetAtIndex(0);
         double theta = continuous_state_vector.GetAtIndex(1);
         // drake::log()->info("x_pos, theta: {}, {}",x_pos,theta);
-
+    drake::log()->info("state_vector[2]: {} \n state_vector[3]: {}",continuous_state_vector.GetAtIndex(3),continuous_state_vector.GetAtIndex(2));
+// drake::log()->info("der size: {}",derivatives_vector.size());
         // Conveyor belt diagram:
         //              0    
         //        _____________
@@ -153,13 +156,15 @@ void ConveyorPlant<T>::DoCalcTimeDerivatives(const systems::Context<T>& context,
         if(x_pos > FLAGS_belt_length/2 && theta >= 0 && theta < M_PI){
             drake::log()->info("location 1");
             derivatives_vector.SetAtIndex(0, 0); //V_x
-            derivatives_vector.SetAtIndex(1, FLAGS_belt_velocity/FLAGS_belt_radius); //W_z    
+            derivatives_vector.SetAtIndex(1, FLAGS_belt_velocity/FLAGS_belt_radius); //W_z
+    
         }            
         //Rolling right
         else if(x_pos < -FLAGS_belt_length/2 && theta >= M_PI){
             drake::log()->info("location 3");
             derivatives_vector.SetAtIndex(0, 0); //V_x
             derivatives_vector.SetAtIndex(1, FLAGS_belt_velocity/FLAGS_belt_radius); //W_z
+ 
         }
         else{
             //Moving rightwards
@@ -167,12 +172,14 @@ void ConveyorPlant<T>::DoCalcTimeDerivatives(const systems::Context<T>& context,
                 drake::log()->info("location 2");
                 derivatives_vector.SetAtIndex(0, -FLAGS_belt_velocity); //V_x
                 derivatives_vector.SetAtIndex(1, 0); //W_z
+ 
             }
             //Moving leftwards
             else if(theta >= 0){
                 drake::log()->info("location 0");
                 derivatives_vector.SetAtIndex(0, FLAGS_belt_velocity); //V_x
                 derivatives_vector.SetAtIndex(1, 0); //W_z
+
             }
             else{
                 drake::log()->info("location ERROR - theta: {}  x_pos: {}",theta,x_pos);
@@ -183,6 +190,7 @@ void ConveyorPlant<T>::DoCalcTimeDerivatives(const systems::Context<T>& context,
         drake::log()->info("Conveyor Belt has stopped {}", inputVector[0]);
         derivatives_vector.SetAtIndex(0, 0);    //V_x = 0
         derivatives_vector.SetAtIndex(1, 0);    //W = 0
+
     }
 }
 

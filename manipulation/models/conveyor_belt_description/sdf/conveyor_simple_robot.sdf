@@ -51,7 +51,7 @@
     </link> -->
 
     <link name='collision_link'>
-      <inertial>
+      <!-- <inertial>
         <mass>53.5</mass>
         <inertia>
           <ixx>5.177409</ixx>
@@ -61,14 +61,14 @@
           <iyz>0</iyz>
           <izz>4.843753753</izz>
         </inertia>
-      </inertial>
+      </inertial> -->
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
        <visual name='visual_01'>
         <pose frame=''>0 0 0.15 0 0</pose>
         <geometry>
           <box>
-            <size>0.15 0.6 0.05</size>
+            <size>0.6 0.15 0.05</size>
           </box>
         </geometry>
         <material>
@@ -82,7 +82,7 @@
         <max_contacts>10</max_contacts>
         <geometry>
           <box>
-            <size>0.15 0.6 0.05</size>
+            <size>0.6 0.15 0.05</size>
           </box>
         </geometry>
         <surface>
@@ -134,16 +134,15 @@
     </link> 
 
 
-    <joint name="zeroth_joint" type="revolute">
+    <joint name="zeroth_joint" type="prismatic">
       <parent>base_link</parent>
       <child>first_link</child>
       <axis>
         <xyz>0 1 0</xyz>
-
       </axis>
     </joint>
 
-    <joint name="first_joint" type="prismatic">
+    <joint name="first_joint" type="revolute">
       <parent>first_link</parent>
       <child>collision_link</child>
       <axis>
