@@ -255,7 +255,7 @@ void ManipulationStation<T>::SetupClutterClearingStation(
   }
 
   AddDefaultIiwa(collision_model);
-  AddDefaultWsg();
+  // AddDefaultWsg();
   drake::log()->info("SetupClutterClearingStation 4");
 
 }
@@ -362,7 +362,6 @@ void ManipulationStation<T>::SetupManipulationClassStation(
 
   // Add the default iiwa/wsg models.
   AddDefaultIiwa(collision_model);
-  // AddDefaultConveyor();
   // AddDefaultWsg();
 
   // Add default cameras.
@@ -426,7 +425,7 @@ void ManipulationStation<T>::SetupPlanarIiwaStation() {
   }
 
   // Add the default wsg model.
-  AddDefaultWsg();
+  // AddDefaultWsg();
   drake::log()->info("SetupPlanarIiwaStation 6");
 }
 
@@ -541,19 +540,8 @@ void ManipulationStation<T>::MakeIiwaControllerModel() {
   //                                             controller_iiwa_model),
   //     wsg_equivalent.body_frame(), wsg_model_.X_PC);
   // owned_controller_plant_->set_name("controller_plant");
-  drake::log()->info("MakeIiwaControllerModel 10");
+  // drake::log()->info("MakeIiwaControllerModel 10");
 }
-
-// template <typename T>
-// drake::multibody::ModelInstanceIndex ManipulationStation<T>::MakeConveyorControllerModel(MultibodyPlant<T>* plant){
-
-//     drake::multibody::Parser parser(plant);
-
-//     drake::multibody::ModelInstanceIndex modelInstanceName = parser.AddModelFromFile(conveyor_model_.model_path, "conveyor");
-
-//     return modelInstanceName;
-// }
-
 
 
 template <typename T>
@@ -569,34 +557,14 @@ void ManipulationStation<T>::Finalize(
   DRAKE_THROW_UNLESS(iiwa_model_.model_instance.is_valid());
   // DRAKE_THROW_UNLESS(wsg_model_.model_instance.is_valid());
 
-//Conveyor belt stuff needs to come before belt_plant_->finalize
-
-    const std::string sdf_path = FindResourceOrThrow(
-        "drake/manipulation/models/conveyor_belt_description/sdf/"
-        "conveyor_simple_robot.sdf");
-
-    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7, 2, 0.4));
-                                  //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
-                                  //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
-
-    conveyor_belt_id_1 = internal::AddAndWeldModelFrom(sdf_path, "conveyor_simple_robot", plant_->world_frame(),
-                                                      "base_link", X_BM, plant_);
-
-    RegisterConveyorControllerModel(
-        sdf_path, conveyor_belt_id_1, plant_->world_frame(),
-        plant_->GetFrameByName("base_link", conveyor_belt_id_1), X_BM);
-
-    //Frame_ids size is 3 for 3 robot links
-    std::vector<geometry::FrameId> frame_ids;
-    for(int i = 0; i < 3; i++) {
-      frame_ids.push_back({plant_->GetBodyFrameIdOrThrow(plant_->GetBodyIndices(conveyor_belt_id_1)[i])});
-    }
-
-
-
-
-
-
+  //Conveyor belt stuff needs to come before belt_plant_->finalize
+  std::vector<geometry::FrameId> frame_ids1; 
+  std::vector<geometry::FrameId> frame_ids2; 
+  std::vector<geometry::FrameId> frame_ids3;
+  AddDefaultConveyor(conveyor_belt_idx_1_, 1, 2.0, frame_ids1, "conveyor_1");
+  AddDefaultConveyor(conveyor_belt_idx_2_, 2, 2.15, frame_ids2, "conveyor_2");
+  AddDefaultConveyor(conveyor_belt_idx_3_, 3, 2.3, frame_ids3, "conveyor_3");
+  
 
   MakeIiwaControllerModel();
   // auto modelInstanceName= MakeConveyorControllerModel(plant_);
@@ -785,7 +753,9 @@ void ManipulationStation<T>::Finalize(
   {
     // auto vector_source_system = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorControl<double>>());
     // auto robot_plant = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorPlant<double>>(frame_ids));
-    auto belt_controller = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids));
+    auto belt_controller1 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids1));
+    auto belt_controller2 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids2));
+    auto belt_controller3 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids3));
 
     // builder.Connect(vector_source_system->get_output_port(0), 
     //                 robot_plant->get_input_port(0));
@@ -794,58 +764,22 @@ void ManipulationStation<T>::Finalize(
     //                 plant_->get_actuation_input_port(conveyor_model_.model_instance));
 
     //Velocity sending
-    builder.Connect(belt_controller->get_output_port(1),
-                    plant_->get_actuation_input_port(conveyor_model_.model_instance));
-
-
-    drake::log()->info("num_actuated_dofs: {}", plant_->num_actuated_dofs());
-    drake::log()->info("num_actuators: {}", plant_->num_actuators());
-
-/*
-    // //First, split plant
-    // auto demux = builder.template AddSystem<systems::Demultiplexer>(8, 1);
-    // auto demux2 = builder.template AddSystem<systems::Demultiplexer>(2, 1);
-
-    // auto mux = builder.template AddSystem<systems::Multiplexer>(8);
-
-    // // Seperate geometry port into 8 pieces
-    // builder.Connect(plant_->get_geometry_poses_output_port(),
-    //                 demux->get_input_port(0));
-
-    // // Connect the first 6
-    // builder.Connect(demux->get_output_port(0),
-    //                 mux->get_input_port(0));
-    // builder.Connect(demux->get_output_port(1),
-    //                 mux->get_input_port(1));
-    // builder.Connect(demux->get_output_port(2),
-    //                 mux->get_input_port(2));
-    // builder.Connect(demux->get_output_port(3),
-    //                 mux->get_input_port(3));
-    // builder.Connect(demux->get_output_port(4),
-    //                 mux->get_input_port(4));
-    // builder.Connect(demux->get_output_port(5),
-    //                 mux->get_input_port(5));
-
-    // builder.Connect(robot_plant->get_output_port(2),
-    //                 demux2->get_input_port(0));
-
-    // // Then connect the last 2 pieces from robot_plant
-    // builder.Connect(demux2->get_output_port(0),
-    //                 mux->get_input_port(6));
-    // builder.Connect(demux2->get_output_port(1),
-    //                 mux->get_input_port(7));
-
-    // builder.Connect(mux->get_output_port(0),
-    //                 scene_graph_->get_source_pose_port(plant_->get_source_id().value()));  
-
-    // builder.Connect(robot_plant->get_output_port(2),
-    //                 scene_graph_->get_source_pose_port(plant_->get_source_id().value())); 
-*/
+    builder.Connect(belt_controller1->get_output_port(1),
+                    plant_->get_actuation_input_port(conveyor_model_1_.model_instance));
+    builder.Connect(belt_controller2->get_output_port(1),
+                    plant_->get_actuation_input_port(conveyor_model_2_.model_instance));
+    builder.Connect(belt_controller3->get_output_port(1),
+                    plant_->get_actuation_input_port(conveyor_model_3_.model_instance));
+  
     //Receive the states
-    builder.Connect(plant_->get_state_output_port(conveyor_model_.model_instance),
-                    belt_controller->get_input_port(0)); 
-
-
+    builder.Connect(plant_->get_state_output_port(conveyor_model_1_.model_instance),
+                    belt_controller1->get_input_port(0)); 
+    //Receive the states
+    builder.Connect(plant_->get_state_output_port(conveyor_model_2_.model_instance),
+                    belt_controller2->get_input_port(0)); 
+    //Receive the states
+    builder.Connect(plant_->get_state_output_port(conveyor_model_3_.model_instance),
+                    belt_controller3->get_input_port(0)); 
   }
 
   // {
@@ -1090,6 +1024,7 @@ void ManipulationStation<T>::RegisterIiwaControllerModel(
 
 template <typename T>
 void ManipulationStation<T>::RegisterConveyorControllerModel(
+    const int conveyor_model_num,
     const std::string& model_path,
     const drake::multibody::ModelInstanceIndex conveyor_instance,
     const drake::multibody::Frame<T>& parent_frame,
@@ -1102,12 +1037,29 @@ void ManipulationStation<T>::RegisterConveyorControllerModel(
   // moment, so we are forcing the parent frame to be the world instead.
   DRAKE_THROW_UNLESS(parent_frame.name() == plant_->world_frame().name());
 
-  conveyor_model_.model_path = model_path;
-  conveyor_model_.parent_frame = &parent_frame;
-  conveyor_model_.child_frame = &child_frame;
-  conveyor_model_.X_PC = X_PC;
-
-  conveyor_model_.model_instance = conveyor_instance;
+  switch(conveyor_model_num){
+    case 1:
+      conveyor_model_1_.model_path = model_path;
+      conveyor_model_1_.parent_frame = &parent_frame;
+      conveyor_model_1_.child_frame = &child_frame;
+      conveyor_model_1_.X_PC = X_PC;
+      conveyor_model_1_.model_instance = conveyor_instance;
+      break;
+    case 2:
+      conveyor_model_2_.model_path = model_path;
+      conveyor_model_2_.parent_frame = &parent_frame;
+      conveyor_model_2_.child_frame = &child_frame;
+      conveyor_model_2_.X_PC = X_PC;
+      conveyor_model_2_.model_instance = conveyor_instance;
+      break;
+    case 3:
+      conveyor_model_3_.model_path = model_path;
+      conveyor_model_3_.parent_frame = &parent_frame;
+      conveyor_model_3_.child_frame = &child_frame;
+      conveyor_model_3_.X_PC = X_PC;
+      conveyor_model_3_.model_instance = conveyor_instance;
+      break;
+  }
   drake::log()->info("RegisterConveyorControllerModel 18");
 }
 
@@ -1197,32 +1149,37 @@ void ManipulationStation<T>::AddDefaultIiwa(
   drake::log()->info("AddDefaultIiwa 21");
 }
 
+
 template <typename T>
-void ManipulationStation<T>::AddDefaultConveyor(drake::multibody::MultibodyPlant<T>* plant) {
-  const std::string sdf_path = FindResourceOrThrow(
-      "drake/manipulation/models/conveyor_belt_description/sdf/"
-      "conveyor_simple_robot.sdf");
+void ManipulationStation<T>::AddDefaultConveyor(
+    drake::multibody::ModelInstanceIndex &model_idx, const int model_num, const double x_coord, std::vector<geometry::FrameId> &frame_ids, const std::string& model_name) {
 
-  RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(M_PI),
-                                Vector3d(1.7, 2, 0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
-                                //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
+    const std::string sdf_path = FindResourceOrThrow(
+        "drake/manipulation/models/conveyor_belt_description/sdf/"
+        "conveyor_simple_robot.sdf");
 
-  conveyor_belt_id_1 = internal::AddAndWeldModelFrom(sdf_path, "conveyor_simple_robot", plant->world_frame(),
-                                                    "base_link", X_BM, plant);
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7, x_coord, 0.84));
+                                  //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
+                                  //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 
-  RegisterConveyorControllerModel(
-      sdf_path, conveyor_belt_id_1, plant->world_frame(),
-      plant->GetFrameByName("base_link", conveyor_belt_id_1), X_BM);
+    model_idx = internal::AddAndWeldModelFrom(sdf_path, model_name, plant_->world_frame(),
+                                                      "base_link", X_BM, plant_);
 
-  drake::log()->info("add default conveyor");
+    RegisterConveyorControllerModel(
+        model_num, sdf_path, model_idx, plant_->world_frame(),
+        plant_->GetFrameByName("base_link", model_idx), X_BM);
+
+    //Frame_ids size is 3 for 3 robot links
+    for(int i = 0; i < 3; i++) {
+      frame_ids.push_back({plant_->GetBodyFrameIdOrThrow(plant_->GetBodyIndices(model_idx)[i])});
+    }
 }
-
   
 // Add default wsg.
 template <typename T>
 void ManipulationStation<T>::AddDefaultWsg() {
   const std::string sdf_path = FindResourceOrThrow(
-      "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector_2.urdf");
+      "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector_1.urdf");
 
   const drake::multibody::Frame<T>& link6 =
       plant_->GetFrameByName("ee_mount", iiwa_model_.model_instance);
@@ -1237,22 +1194,7 @@ void ManipulationStation<T>::AddDefaultWsg() {
 
 }
 
-//Fix this function
 
-template <typename T>
-void ManipulationStation<T>::FreeObjectFromConstraints(
-    systems::Context<T>* context) const {
-      
-  // const auto& plant_context =
-  //     this->GetSubsystemContext(*plant_, context);
-  RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(-M_PI_2),
-                              Vector3d(1.865, 2, 1));
-  const auto& conveyor_frame = plant_->GetFrameByName("front", conveyor_belt_id_1);
-
-  plant_->SetFreeBodyPoseInWorldFrame(context, plant_->GetRigidBodyByName(conveyor_frame.body().name()),
-                                      X_BM);
-
-}
 
 
 }  // namespace manipulation_station

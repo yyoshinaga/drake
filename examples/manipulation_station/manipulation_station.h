@@ -219,11 +219,13 @@ class ManipulationStation : public systems::Diagram<T> {
       const math::RigidTransform<double>& X_PC);
 
   void RegisterConveyorControllerModel(
+      const int conveyor_model_num,
       const std::string& model_path,
       const multibody::ModelInstanceIndex conveyor_instance,
       const multibody::Frame<T>& parent_frame,
       const multibody::Frame<T>& child_frame,
       const math::RigidTransform<double>& X_PC);
+
 
 
   /// Notifies the ManipulationStation that the WSG gripper model instance can
@@ -413,12 +415,6 @@ class ManipulationStation : public systems::Diagram<T> {
     SetWsgVelocity(*station_context, &station_context->get_mutable_state(), v);
   }
 
-  /// Trying to set object free from gravity
-  void FreeObjectFromConstraints(systems::Context<T>* context) const ;
-
-
-  
-
   /// Returns a map from camera name to X_WCameraBody for all the static
   /// (rigidly attached to the world body) cameras that have been registered.
   std::map<std::string, math::RigidTransform<double>>
@@ -452,18 +448,6 @@ class ManipulationStation : public systems::Diagram<T> {
     iiwa_ki_ = ki;
   }
 
-  //Used to get the id of the conveyor belt
-  const multibody::ModelInstanceIndex GetConveyorBeltId1() {
-    DRAKE_THROW_UNLESS(setup_==Setup::kManipulationClass);
-    return conveyor_belt_id_1; //conveyor_belt_id_robot_1
-  }
-
-  //Used to get the id of the conveyor belt
-  const multibody::ModelInstanceIndex GetConveyorBeltId2() {
-    DRAKE_THROW_UNLESS(setup_==Setup::kManipulationClass);
-    return conveyor_belt_id_2;
-  }
-
  private:
   // Struct defined to store information about the how to parse and add a model.
   struct ModelInformation {
@@ -488,7 +472,7 @@ class ManipulationStation : public systems::Diagram<T> {
   drake::multibody::ModelInstanceIndex MakeConveyorControllerModel(drake::multibody::MultibodyPlant<T>* plant);
 
   void AddDefaultIiwa(const IiwaCollisionModel collision_model);
-  void AddDefaultConveyor(multibody::MultibodyPlant<T>* plant);
+  void AddDefaultConveyor(drake::multibody::ModelInstanceIndex &model_idx, const int model_num, const double x_coord, std::vector<geometry::FrameId> &frame_ids, const std::string& model_name);
   void AddDefaultWsg();
 
   // These are only valid until Finalize() is called.
@@ -502,15 +486,13 @@ class ManipulationStation : public systems::Diagram<T> {
   static constexpr const char* default_renderer_name_ =
       "manip_station_renderer";
 
-  //The conveyor belt plant
-  // multibody::MultibodyPlant<T>* belt_plant_;
-
-
   // Populated by RegisterIiwaControllerModel() and
   // RegisterWsgControllerModel().
   ModelInformation iiwa_model_;
   ModelInformation wsg_model_;
-  ModelInformation conveyor_model_;
+  ModelInformation conveyor_model_1_;
+  ModelInformation conveyor_model_2_;
+  ModelInformation conveyor_model_3_;
 
   // Store references to objects as *body* indices instead of model indices,
   // because this is needed for MultibodyPlant::SetFreeBodyPose(), etc.
@@ -541,9 +523,10 @@ class ManipulationStation : public systems::Diagram<T> {
 
   multibody::ModelInstanceIndex conveyor_belt_id_lower;
   multibody::ModelInstanceIndex conveyor_belt_id_upper;
-  multibody::ModelInstanceIndex conveyor_belt_id_1;
-  multibody::ModelInstanceIndex conveyor_belt_id_2;
-  multibody::ModelInstanceIndex conveyor_belt_id_robot_1;
+  multibody::ModelInstanceIndex conveyor_belt_idx_1_;
+  multibody::ModelInstanceIndex conveyor_belt_idx_2_;
+  multibody::ModelInstanceIndex conveyor_belt_idx_3_;
+
 
 
 

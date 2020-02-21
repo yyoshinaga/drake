@@ -67,7 +67,7 @@ int do_main(int argc, char* argv[]) {
     station->AddManipulandFromFile(
         "drake/examples/manipulation_station/models/package1.sdf",
         math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
-                                     Eigen::Vector3d(1.75, 1.8, 1.2)));
+                                     Eigen::Vector3d(1.75, 2.05, 1.1)));
     station->AddManipulandFromFile(
         "drake/examples/manipulation_station/models/package2.sdf",
         math::RigidTransform<double>(math::RollPitchYaw<double>(0, 0, 0.57),
