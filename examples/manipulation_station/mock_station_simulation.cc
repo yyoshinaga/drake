@@ -198,21 +198,6 @@ int do_main(int argc, char* argv[]) {
   auto& station_context =
       diagram->GetMutableSubsystemContext(*station, &context);
 
-  // drake::log()->info("Context output: {}", station_context.num_output_ports());
-  // drake::log()->info("Context input: {}", station_context.num_input_ports());
-
-
-//   //Add movements to the conveyor belt
-  // auto& state = context.get_mutable_state();
-  // auto& plant = station->get_multibody_plant();
-
-
-
-//   plant.SetVelocities(context, &state, station->GetConveyorBeltId1(), drake::Vector1d(-0.1));
-//   auto positions = plant.GetPositions(context,station->GetConveyorBeltId1());
-
-
-  // plant.SetVelocities(context, &state, station->GetConveyorBeltId2(), drake::Vector1d(-0.01));
 
   // Get the initial Iiwa pose and initialize the iiwa_command to match.
   VectorXd q0 = station->GetIiwaPosition(station_context); //Yaskawa has q0 = size 6
@@ -220,12 +205,10 @@ int do_main(int argc, char* argv[]) {
   iiwa_command->set_initial_position(
       &diagram->GetMutableSubsystemContext(*iiwa_command, &context), q0);
 
-        drake::log()->info("Context size: {}");
-  drake::log()->info( station_context.num_continuous_states());
   simulator.set_publish_every_time_step(false);
   simulator.set_target_realtime_rate(FLAGS_target_realtime_rate);
   simulator.AdvanceTo(FLAGS_duration);                              //Failure occurs here.....
-  drake::log()->info("finish simulation");
+  drake::log()->info("finished simulation");
 
   return 0;
 }
