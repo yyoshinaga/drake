@@ -84,7 +84,7 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
     //
     //              2
     
-    double buffer = 0.1; //Used to signal deceleration
+    double buffer = 0.05; //Used to signal deceleration
     double epsilon = 0.01;
     // int direction = 0; //Forwards
 
@@ -97,14 +97,22 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
     //Location 0
     if(x_pos < FLAGS_belt_length/2 && x_pos > -FLAGS_belt_length/2 && (theta <= 0+epsilon || theta >= 2*M_PI-epsilon)){
         drake::log()->info("location 0");
-        output->SetAtIndex(1, 0); //10*(2*M_PI-theta)+30*(-omega)); //W_z strict
 
-        //If close to goal, start decelerating using PD
+        //Makes theta converge around 0 degrees
+        if(theta > 2*M_PI-buffer){    
+            output->SetAtIndex(1, 10*(2*M_PI+epsilon-theta)+30*(-omega)); //W_z strict
+        }
+        else if(theta < 0+buffer){
+            output->SetAtIndex(1, 10*(-theta)+30*(-omega)); //W_z strict
+        }
+        else{ drake::log()->info("error location 0: theta value is outside of range near 0"); DRAKE_DEMAND(false);}
+
+        //If close to goal, start decelerating using PD control
         if(x_pos < -FLAGS_belt_length/2+buffer){
             output->SetAtIndex(0, FLAGS_P*(-FLAGS_belt_length/2-buffer - x_pos)+FLAGS_D*(-x_vel)); //V_x
             drake::log()->info("decelerating");
         }
-        //Otherwise speed up or down until hit desired velocity
+        //Otherwise accelerate until hit desired constant velocity using PD control
         else if(x_vel < -FLAGS_desired_belt_velocity-epsilon || x_vel > -FLAGS_desired_belt_velocity+epsilon){
             output->SetAtIndex(0, FLAGS_D*(-FLAGS_desired_belt_velocity-x_vel)); //V_x
             drake::log()->info("accelerating");
@@ -112,19 +120,17 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
         else{ output->SetAtIndex(0,0); drake::log()->info("const vel {}",x_vel); }
     }
     //Location 1
-    else if(x_pos <= -FLAGS_belt_length/2 && theta < M_PI){
-        drake::log()->info("location 1 {} ", -FLAGS_belt_length/2+buffer);
-        output->SetAtIndex(0, 0); //V_x strict
+    else if((x_pos <= -FLAGS_belt_length/2 && theta < M_PI) || (theta > 0+buffer && theta < M_PI)){
+        drake::log()->info("location 1");
+        output->SetAtIndex(0, 20*(-FLAGS_belt_length/2+epsilon-x_pos)+20*(-x_vel)); //V_x strict
 
-        //Start decelerating using PD
+        //If close to goal, start decelerating using PD control
         if(theta > M_PI-buffer){
             output->SetAtIndex(1, FLAGS_P*(M_PI+buffer-theta)+FLAGS_D*(-omega)); //W_z
-            output->SetAtIndex(0, 20*(-FLAGS_belt_length/2+epsilon-x_pos)+20*(-x_vel)); //V_x strict
-
             drake::log()->info("decelerating");
         }
-        //Start accelerating using PD
-        else if(omega < FLAGS_desired_belt_rot_vel+epsilon || omega > FLAGS_desired_belt_rot_vel-epsilon){
+        //Otherwise accelerate until hit desired constant velocity using PD control
+        else if(omega > FLAGS_desired_belt_rot_vel+epsilon || omega < FLAGS_desired_belt_rot_vel-epsilon){
             output->SetAtIndex(1, FLAGS_D*(FLAGS_desired_belt_rot_vel-omega)); //W_z
             drake::log()->info("accelerating");
         }
@@ -135,12 +141,12 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
         drake::log()->info("location 2");
         output->SetAtIndex(1, 10*(M_PI-theta)+30*(-omega)); //W_z strict
 
-        //If close to goal, start decelerating using PD
+        //If close to goal, start decelerating using PD control
         if(x_pos > FLAGS_belt_length/2-buffer){
             output->SetAtIndex(0, FLAGS_P*(FLAGS_belt_length/2+buffer - x_pos)+FLAGS_D*(-x_vel)); //V_x
             drake::log()->info("decelerating");
         }
-        //Otherwise speed up or down until hit desired velocity
+        //Otherwise accelerate until hit desired constant velocity using PD control
         else if(x_vel < FLAGS_desired_belt_velocity-epsilon || x_vel > FLAGS_desired_belt_velocity+epsilon){
             output->SetAtIndex(0, FLAGS_D*(FLAGS_desired_belt_velocity-x_vel)); //V_x
             drake::log()->info("accelerating");
@@ -148,19 +154,17 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
         else{ output->SetAtIndex(0,0); drake::log()->info("const vel {}",x_vel); }
     }
     //Location 3
-    else if(x_pos >= FLAGS_belt_length/2 && theta < 2*M_PI){
+    else if((x_pos >= FLAGS_belt_length/2 && theta < 2*M_PI) || (theta > M_PI+buffer && theta < 2*M_PI)){
         drake::log()->info("location 3");
-        output->SetAtIndex(0, 0); //V_x gets pushed back
+        output->SetAtIndex(0, 10*(FLAGS_belt_length/2-epsilon-x_pos)+20*(-x_vel)); //V_x gets pushed back
 
-        //Start decelerating using PD
+        //If close to goal, start decelerating using PD control
         if(theta > 2*M_PI-buffer){
             output->SetAtIndex(1, FLAGS_P*(2*M_PI+buffer-theta)+FLAGS_D*(-omega)); //W_z
-            output->SetAtIndex(0, 10*(FLAGS_belt_length/2-epsilon-x_pos)+20*(-x_vel)); //V_x gets pushed back
-
             drake::log()->info("decelerating");
         }
-        //Start accelerating using PD
-        else if(omega < FLAGS_desired_belt_rot_vel+epsilon || omega > FLAGS_desired_belt_rot_vel-epsilon){
+        //Otherwise accelerate until hit desired constant velocity using PD control
+        else if(omega > FLAGS_desired_belt_rot_vel+epsilon || omega < FLAGS_desired_belt_rot_vel-epsilon){
             output->SetAtIndex(1, FLAGS_D*(FLAGS_desired_belt_rot_vel-omega)); //W_z
             drake::log()->info("accelerating");
         }
@@ -171,10 +175,10 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
         drake::log()->info("error --> x_pos is > L: {},  x_pos < -L: {} ", x_pos >= FLAGS_belt_length/2, x_pos <= -FLAGS_belt_length/2);
         drake::log()->info("error --> theta < 0: {},  theta < 2PI: {} ", theta < 0, theta > 2*M_PI);
         drake::log()->info("Location 0 condition --> {} {} {} ", x_pos < FLAGS_belt_length/2 , x_pos > -FLAGS_belt_length/2 , (theta <= 0+epsilon || theta >= 2*M_PI-epsilon)); 
-        drake::log()->info("Location 1 condition --> {} {} ", x_pos <= -FLAGS_belt_length/2 , theta < M_PI); 
+        drake::log()->info("Location 1 condition --> {} {} or {} {}", x_pos <= -FLAGS_belt_length/2 , theta < M_PI, theta > buffer , theta < M_PI); 
         drake::log()->info("Location 2 condition --> {} {} {} ", x_pos < FLAGS_belt_length/2 , x_pos > -FLAGS_belt_length/2 , (theta <= M_PI+epsilon  && theta >= M_PI-epsilon )); 
-        drake::log()->info("Location 3 condition --> {} {} ", x_pos >= FLAGS_belt_length/2 , theta < 2*M_PI); 
-        // DRAKE_DEMAND(false);
+        drake::log()->info("Location 3 condition --> {} {} or {} {}", x_pos >= FLAGS_belt_length/2 , theta < 2*M_PI, theta > M_PI+buffer , theta < 2*M_PI); 
+        DRAKE_DEMAND(false);
     }
 
 

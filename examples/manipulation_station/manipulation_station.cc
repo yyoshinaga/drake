@@ -457,8 +457,6 @@ void ManipulationStation<T>::SetDefaultState(
                             plant_->get_body(object_ids_[i]), object_poses_[i]);
   }
 
-  drake::log()->info("continuous state size: {} ", plant_state.get_continuous_state().size());
-
   // Use SetIiwaPosition to make sure the controller state is initialized to
   // the IIWA state.
 
@@ -466,6 +464,8 @@ void ManipulationStation<T>::SetDefaultState(
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
   // SetWsgPosition(station_context, state, q0_gripper);
   // SetWsgVelocity(station_context, state, 0);
+  // SetConveyorPosition(station_context, state, GetConveyorPosition(station_context));
+  // SetConveyorVelocity(station_context, state, VectorX<T>::Zero(2));
   drake::log()->info("SetDefaultState 8");
 }
 
@@ -498,10 +498,8 @@ void ManipulationStation<T>::SetRandomState(
 
   // Use SetIiwaPosition to make sure the controller state is initialized to
   // the IIWA state.
-  drake::log()->info("random state bug");
 
   SetIiwaPosition(station_context, state, GetIiwaPosition(station_context));
-  drake::log()->info("random state bug");
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
   // SetWsgPosition(station_context, state, GetWsgPosition(station_context));
   // SetWsgVelocity(station_context, state, 0);   
@@ -559,15 +557,14 @@ void ManipulationStation<T>::Finalize(
 
   //Conveyor belt stuff needs to come before belt_plant_->finalize
   std::vector<geometry::FrameId> frame_ids1; 
-  std::vector<geometry::FrameId> frame_ids2; 
+  // std::vector<geometry::FrameId> frame_ids2; 
   std::vector<geometry::FrameId> frame_ids3;
   AddDefaultConveyor(conveyor_belt_idx_1_, 1, 2.0, frame_ids1, "conveyor_1");
-  AddDefaultConveyor(conveyor_belt_idx_2_, 2, 2.15, frame_ids2, "conveyor_2");
-  AddDefaultConveyor(conveyor_belt_idx_3_, 3, 2.3, frame_ids3, "conveyor_3");
+  // AddDefaultConveyor(conveyor_belt_idx_2_, 2, 2.2, frame_ids2, "conveyor_2");
+  // AddDefaultConveyor(conveyor_belt_idx_3_, 3, 2.4, frame_ids3, "conveyor_3");
   
 
   MakeIiwaControllerModel();
-  // auto modelInstanceName= MakeConveyorControllerModel(plant_);
 
   // Note: This deferred diagram construction method/workflow exists because we
   //   - cannot finalize plant until all of my objects are added, and
@@ -754,8 +751,8 @@ void ManipulationStation<T>::Finalize(
     // auto vector_source_system = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorControl<double>>());
     // auto robot_plant = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorPlant<double>>(frame_ids));
     auto belt_controller1 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids1));
-    auto belt_controller2 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids2));
-    auto belt_controller3 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids3));
+    // auto belt_controller2 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids2));
+    // auto belt_controller3 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids3));
 
     // builder.Connect(vector_source_system->get_output_port(0), 
     //                 robot_plant->get_input_port(0));
@@ -766,20 +763,20 @@ void ManipulationStation<T>::Finalize(
     //Velocity sending
     builder.Connect(belt_controller1->get_output_port(1),
                     plant_->get_actuation_input_port(conveyor_model_1_.model_instance));
-    builder.Connect(belt_controller2->get_output_port(1),
-                    plant_->get_actuation_input_port(conveyor_model_2_.model_instance));
-    builder.Connect(belt_controller3->get_output_port(1),
-                    plant_->get_actuation_input_port(conveyor_model_3_.model_instance));
+    // builder.Connect(belt_controller2->get_output_port(1),
+    //                 plant_->get_actuation_input_port(conveyor_model_2_.model_instance));
+    // builder.Connect(belt_controller3->get_output_port(1),
+    //                 plant_->get_actuation_input_port(conveyor_model_3_.model_instance));
   
     //Receive the states
     builder.Connect(plant_->get_state_output_port(conveyor_model_1_.model_instance),
                     belt_controller1->get_input_port(0)); 
     //Receive the states
-    builder.Connect(plant_->get_state_output_port(conveyor_model_2_.model_instance),
-                    belt_controller2->get_input_port(0)); 
-    //Receive the states
-    builder.Connect(plant_->get_state_output_port(conveyor_model_3_.model_instance),
-                    belt_controller3->get_input_port(0)); 
+    // builder.Connect(plant_->get_state_output_port(conveyor_model_2_.model_instance),
+    //                 belt_controller2->get_input_port(0)); 
+    // //Receive the states
+    // builder.Connect(plant_->get_state_output_port(conveyor_model_3_.model_instance),
+    //                 belt_controller3->get_input_port(0)); 
   }
 
   // {
@@ -1158,7 +1155,7 @@ void ManipulationStation<T>::AddDefaultConveyor(
         "drake/manipulation/models/conveyor_belt_description/sdf/"
         "conveyor_simple_robot.sdf");
 
-    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7, x_coord, 0.84));
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(2.5, x_coord, 0.84));
                                   //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
                                   //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 
