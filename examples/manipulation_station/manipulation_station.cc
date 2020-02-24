@@ -443,7 +443,7 @@ void ManipulationStation<T>::SetDefaultState(
     systems::State<T>* state) const {
   // Call the base class method, to initialize all systems in this diagram.
   systems::Diagram<T>::SetDefaultState(station_context, state);
-
+  drake::log()->info("settted default state here");
   // T q0_gripper{0.1};
 
   const auto& plant_context =

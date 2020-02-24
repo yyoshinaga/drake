@@ -135,8 +135,6 @@ class Diagram : public System<T>, internal::SystemParentServiceInterface {
 
     auto diagram_state = dynamic_cast<DiagramState<T>*>(state);
     DRAKE_DEMAND(diagram_state != nullptr);
-drake::log()->info("num_susbsystems:");
-    drake::log()->info(num_subsystems());
 
     // Set default state of each constituent system.
     for (SubsystemIndex i(0); i < num_subsystems(); ++i) {

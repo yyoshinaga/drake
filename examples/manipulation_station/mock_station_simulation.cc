@@ -207,7 +207,7 @@ int do_main(int argc, char* argv[]) {
 
   simulator.set_publish_every_time_step(false);
   simulator.set_target_realtime_rate(FLAGS_target_realtime_rate);
-  simulator.AdvanceTo(FLAGS_duration);                              //Failure occurs here.....
+  simulator.AdvanceTo(FLAGS_duration);                              
   drake::log()->info("finished simulation");
 
   return 0;
