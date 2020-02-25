@@ -331,6 +331,15 @@ drake_lcm_cc_library(
     ],
 )
 
+drake_lcm_cc_library(
+    name = "yaskawa_ee",
+    lcm_package = "drake",
+    lcm_srcs = [
+        "lcmt_yaskawa_ee_command.lcm",
+        "lcmt_yaskawa_ee_status.lcm",
+    ],
+)
+
 # TODO(jwnimmer-tri) Many more C++ messages are missing ...
 
 drake_lcm_py_library(
@@ -391,6 +400,7 @@ LCMTYPES_CC = [
     ":whole_body_data",
     ":zmp_data",
     ":zmp_com_observer_state",
+    ":yaskawa_ee",
 ]
 
 # This rule should list every LCM type that is known to Drake or its external

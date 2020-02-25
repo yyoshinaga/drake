@@ -138,12 +138,12 @@ class SchunkWsgPositionController : public systems::Diagram<double> {
   // The controller stores the last commanded desired position as state.
   // This is a helper method to reset that state.
   void set_initial_position(systems::State<double>* state,
-                            double desired_position) const;
+                            const Eigen::Ref<const Vector3<double>> desired_position) const;
 
   // The controller stores the last commanded desired position as state.
   // This is a helper method to reset that state.
   void set_initial_position(systems::Context<double>* context,
-                            double desired_position) const {
+                            const Eigen::Ref<const Vector3<double>> desired_position) const {
     set_initial_position(&context->get_mutable_state(), desired_position);
   }
 

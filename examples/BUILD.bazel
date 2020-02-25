@@ -68,7 +68,7 @@ filegroup(
 # issues #4224 and #1766).
 INSTALLED_EXAMPLES = [
     "//examples/kuka_iiwa_arm",
-    "//examples/drake_demos",
+
 ]
 
 install(

@@ -1,0 +1,13 @@
+package drake;
+
+struct lcmt_yaskawa_ee_command
+{
+  int64_t utime;  //< The timestamp in microseconds.
+
+  double target_position_mm;
+  double pusher_position;
+  double puller_position;
+  double pusher_move;
+  double puller_move; 
+  double force;
+}

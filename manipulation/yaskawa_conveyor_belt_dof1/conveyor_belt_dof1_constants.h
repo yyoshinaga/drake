@@ -17,9 +17,9 @@ namespace drake {
 namespace manipulation {
 namespace yaskawa_conveyor_belt_dof1 {
 
-constexpr int kEndEffectorNumActuators = 2;
-constexpr int kEndEffectorNumPositions = 2;
-constexpr int kEndEffectorNumVelocities = 2;
+constexpr int kEndEffectorNumActuators = 4;
+constexpr int kEndEffectorNumPositions = 4;
+constexpr int kEndEffectorNumVelocities = 4;
 
 // TODO(russt): These constants are predicated on the idea that we can map
 // one finger's state => gripper state.  We should prefer using
@@ -42,7 +42,7 @@ VectorX<T> GetEndEffectorOpenPosition() {
   // clang-format off
   return (VectorX<T>(kEndEffectorNumPositions) <<
       -0.0550667,
-       0.0550667).finished();
+       0.0550667,0,0).finished();
   // clang-format on
 }
 
@@ -51,10 +51,13 @@ VectorX<T> GetEndEffectorOpenPosition() {
 template <typename T>
 std::unique_ptr<systems::MatrixGain<T>>
 MakeMultibodyStateToBeltStateSystem() {
-  Eigen::Matrix<double, 2, 4> D;
+  Eigen::Matrix<double, 6, 8> D;  //wsg_state_measured of size 6, then 4*2 states
   // clang-format off
-  D << -1, 1, 0,  0,
-      0,  0, -1, 1;
+  //THERE MUST BE 6 STATES
+  D << -1, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, -1, 1, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 1, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 1;
   // clang-format on
   return std::make_unique<systems::MatrixGain<T>>(D);
 }
@@ -64,7 +67,7 @@ class MultibodyForceToBeltForceSystem : public systems::VectorSystem<T> {
  public:
   MultibodyForceToBeltForceSystem()
       : systems::VectorSystem<T>(
-            systems::SystemTypeTag<MultibodyForceToBeltForceSystem>{}, 2, 1) {}
+            systems::SystemTypeTag<MultibodyForceToBeltForceSystem>{}, 4, 2) {}
 
   // Scalar-converting copy constructor.  See @ref system_scalar_conversion.
   template <typename U>

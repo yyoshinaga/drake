@@ -17,9 +17,9 @@ namespace drake {
 namespace manipulation {
 namespace schunk_wsg {
 
-constexpr int kSchunkWsgNumActuators = 2;
-constexpr int kSchunkWsgNumPositions = 2;
-constexpr int kSchunkWsgNumVelocities = 2;
+constexpr int kSchunkWsgNumActuators = 4;
+constexpr int kSchunkWsgNumPositions = 4;
+constexpr int kSchunkWsgNumVelocities = 4;
 
 // TODO(russt): These constants are predicated on the idea that we can map
 // one finger's state => gripper state.  We should prefer using
@@ -42,7 +42,7 @@ VectorX<T> GetSchunkWsgOpenPosition() {
   // clang-format off
   return (VectorX<T>(kSchunkWsgNumPositions) <<
       -0.0550667,
-       0.0550667).finished();
+       0.0550667,0,0).finished();
   // clang-format on
 }
 
@@ -51,10 +51,11 @@ VectorX<T> GetSchunkWsgOpenPosition() {
 template <typename T>
 std::unique_ptr<systems::MatrixGain<T>>
 MakeMultibodyStateToWsgStateSystem() {
-  Eigen::Matrix<double, 2, 4> D;
+  Eigen::Matrix<double, 2, 8> D;  //used to be 2x4 
   // clang-format off
-  D << -1, 1, 0,  0,
-      0,  0, -1, 1;
+  D << -1, 1, 0,  0, -1, 1, 0, 0,
+      0,  0, -1, 1, 0, 0, -1, 1;
+
   // clang-format on
   return std::make_unique<systems::MatrixGain<T>>(D);
 }
@@ -64,7 +65,7 @@ class MultibodyForceToWsgForceSystem : public systems::VectorSystem<T> {
  public:
   MultibodyForceToWsgForceSystem()
       : systems::VectorSystem<T>(
-            systems::SystemTypeTag<MultibodyForceToWsgForceSystem>{}, 2, 1) {}
+            systems::SystemTypeTag<MultibodyForceToWsgForceSystem>{}, 4, 2) {}
 
   // Scalar-converting copy constructor.  See @ref system_scalar_conversion.
   template <typename U>

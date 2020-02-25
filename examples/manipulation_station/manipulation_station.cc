@@ -7,9 +7,7 @@
 
 #include "drake/common/find_resource.h"
 #include "drake/geometry/render/render_engine_vtk_factory.h"
-#include "drake/manipulation/schunk_wsg/schunk_wsg_constants.h"
-#include "drake/manipulation/schunk_wsg/schunk_wsg_position_controller.h"
-// #include "drake/manipulation/conveyor_belt/conveyor_belt_velocity_controller.h"
+
 #include "drake/math/rigid_transform.h"
 #include "drake/math/rotation_matrix.h"
 #include "drake/multibody/parsing/parser.h"
@@ -35,6 +33,9 @@
 #include "drake/examples/multibody/conveyor_belt/conveyor_plant.h"
 #include "drake/examples/multibody/conveyor_belt/conveyor_control.h"
 #include "drake/examples/multibody/conveyor_belt/conveyor_controller.h"
+
+#include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_position_controller.h"
+#include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_constants.h"
 
 
 
@@ -78,11 +79,11 @@ SpatialInertia<double> MakeCompositeGripperInertia(
   const auto& right_finger = plant.GetRigidBodyByName("whisker_right_link");
   const auto& left_slider = plant.GetJointByName("whisker_left_joint");
   const auto& right_slider = plant.GetJointByName("whisker_right_joint");
-  const SpatialInertia<double>& M_GGo_G =
-      gripper_body.default_spatial_inertia();
+
+  const SpatialInertia<double>& M_GGo_G = gripper_body.default_spatial_inertia();
   const SpatialInertia<double>& M_LLo_L = left_finger.default_spatial_inertia();
-  const SpatialInertia<double>& M_RRo_R =
-      right_finger.default_spatial_inertia();
+  const SpatialInertia<double>& M_RRo_R = right_finger.default_spatial_inertia();
+
   auto CalcFingerPoseInGripperFrame = [](const Joint<double>& slider) {
     // Pose of the joint's parent frame P (attached on gripper body G) in the
     // frame of the gripper G.
@@ -97,6 +98,7 @@ SpatialInertia<double> MakeCompositeGripperInertia(
     const RigidTransform<double> X_GF = X_GP * X_FC.inverse();
     return X_GF;
   };
+
   // Pose of left finger L in gripper frame G when the slider's dof is zero.
   const RigidTransform<double> X_GL(CalcFingerPoseInGripperFrame(left_slider));
   // Pose of right finger R in gripper frame G when the slider's dof is zero.
@@ -111,12 +113,14 @@ SpatialInertia<double> MakeCompositeGripperInertia(
         const auto M_FGo_G = M_FFo_G.Shift(p_FoGo_G);
         return M_FGo_G;
       };
+
   // Shift and re-express in G frame the finger's spatial inertias.
   const auto M_LGo_G = CalcFingerSpatialInertiaInGripperFrame(M_LLo_L, X_GL);
   const auto M_RGo_G = CalcFingerSpatialInertiaInGripperFrame(M_RRo_R, X_GR);
   // With everything about the same point Go and expressed in the same frame G,
   // proceed to compose into composite body C:
   // TODO(amcastro-tri): Implement operator+() in SpatialInertia.
+
   SpatialInertia<double> M_CGo_G = M_GGo_G;
   M_CGo_G += M_LGo_G;
   M_CGo_G += M_RGo_G;
@@ -157,8 +161,10 @@ drake::multibody::ModelInstanceIndex AddAndWeldModelFrom(
   DRAKE_THROW_UNLESS(!plant->HasModelInstanceNamed(model_name));
 
   drake::multibody::Parser parser(plant);
+  //This line gives isPhysicallyValid()
   const drake::multibody::ModelInstanceIndex new_model =
       parser.AddModelFromFile(model_path, model_name);
+
   const auto& child_frame = plant->GetFrameByName(child_frame_name, new_model);
   plant->WeldFrames(parent, child_frame, X_PC);
   drake::log()->info("AddAndWeldModelFrom 1");
@@ -362,8 +368,7 @@ void ManipulationStation<T>::SetupManipulationClassStation(
 
   // Add the default iiwa/wsg models.
   AddDefaultIiwa(collision_model);
-  // AddDefaultWsg();
-
+  AddDefaultWsg();
   // Add default cameras.
   {
     std::map<std::string, RigidTransform<double>> camera_poses;
@@ -432,8 +437,7 @@ void ManipulationStation<T>::SetupPlanarIiwaStation() {
 template <typename T>
 int ManipulationStation<T>::num_iiwa_joints() const {
   DRAKE_DEMAND(iiwa_model_.model_instance.is_valid());
-  drake::log()->info("num_iiwa_joints ...7");
-  drake::log()->info(plant_->num_positions(iiwa_model_.model_instance));
+  drake::log()->info("num_iiwa_joints() 7");
   return plant_->num_positions(iiwa_model_.model_instance);
 }
 
@@ -443,8 +447,6 @@ void ManipulationStation<T>::SetDefaultState(
     systems::State<T>* state) const {
   // Call the base class method, to initialize all systems in this diagram.
   systems::Diagram<T>::SetDefaultState(station_context, state);
-
-  // T q0_gripper{0.1};
 
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
@@ -462,15 +464,19 @@ void ManipulationStation<T>::SetDefaultState(
 
   SetIiwaPosition(station_context, state, GetIiwaPosition(station_context));
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
-  // SetWsgPosition(station_context, state, q0_gripper);
-  // SetWsgVelocity(station_context, state, 0);
-  Vector2<T> conveyorPosition1(2);
-  conveyorPosition1 << 0, 0; //x_pos, theta
-  SetConveyorPosition(station_context, state, conveyorPosition1, 1);
+  
+  // Vector3<T> eePosition;
+  // eePosition << 0, 0, 1; //x_pos, theta, alpha
 
-  Vector2<T> conveyorPosition2(2);
-  conveyorPosition2 << 0.16, 0; //x_pos, theta
-  SetConveyorPosition(station_context, state, conveyorPosition2, 2);
+  // SetWsgPosition(station_context, state, eePosition);
+  // SetWsgVelocity(station_context, state, Vector3<T>::Zero(0));
+  // Vector3<T> conveyorPosition1;
+  // conveyorPosition1 << 0, 0, 1; //x_pos, theta, alpha
+  // SetConveyorPosition(station_context, state, conveyorPosition1, 1);
+
+  // Vector2<T> conveyorPosition2(2);
+  // conveyorPosition2 << 0.16, 0; //x_pos, theta
+  // SetConveyorPosition(station_context, state, conveyorPosition2, 2);
 
   // Vector2<T> conveyorPosition3(2);
   // conveyorPosition3 << 0.3, 0; //x_pos, theta
@@ -537,20 +543,20 @@ void ManipulationStation<T>::MakeIiwaControllerModel() {
   // (according to the sdf)... and we don't believe our inertia calibration
   // on the hardware to be so precise, so we simply ignore the inertia
   // contribution from the fingers here.
-  // const drake::multibody::RigidBody<T>& wsg_equivalent =
-  //     owned_controller_plant_->AddRigidBody(
-  //         "wsg_equivalent", controller_iiwa_model,
-  //         internal::MakeCompositeGripperInertia(
-  //             wsg_model_.model_path, wsg_model_.child_frame->name()));
+  const drake::multibody::RigidBody<T>& wsg_equivalent =
+      owned_controller_plant_->AddRigidBody(
+          "wsg_equivalent", controller_iiwa_model,
+          internal::MakeCompositeGripperInertia(
+              wsg_model_.model_path, wsg_model_.child_frame->name()));
 
   // TODO(siyuan.feng@tri.global): when we handle multiple IIWA and WSG, this
   // part need to deal with the parent's (iiwa's) model instance id.
-  // owned_controller_plant_->WeldFrames(
-  //     owned_controller_plant_->GetFrameByName(wsg_model_.parent_frame->name(),
-  //                                             controller_iiwa_model),
-  //     wsg_equivalent.body_frame(), wsg_model_.X_PC);
-  // owned_controller_plant_->set_name("controller_plant");
-  // drake::log()->info("MakeIiwaControllerModel 10");
+  owned_controller_plant_->WeldFrames(
+      owned_controller_plant_->GetFrameByName(wsg_model_.parent_frame->name(),
+                                              controller_iiwa_model),
+      wsg_equivalent.body_frame(), wsg_model_.X_PC);
+  owned_controller_plant_->set_name("controller_plant");
+  drake::log()->info("MakeIiwaControllerModel 10");
 }
 
 
@@ -569,10 +575,10 @@ void ManipulationStation<T>::Finalize(
 
   //Conveyor belt stuff needs to come before belt_plant_->finalize
   std::vector<geometry::FrameId> frame_ids1; 
-  std::vector<geometry::FrameId> frame_ids2; 
+  // std::vector<geometry::FrameId> frame_ids2; 
   // std::vector<geometry::FrameId> frame_ids3;
   AddDefaultConveyor(conveyor_belt_idx_1_, 1, frame_ids1, "conveyor_1");
-  AddDefaultConveyor(conveyor_belt_idx_2_, 2, frame_ids2, "conveyor_2");
+  // AddDefaultConveyor(conveyor_belt_idx_2_, 2, frame_ids2, "conveyor_2");
   // AddDefaultConveyor(conveyor_belt_idx_3_, 3, frame_ids3, "conveyor_3");
   
 
@@ -713,8 +719,6 @@ void ManipulationStation<T>::Finalize(
     }
     DRAKE_THROW_UNLESS(check_gains(iiwa_ki_, num_iiwa_positions));
 
-    drake::log()->info("num of iiwa pos: {}",num_iiwa_positions);        
-
     // Add the inverse dynamics controller.
     auto iiwa_controller = builder.template AddSystem<
         systems::controllers::InverseDynamicsController>(
@@ -763,43 +767,44 @@ void ManipulationStation<T>::Finalize(
     // auto vector_source_system = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorControl<double>>());
     // auto robot_plant = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorPlant<double>>(frame_ids));
     auto belt_controller1 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids1));
-    auto belt_controller2 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids2));
+    // auto belt_controller2 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids2));
     // auto belt_controller3 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids3));
 
 
     //Velocity sending
     builder.Connect(belt_controller1->get_output_port(1),
                     plant_->get_actuation_input_port(conveyor_model_1_.model_instance));
-    builder.Connect(belt_controller2->get_output_port(1),
-                    plant_->get_actuation_input_port(conveyor_model_2_.model_instance));
+    // builder.Connect(belt_controller2->get_output_port(1),
+    //                 plant_->get_actuation_input_port(conveyor_model_2_.model_instance));
     // builder.Connect(belt_controller3->get_output_port(1),
     //                 plant_->get_actuation_input_port(conveyor_model_3_.model_instance));
   
     //Receive the states
     builder.Connect(plant_->get_state_output_port(conveyor_model_1_.model_instance),
                     belt_controller1->get_input_port(0)); 
-    //Receive the states
-    builder.Connect(plant_->get_state_output_port(conveyor_model_2_.model_instance),
-                    belt_controller2->get_input_port(0)); 
+    // //Receive the states
+    // builder.Connect(plant_->get_state_output_port(conveyor_model_2_.model_instance),
+    //                 belt_controller2->get_input_port(0)); 
     // //Receive the states
     // builder.Connect(plant_->get_state_output_port(conveyor_model_3_.model_instance),
     //                 belt_controller3->get_input_port(0)); 
   
 
-    // Approximate desired state command from a discrete derivative of the
-    // position command input port.
-    auto desired_state_from_position_1 = builder.template AddSystem<
-        systems::StateInterpolatorWithDiscreteDerivative>(2, plant_->time_step());
-    desired_state_from_position_1->set_name("desired_state_from_position_belt_1");
-    builder.Connect(belt_controller1->get_output_port(0),
-                    desired_state_from_position_1->get_input_port());
-     // Approximate desired state command from a discrete derivative of the
-    // position command input port.
-    auto desired_state_from_position_2 = builder.template AddSystem<
-        systems::StateInterpolatorWithDiscreteDerivative>(2, plant_->time_step());
-    desired_state_from_position_2->set_name("desired_state_from_position_belt_2");
-    builder.Connect(belt_controller2->get_output_port(0),
-                    desired_state_from_position_2->get_input_port());
+    // // Approximate desired state command from a discrete derivative of the
+    // // position command input port.
+    // auto desired_state_from_position_1 = builder.template AddSystem<
+    //     systems::StateInterpolatorWithDiscreteDerivative>(3, plant_->time_step());
+    // desired_state_from_position_1->set_name("desired_state_from_position_belt_1");
+    // builder.Connect(belt_controller1->get_output_port(0),
+    //                 desired_state_from_position_1->get_input_port());
+
+    // // Approximate desired state command from a discrete derivative of the
+    // // position command input port.
+    // auto desired_state_from_position_2 = builder.template AddSystem<
+    //     systems::StateInterpolatorWithDiscreteDerivative>(2, plant_->time_step());
+    // desired_state_from_position_2->set_name("desired_state_from_position_belt_2");
+    // builder.Connect(belt_controller2->get_output_port(0),
+    //                 desired_state_from_position_2->get_input_port());
     // // Approximate desired state command from a discrete derivative of the
     // // position command input port.
     // auto desired_state_from_position_3 = builder.template AddSystem<
@@ -809,34 +814,36 @@ void ManipulationStation<T>::Finalize(
     //                 desired_state_from_position_3->get_input_port());
   }
 
-  // {
-  //   auto wsg_controller = builder.template AddSystem<
-  //       manipulation::schunk_wsg::SchunkWsgPositionController>(
-  //       manipulation::schunk_wsg::kSchunkWsgLcmStatusPeriod, wsg_kp_, wsg_kd_);
-  //   wsg_controller->set_name("wsg_controller");
+  {
+    auto wsg_controller = builder.template AddSystem<
+        manipulation::yaskawa_conveyor_belt_dof1::EndEffectorPositionController>(
+        manipulation::yaskawa_conveyor_belt_dof1::kEndEffectorLcmStatusPeriod, wsg_kp_, wsg_kd_);
+    wsg_controller->set_name("ee_controller");
 
-  //   builder.Connect(
-  //       wsg_controller->get_generalized_force_output_port(),
-  //       plant_->get_actuation_input_port(wsg_model_.model_instance));
-  //   builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
-  //                   wsg_controller->get_state_input_port());
+    builder.Connect(wsg_controller->get_generalized_force_output_port(),
+                    plant_->get_actuation_input_port(wsg_model_.model_instance));
 
-  //   builder.ExportInput(wsg_controller->get_desired_position_input_port(),
-  //                       "wsg_position");
-  //   builder.ExportInput(wsg_controller->get_force_limit_input_port(),
-  //                       "wsg_force_limit");
+    builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
+                    wsg_controller->get_state_input_port());
 
-  //   auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
-  //       manipulation::schunk_wsg::MakeMultibodyStateToWsgStateSystem<double>());
-  //   builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
-  //                   wsg_mbp_state_to_wsg_state->get_input_port());
+    builder.ExportInput(wsg_controller->get_desired_position_input_port(),
+                        "wsg_position");
 
-  //   builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
-  //                        "wsg_state_measured");
+    builder.ExportInput(wsg_controller->get_force_limit_input_port(),
+                        "wsg_force_limit");
 
-  //   builder.ExportOutput(wsg_controller->get_grip_force_output_port(),
-  //                        "wsg_force_measured");
-  // }
+    auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
+        manipulation::yaskawa_conveyor_belt_dof1::MakeMultibodyStateToBeltStateSystem<double>());
+
+    builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
+                    wsg_mbp_state_to_wsg_state->get_input_port());
+
+    builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
+                         "wsg_state_measured");
+
+    builder.ExportOutput(wsg_controller->get_grip_force_output_port(),
+                         "wsg_force_measured");
+  }
 
   builder.ExportOutput(plant_->get_generalized_contact_forces_output_port(
                            iiwa_model_.model_instance),
@@ -1007,42 +1014,55 @@ void ManipulationStation<T>::SetConveyorPosition(
 
 
 template <typename T>
-T ManipulationStation<T>::GetWsgPosition(
+Vector3<T> ManipulationStation<T>::GetWsgPosition(
     const systems::Context<T>& station_context) const {
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
 
-  Vector2<T> positions =
+  Vector4<T> positions =
       plant_->GetPositions(plant_context, wsg_model_.model_instance);
-  return positions(1) - positions(0);
+  
+  Vector3<T> posm;
+      posm << positions(1) - positions(0), positions(2), positions(3);
+
+  return posm;
 }
 
 template <typename T>
-T ManipulationStation<T>::GetWsgVelocity(
+Vector3<T> ManipulationStation<T>::GetWsgVelocity(
     const systems::Context<T>& station_context) const {
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
 
-  Vector2<T> velocities =
+  Vector4<T> velocities =
       plant_->GetVelocities(plant_context, wsg_model_.model_instance);
-  return velocities(1) - velocities(0);
+
+  Vector3<T> vels;
+    vels << (velocities(1) - velocities(0)), velocities(2), velocities(3);
+
+  return vels;
 }
 
 template <typename T>
 void ManipulationStation<T>::SetWsgPosition(
     const drake::systems::Context<T>& station_context, systems::State<T>* state,
-    const T& q) const {
+    const Eigen::Ref<const drake::Vector3<T>>& q) const {
   DRAKE_DEMAND(state != nullptr);
   auto& plant_context = this->GetSubsystemContext(*plant_, station_context);
   auto& plant_state = this->GetMutableSubsystemState(*plant_, state);
 
-  const Vector2<T> positions(-q / 2, q / 2);
+  // Since plant_->SetPositions has to take in a "const" of "positions" vector, 
+  // I had to create a nonConstPos to assign it to the const positions
+  Vector4<T> nonConstPos; 
+  nonConstPos << -q(0) / 2, q(0) / 2, q(1), q(2);
+
+  const Vector4<T> positions = nonConstPos; 
   plant_->SetPositions(plant_context, &plant_state, wsg_model_.model_instance,
                        positions);
 
   // Set the position history in the state interpolator to match.
   const auto& wsg_controller = dynamic_cast<
-      const manipulation::schunk_wsg::SchunkWsgPositionController&>(
+      const manipulation::yaskawa_conveyor_belt_dof1::EndEffectorPositionController&>(
       this->GetSubsystemByName("wsg_controller"));
   wsg_controller.set_initial_position(
       &this->GetMutableSubsystemState(wsg_controller, state), q);
@@ -1051,12 +1071,17 @@ void ManipulationStation<T>::SetWsgPosition(
 template <typename T>
 void ManipulationStation<T>::SetWsgVelocity(
     const drake::systems::Context<T>& station_context, systems::State<T>* state,
-    const T& v) const {
+    const Eigen::Ref<const drake::Vector3<T>>& v) const {
   DRAKE_DEMAND(state != nullptr);
   auto& plant_context = this->GetSubsystemContext(*plant_, station_context);
   auto& plant_state = this->GetMutableSubsystemState(*plant_, state);
 
-  const Vector2<T> velocities(-v / 2, v / 2);
+  // Since plant_->SetVelocties has to take in a "const" of "velocities" vector, 
+  // I had to create a nonConstVel to assign it to the const velocities
+  Vector4<T> nonConstVel;
+  nonConstVel << -v(0) / 2, v(0) / 2, v(1), v(2);
+
+  const Vector4<T> velocities =  nonConstVel;
   plant_->SetVelocities(plant_context, &plant_state, wsg_model_.model_instance,
                         velocities);
 }
@@ -1240,7 +1265,7 @@ void ManipulationStation<T>::AddDefaultConveyor(
         "drake/manipulation/models/conveyor_belt_description/sdf/"
         "conveyor_simple_robot.sdf");
 
-    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7, 2.0, 0.8));
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(2.5, 2.0, 0.8));
                                   //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
                                   //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 
@@ -1251,8 +1276,8 @@ void ManipulationStation<T>::AddDefaultConveyor(
         model_num, sdf_path, model_idx, plant_->world_frame(),
         plant_->GetFrameByName("base_link", model_idx), X_BM);
 
-    //Frame_ids size is 3 for 3 robot links
-    for(int i = 0; i < 3; i++) {
+    //Frame_ids size is 4 for 4 robot links
+    for(int i = 0; i < 4; i++) {
       frame_ids.push_back({plant_->GetBodyFrameIdOrThrow(plant_->GetBodyIndices(model_idx)[i])});
     }
 }
@@ -1260,8 +1285,9 @@ void ManipulationStation<T>::AddDefaultConveyor(
 // Add default wsg.
 template <typename T>
 void ManipulationStation<T>::AddDefaultWsg() {
+
   const std::string sdf_path = FindResourceOrThrow(
-      "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector_1.urdf");
+      "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector_3.urdf");
 
   const drake::multibody::Frame<T>& link6 =
       plant_->GetFrameByName("ee_mount", iiwa_model_.model_instance);

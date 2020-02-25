@@ -6,8 +6,8 @@
 #include <memory>
 #include <vector>
 
-#include "drake/lcmt_schunk_wsg_command.hpp"
-#include "drake/lcmt_schunk_wsg_status.hpp"
+#include "drake/lcmt_yaskawa_ee_command.hpp"
+#include "drake/lcmt_yaskawa_ee_status.hpp"
 #include "drake/systems/framework/leaf_system.h"
 
 namespace drake {
@@ -38,7 +38,9 @@ class EndEffectorCommandReceiver : public systems::LeafSystem<double> {
   /// @param initial_force the commanded force limit to output if no LCM
   /// message has been received yet.
   EndEffectorCommandReceiver(double initial_position = 0.02,
-                           double initial_force = 40);
+                            double initial_force = 40, double initial_pusher_position = 0, 
+                            double initial_pusher_velocity = 0,double initial_puller_position = 0,
+                            double initial_puller_velocity = 0);
 
   const systems::OutputPort<double>& get_position_output_port() const {
     return this->GetOutputPort("position");
@@ -57,6 +59,12 @@ class EndEffectorCommandReceiver : public systems::LeafSystem<double> {
 
   const double initial_position_{};
   const double initial_force_{};
+  const double initial_pusher_position_{};
+  const double initial_pusher_velocity_{};
+  const double initial_puller_position_{};
+  const double initial_puller_velocity_{};
+
+
 };
 
 
@@ -94,11 +102,14 @@ class EndEffectorCommandSender : public systems::LeafSystem<double> {
  private:
   void CalcCommandOutput(
       const systems::Context<double>& context,
-      lcmt_schunk_wsg_command* output) const;
+      lcmt_yaskawa_ee_command* output) const;
 
  private:
   const systems::InputPortIndex position_input_port_{};
   const systems::InputPortIndex force_limit_input_port_{};
+  const systems::InputPortIndex pusher_position_input_port_{};
+  const systems::InputPortIndex puller_position_input_port_{};
+
 };
 
 
@@ -144,6 +155,8 @@ class EndEffectorStatusReceiver : public systems::LeafSystem<double> {
  private:
   const systems::OutputPortIndex state_output_port_{};
   const systems::OutputPortIndex force_output_port_{};
+
+
 };
 
 
@@ -177,7 +190,7 @@ class EndEffectorStatusSender : public systems::LeafSystem<double> {
 
  private:
   void OutputStatus(const systems::Context<double>& context,
-                    lcmt_schunk_wsg_status* output) const;
+                    lcmt_yaskawa_ee_status* output) const;
 
   systems::InputPortIndex state_input_port_{};
   systems::InputPortIndex force_input_port_{};

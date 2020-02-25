@@ -13,9 +13,14 @@
 #include "drake/lcmt_iiwa_status.hpp"
 #include "drake/lcmt_schunk_wsg_command.hpp"
 #include "drake/lcmt_schunk_wsg_status.hpp"
+#include "drake/lcmt_yaskawa_ee_command.hpp"
+#include "drake/lcmt_yaskawa_ee_status.hpp"
+
+
 #include "drake/manipulation/yaskawa/yaskawa_command_receiver.h"	
 #include "drake/manipulation/yaskawa/yaskawa_status_sender.h"
 #include "drake/manipulation/schunk_wsg/schunk_wsg_lcm.h"
+#include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_lcm.h"
 
 #include "drake/math/rigid_transform.h"
 #include "drake/math/rotation_matrix.h"
@@ -162,32 +167,33 @@ int do_main(int argc, char* argv[]) {
 
 
 
-
   // Receive the WSG commands.
-  // auto wsg_command_subscriber = builder.AddSystem(
-  //     systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_schunk_wsg_command>(
-  //         "SCHUNK_WSG_COMMAND", lcm));
-  // auto wsg_command =
-  //     builder.AddSystem<manipulation::schunk_wsg::SchunkWsgCommandReceiver>();
-  // builder.Connect(wsg_command_subscriber->get_output_port(),
-  //                 wsg_command->GetInputPort("command_message"));
-  // builder.Connect(wsg_command->get_position_output_port(),
-  //                 station->GetInputPort("wsg_position"));
-  // builder.Connect(wsg_command->get_force_limit_output_port(),
-  //                 station->GetInputPort("wsg_force_limit"));
+  auto wsg_command_subscriber = builder.AddSystem(
+      systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_yaskawa_ee_command>(
+          "SCHUNK_WSG_COMMAND", lcm));
+  auto wsg_command =
+      builder.AddSystem<manipulation::yaskawa_conveyor_belt_dof1::EndEffectorCommandReceiver>();
+  builder.Connect(wsg_command_subscriber->get_output_port(),
+                  wsg_command->GetInputPort("command_message"));
+  builder.Connect(wsg_command->get_position_output_port(),
+                  station->GetInputPort("wsg_position"));
+  builder.Connect(wsg_command->get_force_limit_output_port(),
+                  station->GetInputPort("wsg_force_limit"));
 
-  // // Publish the WSG status.
-  // auto wsg_status =
-  //     builder.AddSystem<manipulation::schunk_wsg::SchunkWsgStatusSender>();
-  // builder.Connect(station->GetOutputPort("wsg_state_measured"),
-  //                 wsg_status->get_state_input_port());
-  // builder.Connect(station->GetOutputPort("wsg_force_measured"),
-  //                 wsg_status->get_force_input_port());
-  // auto wsg_status_publisher = builder.AddSystem(
-  //     systems::lcm::LcmPublisherSystem::Make<drake::lcmt_schunk_wsg_status>(
-  //         "SCHUNK_WSG_STATUS", lcm, 0.05 /* publish period */));
-  // builder.Connect(wsg_status->get_output_port(0),
-  //                 wsg_status_publisher->get_input_port());
+  // Publish the WSG status.
+  auto wsg_status =
+      builder.AddSystem<manipulation::yaskawa_conveyor_belt_dof1::EndEffectorStatusSender>();
+  builder.Connect(station->GetOutputPort("wsg_state_measured"),
+                  wsg_status->get_state_input_port());
+                  
+  builder.Connect(station->GetOutputPort("wsg_force_measured"),
+                  wsg_status->get_force_input_port());
+  auto wsg_status_publisher = builder.AddSystem(
+      systems::lcm::LcmPublisherSystem::Make<drake::lcmt_yaskawa_ee_status>(
+          "SCHUNK_WSG_STATUS", lcm, 0.05 /* publish period */));
+  builder.Connect(wsg_status->get_output_port(0),
+                  wsg_status_publisher->get_input_port());
+  drake::log()->info("finished connecting ee stuff in mock station");
 
   // TODO(russt): Publish the camera outputs.
 

@@ -11,7 +11,7 @@ using Eigen::Vector2d;
 
 using systems::BasicVector;
 
-const int kNumJoints = 2;
+const int kNumJoints = 4;
 
 SchunkWsgPdController::SchunkWsgPdController(double kp_command,
                                              double kd_command,
@@ -27,7 +27,7 @@ SchunkWsgPdController::SchunkWsgPdController(double kp_command,
   DRAKE_DEMAND(kd_constraint >= 0);
 
   desired_state_input_port_ =
-      this->DeclareVectorInputPort("desired_state", BasicVector<double>(2))
+      this->DeclareVectorInputPort("desired_state", BasicVector<double>(6))
           .get_index();
   force_limit_input_port_ =
       this->DeclareVectorInputPort("force_limit", BasicVector<double>(1))
@@ -98,18 +98,23 @@ SchunkWsgPositionController::SchunkWsgPositionController(double time_step,
       kp_command, kd_command, kp_constraint, kd_constraint);
   state_interpolator_ =
       builder.AddSystem<systems::StateInterpolatorWithDiscreteDerivative>(
-          1, time_step);
+          3, time_step);
 
   builder.Connect(state_interpolator_->get_output_port(),
                   pd_controller->get_desired_state_input_port());
+
   desired_position_input_port_ = builder.ExportInput(
       state_interpolator_->get_input_port(), "desired_position");
+
   force_limit_input_port_ = builder.ExportInput(
       pd_controller->get_force_limit_input_port(), "force_limit");
+
   state_input_port_ =
       builder.ExportInput(pd_controller->get_state_input_port(), "state");
+
   generalized_force_output_port_ = builder.ExportOutput(
       pd_controller->get_generalized_force_output_port(), "generalized_force");
+
   grip_force_output_port_ = builder.ExportOutput(
       pd_controller->get_grip_force_output_port(), "grip_force");
 
@@ -117,10 +122,9 @@ SchunkWsgPositionController::SchunkWsgPositionController(double time_step,
 }
 
 void SchunkWsgPositionController::set_initial_position(
-    drake::systems::State<double>* state, double desired_position) const {
+    drake::systems::State<double>* state, const Eigen::Ref<const Vector3<double>> desired_position) const {
   state_interpolator_->set_initial_position(
-      &this->GetMutableSubsystemState(*state_interpolator_, state),
-      Vector1d(desired_position));
+      &this->GetMutableSubsystemState(*state_interpolator_, state), desired_position);
 }
 
 }  // namespace schunk_wsg

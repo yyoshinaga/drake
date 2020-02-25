@@ -35,6 +35,8 @@ drake_cc_library(
         "//manipulation/models/yaskawa_end_effector_description:models",
         "//manipulation/models/PB_Layout_V2_description:models",
         "//manipulation/models/conveyor_belt_description:models",
+        "//manipulation/models/allegro_hand_description:models",
+
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -58,6 +60,8 @@ drake_cc_library(
         "//examples/multibody/conveyor_belt:conveyor_plant",
         "//examples/multibody/conveyor_belt:conveyor_control",
         "//examples/multibody/conveyor_belt:conveyor_controller",
+        "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_constants",
+        "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_position_controller",
 
         "//examples/multibody/conveyor_belt:conveyor_station",
 
@@ -109,7 +113,7 @@ drake_cc_binary(
       	"//manipulation/yaskawa:yaskawa_command_receiver",
         "//manipulation/yaskawa:yaskawa_status_sender",
         "//manipulation/schunk_wsg:schunk_wsg_lcm",
-        # "//manipulation/conveyor_belt:conveyor_belt_lcm",
+        "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_lcm",
         "//systems/analysis:simulator",
         "//systems/lcm",
         "@gflags",

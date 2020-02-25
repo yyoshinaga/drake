@@ -394,10 +394,10 @@ class ManipulationStation : public systems::Diagram<T> {
   /// Convenience method for getting the position of the Schunk WSG. Note
   /// that the WSG position is the signed distance between the two fingers
   /// (not the state of the fingers individually).
-  T GetWsgPosition(const systems::Context<T>& station_context) const;
+  Vector3<T> GetWsgPosition(const systems::Context<T>& station_context) const;
 
   /// Convenience method for getting the velocity of the Schunk WSG.
-  T GetWsgVelocity(const systems::Context<T>& station_context) const;
+  Vector3<T> GetWsgVelocity(const systems::Context<T>& station_context) const;
 
   /// Convenience method for setting the position of the Schunk WSG. Also
   /// sets the position history in the velocity interpolator.  Note that the
@@ -406,13 +406,13 @@ class ManipulationStation : public systems::Diagram<T> {
   /// @pre `state` must be the systems::State<T> object contained in
   /// `station_context`.
   void SetWsgPosition(const systems::Context<T>& station_context,
-                      systems::State<T>* state, const T& q) const;
+                      systems::State<T>* state, const Eigen::Ref<const drake::Vector3<T>>& q) const;
 
   /// Convenience method for setting the position of the Schunk WSG. Also
   /// sets the position history in the velocity interpolator.  Note that the
   /// WSG position is the signed distance between the two fingers (not the
   /// state of the fingers individually).
-  void SetWsgPosition(systems::Context<T>* station_context, const T& q) const {
+  void SetWsgPosition(systems::Context<T>* station_context, const Eigen::Ref<const drake::Vector3<T>>& q) const {
     SetWsgPosition(*station_context, &station_context->get_mutable_state(), q);
   }
 
@@ -420,10 +420,10 @@ class ManipulationStation : public systems::Diagram<T> {
   /// @pre `state` must be the systems::State<T> object contained in
   /// `station_context`.
   void SetWsgVelocity(const systems::Context<T>& station_context,
-                      systems::State<T>* state, const T& v) const;
+                      systems::State<T>* state, const Eigen::Ref<const drake::Vector3<T>>& v) const;
 
   /// Convenience method for setting the velocity of the Schunk WSG.
-  void SetWsgVelocity(systems::Context<T>* station_context, const T& v) const {
+  void SetWsgVelocity(systems::Context<T>* station_context, const Eigen::Ref<const drake::Vector3<T>>& v) const {
     SetWsgVelocity(*station_context, &station_context->get_mutable_state(), v);
   }
 

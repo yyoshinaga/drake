@@ -85,8 +85,13 @@ class EndEffectorPdController : public systems::LeafSystem<double> {
     return get_output_port(grip_force_output_port_);
   }
 
+  //Only for pusher and puller
+  const systems::OutputPort<double>& get_pose_output_port() const {
+    return get_output_port(grip_force_output_port_);
+  }
+
  private:
-  Eigen::Vector2d CalcGeneralizedForce(
+  Eigen::Vector4d CalcGeneralizedForce(
       const systems::Context<double>& context) const;
 
   void CalcGeneralizedForceOutput(
@@ -95,6 +100,10 @@ class EndEffectorPdController : public systems::LeafSystem<double> {
 
   void CalcGripForceOutput(const systems::Context<double>& context,
                            systems::BasicVector<double>* output_vector) const;
+
+  void CalcPoseOutput(const systems::Context<double>& context,
+                        systems::BasicVector<double>* output) const;
+
 
   const double kp_command_;
   const double kd_command_;
@@ -106,6 +115,8 @@ class EndEffectorPdController : public systems::LeafSystem<double> {
   systems::InputPortIndex state_input_port_{};
   systems::OutputPortIndex generalized_force_output_port_{};
   systems::OutputPortIndex grip_force_output_port_{};
+  systems::OutputPortIndex pose_output_port_{};
+
 };
 
 /// This class implements a controller for a Schunk WSG gripper in position
@@ -138,12 +149,12 @@ class EndEffectorPositionController : public systems::Diagram<double> {
   // The controller stores the last commanded desired position as state.
   // This is a helper method to reset that state.
   void set_initial_position(systems::State<double>* state,
-                            double desired_position) const;
+                            Eigen::Ref<const Vector3<double>> desired_position) const;
 
   // The controller stores the last commanded desired position as state.
   // This is a helper method to reset that state.
   void set_initial_position(systems::Context<double>* context,
-                            double desired_position) const {
+                            Eigen::Ref<const Vector3<double>> desired_position) const {
     set_initial_position(&context->get_mutable_state(), desired_position);
   }
 
@@ -167,6 +178,10 @@ class EndEffectorPositionController : public systems::Diagram<double> {
     return get_output_port(grip_force_output_port_);
   }
 
+  const systems::OutputPort<double>& get_pose_output_port() const {
+    return get_output_port(pose_output_port_);
+  }
+
  private:
   systems::StateInterpolatorWithDiscreteDerivative<double>* state_interpolator_;
 
@@ -175,6 +190,8 @@ class EndEffectorPositionController : public systems::Diagram<double> {
   systems::InputPortIndex state_input_port_{};
   systems::OutputPortIndex generalized_force_output_port_{};
   systems::OutputPortIndex grip_force_output_port_{};
+  systems::OutputPortIndex pose_output_port_{};
+
 };
 
 }  // namespace yaskawa_conveyor_belt_dof1
