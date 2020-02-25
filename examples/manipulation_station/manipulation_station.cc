@@ -443,7 +443,7 @@ void ManipulationStation<T>::SetDefaultState(
     systems::State<T>* state) const {
   // Call the base class method, to initialize all systems in this diagram.
   systems::Diagram<T>::SetDefaultState(station_context, state);
-  drake::log()->info("settted default state here");
+
   // T q0_gripper{0.1};
 
   const auto& plant_context =
@@ -464,7 +464,19 @@ void ManipulationStation<T>::SetDefaultState(
   SetIiwaVelocity(station_context, state, VectorX<T>::Zero(num_iiwa_joints()));
   // SetWsgPosition(station_context, state, q0_gripper);
   // SetWsgVelocity(station_context, state, 0);
-  // SetConveyorPosition(station_context, state, GetConveyorPosition(station_context));
+  Vector2<T> conveyorPosition1(2);
+  conveyorPosition1 << 0, 0; //x_pos, theta
+  SetConveyorPosition(station_context, state, conveyorPosition1, 1);
+
+  Vector2<T> conveyorPosition2(2);
+  conveyorPosition2 << 0.16, 0; //x_pos, theta
+  SetConveyorPosition(station_context, state, conveyorPosition2, 2);
+
+  // Vector2<T> conveyorPosition3(2);
+  // conveyorPosition3 << 0.3, 0; //x_pos, theta
+  // SetConveyorPosition(station_context, state, conveyorPosition3, 3);
+
+
   // SetConveyorVelocity(station_context, state, VectorX<T>::Zero(2));
   drake::log()->info("SetDefaultState 8");
 }
@@ -557,11 +569,11 @@ void ManipulationStation<T>::Finalize(
 
   //Conveyor belt stuff needs to come before belt_plant_->finalize
   std::vector<geometry::FrameId> frame_ids1; 
-  // std::vector<geometry::FrameId> frame_ids2; 
-  std::vector<geometry::FrameId> frame_ids3;
-  AddDefaultConveyor(conveyor_belt_idx_1_, 1, 2.0, frame_ids1, "conveyor_1");
-  // AddDefaultConveyor(conveyor_belt_idx_2_, 2, 2.2, frame_ids2, "conveyor_2");
-  // AddDefaultConveyor(conveyor_belt_idx_3_, 3, 2.4, frame_ids3, "conveyor_3");
+  std::vector<geometry::FrameId> frame_ids2; 
+  // std::vector<geometry::FrameId> frame_ids3;
+  AddDefaultConveyor(conveyor_belt_idx_1_, 1, frame_ids1, "conveyor_1");
+  AddDefaultConveyor(conveyor_belt_idx_2_, 2, frame_ids2, "conveyor_2");
+  // AddDefaultConveyor(conveyor_belt_idx_3_, 3, frame_ids3, "conveyor_3");
   
 
   MakeIiwaControllerModel();
@@ -751,20 +763,15 @@ void ManipulationStation<T>::Finalize(
     // auto vector_source_system = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorControl<double>>());
     // auto robot_plant = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorPlant<double>>(frame_ids));
     auto belt_controller1 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids1));
-    // auto belt_controller2 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids2));
+    auto belt_controller2 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids2));
     // auto belt_controller3 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids3));
 
-    // builder.Connect(vector_source_system->get_output_port(0), 
-    //                 robot_plant->get_input_port(0));
-
-    // builder.Connect(robot_plant->get_output_port(1),
-    //                 plant_->get_actuation_input_port(conveyor_model_.model_instance));
 
     //Velocity sending
     builder.Connect(belt_controller1->get_output_port(1),
                     plant_->get_actuation_input_port(conveyor_model_1_.model_instance));
-    // builder.Connect(belt_controller2->get_output_port(1),
-    //                 plant_->get_actuation_input_port(conveyor_model_2_.model_instance));
+    builder.Connect(belt_controller2->get_output_port(1),
+                    plant_->get_actuation_input_port(conveyor_model_2_.model_instance));
     // builder.Connect(belt_controller3->get_output_port(1),
     //                 plant_->get_actuation_input_port(conveyor_model_3_.model_instance));
   
@@ -772,11 +779,34 @@ void ManipulationStation<T>::Finalize(
     builder.Connect(plant_->get_state_output_port(conveyor_model_1_.model_instance),
                     belt_controller1->get_input_port(0)); 
     //Receive the states
-    // builder.Connect(plant_->get_state_output_port(conveyor_model_2_.model_instance),
-    //                 belt_controller2->get_input_port(0)); 
+    builder.Connect(plant_->get_state_output_port(conveyor_model_2_.model_instance),
+                    belt_controller2->get_input_port(0)); 
     // //Receive the states
     // builder.Connect(plant_->get_state_output_port(conveyor_model_3_.model_instance),
     //                 belt_controller3->get_input_port(0)); 
+  
+
+    // Approximate desired state command from a discrete derivative of the
+    // position command input port.
+    auto desired_state_from_position_1 = builder.template AddSystem<
+        systems::StateInterpolatorWithDiscreteDerivative>(2, plant_->time_step());
+    desired_state_from_position_1->set_name("desired_state_from_position_belt_1");
+    builder.Connect(belt_controller1->get_output_port(0),
+                    desired_state_from_position_1->get_input_port());
+     // Approximate desired state command from a discrete derivative of the
+    // position command input port.
+    auto desired_state_from_position_2 = builder.template AddSystem<
+        systems::StateInterpolatorWithDiscreteDerivative>(2, plant_->time_step());
+    desired_state_from_position_2->set_name("desired_state_from_position_belt_2");
+    builder.Connect(belt_controller2->get_output_port(0),
+                    desired_state_from_position_2->get_input_port());
+    // // Approximate desired state command from a discrete derivative of the
+    // // position command input port.
+    // auto desired_state_from_position_3 = builder.template AddSystem<
+    //     systems::StateInterpolatorWithDiscreteDerivative>(2, plant_->time_step());
+    // desired_state_from_position_3->set_name("desired_state_from_position_belt_3");
+    // builder.Connect(belt_controller3->get_output_port(0),
+    //                 desired_state_from_position_3->get_input_port());
   }
 
   // {
@@ -920,6 +950,61 @@ void ManipulationStation<T>::SetIiwaVelocity(
   drake::log()->info("SetIiwaVelocity 16");
 
 }
+
+template <typename T>
+void ManipulationStation<T>::SetConveyorPosition(
+    const drake::systems::Context<T>& station_context, systems::State<T>* state,
+    const Eigen::Ref<const drake::VectorX<T>>& q, const int num) const {
+  const int num_belt_positions =
+      plant_->num_positions(conveyor_model_1_.model_instance);
+  DRAKE_DEMAND(state != nullptr);
+  DRAKE_DEMAND(q.size() == num_belt_positions);
+  auto& plant_context = this->GetSubsystemContext(*plant_, station_context);
+  auto& plant_state = this->GetMutableSubsystemState(*plant_, state);
+
+  switch(num){
+    case 1: {
+      plant_->SetPositions(plant_context, &plant_state, conveyor_model_1_.model_instance, q);
+      // Set the position history in the state interpolator to match.
+      const auto& state_from_position1 = dynamic_cast<
+          const systems::StateInterpolatorWithDiscreteDerivative<double>&>(
+          this->GetSubsystemByName("desired_state_from_position_belt_1"));
+      state_from_position1.set_initial_position(
+          &this->GetMutableSubsystemState(state_from_position1, state), q);
+      break;
+    }
+    case 2: {
+      plant_->SetPositions(plant_context, &plant_state, conveyor_model_2_.model_instance, q);
+      // Set the position history in the state interpolator to match.
+      const auto& state_from_position2 = dynamic_cast<
+          const systems::StateInterpolatorWithDiscreteDerivative<double>&>(
+          this->GetSubsystemByName("desired_state_from_position_belt_2"));
+      state_from_position2.set_initial_position(
+          &this->GetMutableSubsystemState(state_from_position2, state), q);
+      break;
+    }
+    case 3:{
+      plant_->SetPositions(plant_context, &plant_state, conveyor_model_3_.model_instance, q);
+      // Set the position history in the state interpolator to match.
+      const auto& state_from_position3 = dynamic_cast<
+          const systems::StateInterpolatorWithDiscreteDerivative<double>&>(
+          this->GetSubsystemByName("desired_state_from_position_belt_3"));
+      state_from_position3.set_initial_position(
+          &this->GetMutableSubsystemState(state_from_position3, state), q);
+      break;
+    }
+  }
+
+  drake::log()->info("SetConveyorPosition 14");
+
+}
+
+
+
+
+
+
+
 
 template <typename T>
 T ManipulationStation<T>::GetWsgPosition(
@@ -1149,13 +1234,13 @@ void ManipulationStation<T>::AddDefaultIiwa(
 
 template <typename T>
 void ManipulationStation<T>::AddDefaultConveyor(
-    drake::multibody::ModelInstanceIndex &model_idx, const int model_num, const double x_coord, std::vector<geometry::FrameId> &frame_ids, const std::string& model_name) {
+    drake::multibody::ModelInstanceIndex &model_idx, const int model_num, std::vector<geometry::FrameId> &frame_ids, const std::string& model_name) {
 
     const std::string sdf_path = FindResourceOrThrow(
         "drake/manipulation/models/conveyor_belt_description/sdf/"
         "conveyor_simple_robot.sdf");
 
-    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(2.5, x_coord, 0.84));
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7, 2.0, 0.8));
                                   //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
                                   //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 

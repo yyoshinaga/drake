@@ -379,6 +379,18 @@ class ManipulationStation : public systems::Diagram<T> {
     SetIiwaVelocity(*station_context, &station_context->get_mutable_state(), v);
   }
 
+  void SetConveyorPosition(const systems::Context<T>& station_context,
+                       systems::State<T>* state,
+                       const Eigen::Ref<const VectorX<T>>& q, const int num) const;
+
+  /// Convenience method for setting all of the joint angles of the Kuka IIWA.
+  /// Also sets the position history in the velocity command generator.
+  /// @p q must have size num_iiwa_joints().
+  void SetConveyorPosition(systems::Context<T>* station_context,
+                       const Eigen::Ref<const VectorX<T>>& q, const int num) const {
+    SetConveyorPosition(*station_context, &station_context->get_mutable_state(), q, num);
+  }
+
   /// Convenience method for getting the position of the Schunk WSG. Note
   /// that the WSG position is the signed distance between the two fingers
   /// (not the state of the fingers individually).
@@ -472,7 +484,7 @@ class ManipulationStation : public systems::Diagram<T> {
   drake::multibody::ModelInstanceIndex MakeConveyorControllerModel(drake::multibody::MultibodyPlant<T>* plant);
 
   void AddDefaultIiwa(const IiwaCollisionModel collision_model);
-  void AddDefaultConveyor(drake::multibody::ModelInstanceIndex &model_idx, const int model_num, const double x_coord, std::vector<geometry::FrameId> &frame_ids, const std::string& model_name);
+  void AddDefaultConveyor(drake::multibody::ModelInstanceIndex &model_idx, const int model_num, std::vector<geometry::FrameId> &frame_ids, const std::string& model_name);
   void AddDefaultWsg();
 
   // These are only valid until Finalize() is called.
