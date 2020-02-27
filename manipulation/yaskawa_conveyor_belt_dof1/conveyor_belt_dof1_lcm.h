@@ -34,37 +34,16 @@ class EndEffectorCommandReceiver : public systems::LeafSystem<double> {
 
   /// @param initial_position the commanded position to output if no LCM
   /// message has been received yet.
-  ///
-  /// @param initial_force the commanded force limit to output if no LCM
-  /// message has been received yet.
-  EndEffectorCommandReceiver(double initial_position = 0.02,
-                            double initial_force = 40, double initial_pusher_position = 0, 
-                            double initial_pusher_velocity = 0,double initial_puller_position = 0,
-                            double initial_puller_velocity = 0);
 
-  const systems::OutputPort<double>& get_position_output_port() const {
-    return this->GetOutputPort("position");
-  }
+  EndEffectorCommandReceiver();
 
-  const systems::OutputPort<double>& get_force_limit_output_port() const {
-    return this->GetOutputPort("force_limit");
+  const systems::OutputPort<double>& get_actuation_output_port() const {
+    return this->GetOutputPort("actuation");
   }
 
  private:
-  void CalcPositionOutput(const systems::Context<double>& context,
+  void CalcActuationOutput(const systems::Context<double>& context,
                           systems::BasicVector<double>* output) const;
-
-  void CalcForceLimitOutput(const systems::Context<double>& context,
-                            systems::BasicVector<double>* output) const;
-
-  const double initial_position_{};
-  const double initial_force_{};
-  const double initial_pusher_position_{};
-  const double initial_pusher_velocity_{};
-  const double initial_puller_position_{};
-  const double initial_puller_velocity_{};
-
-
 };
 
 
@@ -90,11 +69,6 @@ class EndEffectorCommandSender : public systems::LeafSystem<double> {
     return this->get_input_port(position_input_port_);
   }
 
-  const systems::InputPort<double>& get_force_limit_input_port()
-  const {
-    return this->get_input_port(force_limit_input_port_);
-  }
-
   const systems::OutputPort<double>& get_command_output_port() const {
     return this->get_output_port(0);
   }
@@ -106,7 +80,6 @@ class EndEffectorCommandSender : public systems::LeafSystem<double> {
 
  private:
   const systems::InputPortIndex position_input_port_{};
-  const systems::InputPortIndex force_limit_input_port_{};
   const systems::InputPortIndex pusher_position_input_port_{};
   const systems::InputPortIndex puller_position_input_port_{};
 
@@ -133,14 +106,10 @@ class EndEffectorStatusReceiver : public systems::LeafSystem<double> {
     return this->get_input_port(0);
   }
 
+  //Measuring pos b/w finger and vel
   const systems::OutputPort<double>& get_state_output_port()
   const {
     return this->get_output_port(state_output_port_);
-  }
-
-  const systems::OutputPort<double>& get_force_output_port()
-  const {
-    return this->get_output_port(force_output_port_);
   }
 
  private:
@@ -148,14 +117,8 @@ class EndEffectorStatusReceiver : public systems::LeafSystem<double> {
       const systems::Context<double>& context,
       systems::BasicVector<double>* output) const;
 
-  void CopyForceOut(
-      const systems::Context<double>& context,
-      systems::BasicVector<double>* output) const;
-
  private:
   const systems::OutputPortIndex state_output_port_{};
-  const systems::OutputPortIndex force_output_port_{};
-
 
 };
 
@@ -184,16 +147,11 @@ class EndEffectorStatusSender : public systems::LeafSystem<double> {
     return this->get_input_port(state_input_port_);
   }
 
-  const systems::InputPort<double>& get_force_input_port() const {
-    return this->get_input_port(force_input_port_);
-  }
-
  private:
   void OutputStatus(const systems::Context<double>& context,
                     lcmt_yaskawa_ee_status* output) const;
 
   systems::InputPortIndex state_input_port_{};
-  systems::InputPortIndex force_input_port_{};
 };
 
 }  // namespace conveyor_belt_dof1

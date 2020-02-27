@@ -1,5 +1,5 @@
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_lcm.h"
-
+#include <gflags/gflags.h>
 #include <vector>
 
 #include <Eigen/Dense>
@@ -12,24 +12,25 @@ namespace drake {
 namespace manipulation {
 namespace yaskawa_conveyor_belt_dof1 {
 
+DEFINE_double(whiskers_P, 8.0, "Proportional gain");
+DEFINE_double(whiskers_D, 8.0, "Derivative gain");
+DEFINE_double(pusher_P, 8.0, "Proportional gain");
+DEFINE_double(pusher_D, 8.0, "Derivative gain");
+DEFINE_double(puller_P, 8.0, "Proportional gain");
+DEFINE_double(puller_D, 8.0, "Derivative gain");
+
+DEFINE_double(pusher_init, 8.0, "Initial position");
+DEFINE_double(pusher_max, 8.0, "Max position");
+DEFINE_double(puller_init, 8.0, "Initial position");
+DEFINE_double(puller_max, 8.0, "Max position");
+
 using systems::BasicVector;
 using systems::Context;
 
-EndEffectorCommandReceiver::EndEffectorCommandReceiver(double initial_position,
-                                                      double initial_force, 
-                                                      double initial_pusher_position, 
-                                                      double initial_pusher_velocity, 
-                                                      double initial_puller_position, 
-                                                      double initial_puller_velocity)
-    : initial_position_(initial_position), initial_force_(initial_force),
-    initial_pusher_position_(initial_pusher_position), initial_pusher_velocity_(initial_pusher_velocity),
-    initial_puller_position_(initial_puller_position), initial_puller_velocity_(initial_puller_velocity) {
+EndEffectorCommandReceiver::EndEffectorCommandReceiver() {
 
-  this->DeclareVectorOutputPort("position", BasicVector<double>(3),
-                                &EndEffectorCommandReceiver::CalcPositionOutput);
-  this->DeclareVectorOutputPort(
-      "force_limit", BasicVector<double>(1),
-      &EndEffectorCommandReceiver::CalcForceLimitOutput);
+  this->DeclareVectorOutputPort("actuation", BasicVector<double>(3),
+                                &EndEffectorCommandReceiver::CalcActuationOutput);
 
   lcmt_yaskawa_ee_command uninitialized_message{};
   this->DeclareAbstractInputPort(
@@ -37,47 +38,62 @@ EndEffectorCommandReceiver::EndEffectorCommandReceiver(double initial_position,
       Value<lcmt_yaskawa_ee_command>(uninitialized_message));
 }
 
-void EndEffectorCommandReceiver::CalcPositionOutput(
+//TODO: Find out how Dorabot controls their ee motors
+void EndEffectorCommandReceiver::CalcActuationOutput(
     const Context<double>& context, BasicVector<double>* output) const {
   const auto& message =
       this->get_input_port(0).Eval<lcmt_yaskawa_ee_command>(context);
 
-  double target_position = initial_position_;
-  if (message.utime != 0.0) {
-    target_position = message.target_position_mm / 1e3;
-    if (std::isnan(target_position)) {
-      target_position = 0;
-    }
-  }
+  // // Get the states from the plant
+  // const systems::BasicVector<double>* input_vector =
+  //     this->EvalVectorInput(context, 0);
+  // auto inputVector = input_vector->CopyToVector();
 
-  output->SetAtIndex(0, target_position);
-  output->SetAtIndex(1,initial_pusher_position_);  //Pusher
-  output->SetAtIndex(2,initial_puller_position_);  //Puller
+  // double whiskerAcc = 0;
+  // double pusherAcc = 0;
+  // double pullerAcc = 0;
+
+  // //TODO: The acceleration calculations need to be modified.
+
+  // //If the message transfer started and position is not infinity, 
+  // if (message.utime != 0.0) {
+  //   //If true, make whiskers go down. Otherwise move them back up
+  //   if(message.whiskers_down){
+  //     whiskerAcc = FLAGS_whiskers_P*(M_PI/2-inputVector[0])+FLAGS_whiskers_D*(-inputVector[3]);
+  //   }
+  //   else{
+  //     whiskerAcc = FLAGS_whiskers_P*(-inputVector[0])+FLAGS_whiskers_D*(-inputVector[3]);
+  //   }
+
+  //   //If true, move pusher to max position. Otherwise move them back to initial position
+  //   if(message.pusher_move){
+  //     pusherAcc = FLAGS_pusher_P*(FLAGS_pusher_max-inputVector[1])+FLAGS_pusher_D*(-inputVector[4]);
+  //   }
+  //   else{
+  //     pusherAcc = FLAGS_pusher_P*(FLAGS_pusher_init-inputVector[1])+FLAGS_pusher_D*(-inputVector[4]);
+  //   }
+
+  //   //If true, move pusher to max position. Otherwise move them back to initial position
+  //   if(message.puller_move){
+  //     pullerAcc = FLAGS_puller_P*(FLAGS_puller_max-inputVector[2])+FLAGS_puller_D*(-inputVector[5]);
+  //   }
+  //   else{
+  //     pullerAcc = FLAGS_puller_P*(FLAGS_puller_init-inputVector[2])+FLAGS_puller_D*(-inputVector[5]);
+  //   }
+  // }
+
+  
+
+  output->SetAtIndex(0, message.whiskers_down?1:0);  
+  output->SetAtIndex(1, message.pusher_move?1:0);  //Pusher is moving?
+  output->SetAtIndex(2, message.puller_move?1:0);  //Puller is moving?
 }
 
-void EndEffectorCommandReceiver::CalcForceLimitOutput(
-    const Context<double>& context, BasicVector<double>* output) const {
-  const auto& message =
-      this->get_input_port(0).Eval<lcmt_yaskawa_ee_command>(context);
-
-  double force_limit = initial_force_;
-  if (message.utime != 0.0) {
-    force_limit = message.force;
-  }
-
-  drake::log()->info("pusher and puller velocity... please ignore this: {} {}", initial_pusher_velocity_, initial_puller_velocity_);
-  drake::log()->info("conveyor_belt_dof1_lcm calcforcelimitoutput");
-  output->SetAtIndex(0, force_limit);
-}
 //------------------------------------------------------------------------------------------------------------
 EndEffectorCommandSender::EndEffectorCommandSender()
     : position_input_port_(this->DeclareVectorInputPort(
                                    "position", systems::BasicVector<double>(3))
-                               .get_index()),
-      force_limit_input_port_(
-          this->DeclareVectorInputPort("force_limit",
-                                       systems::BasicVector<double>(1))
-              .get_index()) {
+                               .get_index()) {
   this->DeclareAbstractOutputPort("lcmt_yaskawa_ee_command",
                                   &EndEffectorCommandSender::CalcCommandOutput);
 }
@@ -88,8 +104,10 @@ void EndEffectorCommandSender::CalcCommandOutput(
   lcmt_yaskawa_ee_command& command = *output;
 
   command.utime = context.get_time() * 1e6;
-  command.target_position_mm = get_position_input_port().Eval(context)[0] * 1e3;
-  command.force = get_force_limit_input_port().Eval(context)[0];
+  command.whiskers_down = get_position_input_port().Eval(context)[0];
+  command.pusher_move = get_position_input_port().Eval(context)[1];
+  command.puller_move = get_position_input_port().Eval(context)[2];
+
 }
 //------------------------------------------------------------------------------------------------------------
 
@@ -97,10 +115,6 @@ EndEffectorStatusReceiver::EndEffectorStatusReceiver()
     : state_output_port_(this->DeclareVectorOutputPort(
                                  "state", systems::BasicVector<double>(6),
                                  &EndEffectorStatusReceiver::CopyStateOut)
-                             .get_index()),
-      force_output_port_(this->DeclareVectorOutputPort(
-                                 "force", systems::BasicVector<double>(1),
-                                 &EndEffectorStatusReceiver::CopyForceOut)
                              .get_index()) {
   this->DeclareAbstractInputPort("lcmt_yaskawa_ee_status",
                                  Value<lcmt_yaskawa_ee_status>());
@@ -111,38 +125,22 @@ void EndEffectorStatusReceiver::CopyStateOut(
     drake::systems::BasicVector<double>* output) const {
   const auto& status =
       get_status_input_port().Eval<lcmt_yaskawa_ee_status>(context);
-  output->SetAtIndex(0, status.actual_position_mm / 1e3);
-  output->SetAtIndex(3, status.actual_speed_mm_per_s / 1e3);
-
+  output->SetAtIndex(0, status.actual_whisker_angle);
   output->SetAtIndex(1,status.actual_pusher_position);
   output->SetAtIndex(2,status.actual_puller_position);
+
+  output->SetAtIndex(3, status.actual_whisker_speed);
   output->SetAtIndex(4,status.actual_pusher_speed);
   output->SetAtIndex(5,status.actual_puller_speed);
 }
 
-void EndEffectorStatusReceiver::CopyForceOut(
-    const drake::systems::Context<double>& context,
-    drake::systems::BasicVector<double>* output) const {
-  const auto& status =
-      get_status_input_port().Eval<lcmt_yaskawa_ee_status>(context);
-  output->SetAtIndex(0, status.actual_force);
-  output->SetAtIndex(1, status.actual_pusher_speed);
-  output->SetAtIndex(2, status.actual_puller_speed);
-
-}
 //------------------------------------------------------------------------------------------------------------
 
 EndEffectorStatusSender::EndEffectorStatusSender() {
   state_input_port_ =
       this->DeclareInputPort(systems::kVectorValued, 6).get_index();
-  force_input_port_ =
-      this->DeclareInputPort(systems::kVectorValued, 1).get_index();
-  //Do we need acceleration input port?
-  // acc_input_port_ =
-  //     this->DeclareInputPort(systems::kVectorValued, 2).get_index();
 
   this->DeclareAbstractOutputPort(&EndEffectorStatusSender::OutputStatus);
-
 }
 
 void EndEffectorStatusSender::OutputStatus(const Context<double>& context,
@@ -154,26 +152,11 @@ void EndEffectorStatusSender::OutputStatus(const Context<double>& context,
   // The position and speed reported in this message are between the
   // two fingers rather than the position/speed of a single finger
   // (so effectively doubled).
-  status.actual_position_mm = state[0] * 1e3;
-  status.actual_speed_mm_per_s = state[3] * 1e3;
-
-  if (get_force_input_port().HasValue(context)) {
-    // In drake-schunk-driver, the driver attempts to apply a sign to the
-    // force value based on the last reported direction of gripper movement
-    // (the gripper always reports positive values).  This does not work very
-    // well, and as a result the sign is almost always negative (when
-    // non-zero) regardless of which direction the gripper was moving in when
-    // motion was blocked.  As it's not a reliable source of information in
-    // the driver (and should be removed there at some point), we don't try to
-    // replicate it here and instead report positive forces.
-    using std::abs;
-    status.actual_force = abs(get_force_input_port().Eval(context)[0]);
-  } else {
-    status.actual_force = 0;
-  }
-
+  status.actual_whisker_angle = state[0];
   status.actual_pusher_position = state[1];
   status.actual_puller_position = state[2];
+
+  status.actual_whisker_speed = state[3];
   status.actual_pusher_speed = state[4];
   status.actual_puller_speed = state[5];
 }

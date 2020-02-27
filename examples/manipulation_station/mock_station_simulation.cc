@@ -11,15 +11,15 @@
 #include "drake/geometry/geometry_visualization.h"
 #include "drake/lcmt_iiwa_command.hpp"
 #include "drake/lcmt_iiwa_status.hpp"
-#include "drake/lcmt_schunk_wsg_command.hpp"
-#include "drake/lcmt_schunk_wsg_status.hpp"
+// #include "drake/lcmt_schunk_wsg_command.hpp"
+// #include "drake/lcmt_schunk_wsg_status.hpp"
 #include "drake/lcmt_yaskawa_ee_command.hpp"
 #include "drake/lcmt_yaskawa_ee_status.hpp"
 
 
 #include "drake/manipulation/yaskawa/yaskawa_command_receiver.h"	
 #include "drake/manipulation/yaskawa/yaskawa_status_sender.h"
-#include "drake/manipulation/schunk_wsg/schunk_wsg_lcm.h"
+// #include "drake/manipulation/schunk_wsg/schunk_wsg_lcm.h"
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_lcm.h"
 
 #include "drake/math/rigid_transform.h"
@@ -69,14 +69,14 @@ int do_main(int argc, char* argv[]) {
 
   if (FLAGS_setup == "manipulation_class") {
     station->SetupManipulationClassStation();
-    station->AddManipulandFromFile(
-        "drake/examples/manipulation_station/models/package1.sdf",
-        math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
-                                     Eigen::Vector3d(1.75, 1.999, 1.2)));
-    station->AddManipulandFromFile(
-        "drake/examples/manipulation_station/models/package2.sdf",
-        math::RigidTransform<double>(math::RollPitchYaw<double>(0, 0, 0.57),
-                                     Eigen::Vector3d(1.75, 2.7, 1.05)));
+    // station->AddManipulandFromFile(
+    //     "drake/examples/manipulation_station/models/package1.sdf",
+    //     math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
+    //                                  Eigen::Vector3d(1.75, 1.999, 1.2)));
+    // station->AddManipulandFromFile(
+    //     "drake/examples/manipulation_station/models/package2.sdf",
+    //     math::RigidTransform<double>(math::RollPitchYaw<double>(0, 0, 0.57),
+    //                                  Eigen::Vector3d(1.75, 2.7, 1.05)));
 
 
   } else if (FLAGS_setup == "clutter_clearing") {
@@ -165,34 +165,42 @@ int do_main(int argc, char* argv[]) {
 
 
 
-
-
-  // Receive the WSG commands.
-  auto wsg_command_subscriber = builder.AddSystem(
+  // Receive the ee commands.
+  auto ee_command_subscriber = builder.AddSystem(
       systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_yaskawa_ee_command>(
-          "SCHUNK_WSG_COMMAND", lcm));
-  auto wsg_command =
+          "EE_COMMAND", lcm));
+  auto ee_command =
       builder.AddSystem<manipulation::yaskawa_conveyor_belt_dof1::EndEffectorCommandReceiver>();
-  builder.Connect(wsg_command_subscriber->get_output_port(),
-                  wsg_command->GetInputPort("command_message"));
-  builder.Connect(wsg_command->get_position_output_port(),
-                  station->GetInputPort("wsg_position"));
-  builder.Connect(wsg_command->get_force_limit_output_port(),
-                  station->GetInputPort("wsg_force_limit"));
+  builder.Connect(ee_command_subscriber->get_output_port(),
+                  ee_command->GetInputPort("command_message"));
 
-  // Publish the WSG status.
-  auto wsg_status =
+
+
+DRAKE_DEMAND(false);
+//FIX ME: 
+/*
+    Problem: Need to find out how Dorabot controls their ee motors. 
+    PWM? PPM? Is the input acceleration or voltage? How accurate do we need to model the motor? 
+    Depending on that, we need to change the command actuation port. 
+*/
+
+  //***Create acceleration_output_port instead of position_output_port***
+  builder.Connect(ee_command->get_actuation_output_port(),
+                  station->GetInputPort("ee_actuation"));
+//   builder.Connect(ee_command->get_position_output_port(),
+//                   station->GetInputPort("ee_position"));
+
+  // Publish the ee status.
+  auto ee_status =
       builder.AddSystem<manipulation::yaskawa_conveyor_belt_dof1::EndEffectorStatusSender>();
-  builder.Connect(station->GetOutputPort("wsg_state_measured"),
-                  wsg_status->get_state_input_port());
-                  
-  builder.Connect(station->GetOutputPort("wsg_force_measured"),
-                  wsg_status->get_force_input_port());
-  auto wsg_status_publisher = builder.AddSystem(
+  builder.Connect(station->GetOutputPort("ee_state_measured"),
+                  ee_status->get_state_input_port());
+
+  auto ee_status_publisher = builder.AddSystem(
       systems::lcm::LcmPublisherSystem::Make<drake::lcmt_yaskawa_ee_status>(
-          "SCHUNK_WSG_STATUS", lcm, 0.05 /* publish period */));
-  builder.Connect(wsg_status->get_output_port(0),
-                  wsg_status_publisher->get_input_port());
+          "EE_STATUS", lcm, 0.05 /* publish period */));
+  builder.Connect(ee_status->get_output_port(0),
+                  ee_status_publisher->get_input_port());
   drake::log()->info("finished connecting ee stuff in mock station");
 
   // TODO(russt): Publish the camera outputs.

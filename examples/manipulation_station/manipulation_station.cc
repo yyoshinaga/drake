@@ -815,36 +815,35 @@ void ManipulationStation<T>::Finalize(
   }
 
   {
-    auto wsg_controller = builder.template AddSystem<
+    auto ee_controller = builder.template AddSystem<
         manipulation::yaskawa_conveyor_belt_dof1::EndEffectorPositionController>(
-        manipulation::yaskawa_conveyor_belt_dof1::kEndEffectorLcmStatusPeriod, wsg_kp_, wsg_kd_);
-    wsg_controller->set_name("ee_controller");
+        manipulation::yaskawa_conveyor_belt_dof1::kEndEffectorLcmStatusPeriod, ee_kp_, ee_kd_);
+    ee_controller->set_name("ee_controller");
 
-    builder.Connect(wsg_controller->get_generalized_force_output_port(),
+    //Input accelerations to multibody plant - size 4
+    builder.Connect(ee_controller->get_generalized_force_output_port(),
                     plant_->get_actuation_input_port(wsg_model_.model_instance));
 
+    //States sent from mbp to controller - size 8
     builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
-                    wsg_controller->get_state_input_port());
+                    ee_controller->get_state_input_port());
 
-    builder.ExportInput(wsg_controller->get_desired_position_input_port(),
-                        "wsg_position");
+    //State interpolator of only position of size 3
+    builder.ExportInput(ee_controller->get_desired_position_input_port(),
+                        "ee_acc");
 
-    builder.ExportInput(wsg_controller->get_force_limit_input_port(),
-                        "wsg_force_limit");
+    // auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
+    //     manipulation::yaskawa_conveyor_belt_dof1::MakeMultibodyStateToBeltStateSystem<double>());
 
-    auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
-        manipulation::yaskawa_conveyor_belt_dof1::MakeMultibodyStateToBeltStateSystem<double>());
+    // //States sent from mbp to wsgState - size 8
+    // builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
+    //                 wsg_mbp_state_to_wsg_state->get_input_port());
 
-    builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
-                    wsg_mbp_state_to_wsg_state->get_input_port());
-
-    builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
-                         "wsg_state_measured");
-
-    builder.ExportOutput(wsg_controller->get_grip_force_output_port(),
-                         "wsg_force_measured");
+    // //Should be size 8
+    // builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
+    //                      "ee_state_measured");
   }
-
+//----------------------------------------------------------------------------------
   builder.ExportOutput(plant_->get_generalized_contact_forces_output_port(
                            iiwa_model_.model_instance),
                        "iiwa_torque_external");
@@ -885,7 +884,6 @@ void ManipulationStation<T>::Finalize(
 
   builder.ExportOutput(scene_graph_->get_pose_bundle_output_port(),
                        "pose_bundle");
-
   builder.ExportOutput(plant_->get_contact_results_output_port(),
                        "contact_results");
   builder.ExportOutput(plant_->get_state_output_port(),
@@ -1102,8 +1100,8 @@ template <typename T>
 void ManipulationStation<T>::SetWsgGains(const double kp, const double kd) {
   DRAKE_THROW_UNLESS(!plant_->is_finalized());
   DRAKE_THROW_UNLESS(kp >= 0 && kd >= 0);
-  wsg_kp_ = kp;
-  wsg_kd_ = kd;
+  ee_kp_ = kp;
+  ee_kd_ = kd;
 }
 
 template <typename T>

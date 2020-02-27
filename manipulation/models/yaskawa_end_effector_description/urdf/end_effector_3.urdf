@@ -149,6 +149,7 @@
       <parent link="ee_base"/>
       <child link="puller_link"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
+
     </joint>
 
     <!-- joint whisker right -->
@@ -156,12 +157,16 @@
       <parent link="ee_base"/>
       <child link="whisker_right_link"/>
       <origin xyz="0.35 0 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+
     </joint>
     <!-- joint whisker left -->
     <joint name="whisker_left_joint" type="revolute">
       <parent link="ee_base"/>
       <child link="whisker_left_link"/>
       <origin xyz="0.35 0 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+
     </joint>
     <!-- END JOINTS -->
 

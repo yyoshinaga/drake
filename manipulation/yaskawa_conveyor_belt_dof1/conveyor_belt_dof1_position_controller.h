@@ -69,41 +69,21 @@ class EndEffectorPdController : public systems::LeafSystem<double> {
     return get_input_port(desired_state_input_port_);
   }
 
-  const systems::InputPort<double>& get_force_limit_input_port() const {
-    return get_input_port(force_limit_input_port_);
-  }
-
   const systems::InputPort<double>& get_state_input_port() const {
     return get_input_port(state_input_port_);
   }
 
-  const systems::OutputPort<double>& get_generalized_force_output_port() const {
-    return get_output_port(generalized_force_output_port_);
-  }
-
-  const systems::OutputPort<double>& get_grip_force_output_port() const {
-    return get_output_port(grip_force_output_port_);
-  }
-
-  //Only for pusher and puller
-  const systems::OutputPort<double>& get_pose_output_port() const {
-    return get_output_port(grip_force_output_port_);
+  const systems::OutputPort<double>& get_generalized_actuation_output_port() const {
+    return get_output_port(generalized_actuation_output_port_);
   }
 
  private:
-  Eigen::Vector4d CalcGeneralizedForce(
+  Eigen::Vector4d CalcGeneralizedActuation(
       const systems::Context<double>& context) const;
 
-  void CalcGeneralizedForceOutput(
+  void CalcGeneralizedActuationOutput(
       const systems::Context<double>& context,
       systems::BasicVector<double>* output_vector) const;
-
-  void CalcGripForceOutput(const systems::Context<double>& context,
-                           systems::BasicVector<double>* output_vector) const;
-
-  void CalcPoseOutput(const systems::Context<double>& context,
-                        systems::BasicVector<double>* output) const;
-
 
   const double kp_command_;
   const double kd_command_;
@@ -111,11 +91,8 @@ class EndEffectorPdController : public systems::LeafSystem<double> {
   const double kd_constraint_;
 
   systems::InputPortIndex desired_state_input_port_{};
-  systems::InputPortIndex force_limit_input_port_{};
   systems::InputPortIndex state_input_port_{};
-  systems::OutputPortIndex generalized_force_output_port_{};
-  systems::OutputPortIndex grip_force_output_port_{};
-  systems::OutputPortIndex pose_output_port_{};
+  systems::OutputPortIndex generalized_actuation_output_port_{};
 
 };
 
@@ -162,35 +139,20 @@ class EndEffectorPositionController : public systems::Diagram<double> {
     return get_input_port(desired_position_input_port_);
   }
 
-  const systems::InputPort<double>& get_force_limit_input_port() const {
-    return get_input_port(force_limit_input_port_);
-  }
-
   const systems::InputPort<double>& get_state_input_port() const {
     return get_input_port(state_input_port_);
   }
 
-  const systems::OutputPort<double>& get_generalized_force_output_port() const {
-    return get_output_port(generalized_force_output_port_);
-  }
-
-  const systems::OutputPort<double>& get_grip_force_output_port() const {
-    return get_output_port(grip_force_output_port_);
-  }
-
-  const systems::OutputPort<double>& get_pose_output_port() const {
-    return get_output_port(pose_output_port_);
+  const systems::OutputPort<double>& get_generalized_actuation_output_port() const {
+    return get_output_port(generalized_actuation_output_port_);
   }
 
  private:
   systems::StateInterpolatorWithDiscreteDerivative<double>* state_interpolator_;
 
   systems::InputPortIndex desired_position_input_port_{};
-  systems::InputPortIndex force_limit_input_port_{};
   systems::InputPortIndex state_input_port_{};
-  systems::OutputPortIndex generalized_force_output_port_{};
-  systems::OutputPortIndex grip_force_output_port_{};
-  systems::OutputPortIndex pose_output_port_{};
+  systems::OutputPortIndex generalized_actuation_output_port_{};
 
 };
 

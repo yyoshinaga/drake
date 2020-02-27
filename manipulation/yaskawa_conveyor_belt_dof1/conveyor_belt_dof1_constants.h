@@ -40,6 +40,8 @@ constexpr double kEndEffectorLcmStatusPeriod = 0.05;
 template <typename T>
 VectorX<T> GetEndEffectorOpenPosition() {
   // clang-format off
+  drake::log()->info("GetEndEffectorOpenPosition in conveyor constants");
+  DRAKE_DEMAND(false);
   return (VectorX<T>(kEndEffectorNumPositions) <<
       -0.0550667,
        0.0550667,0,0).finished();
@@ -54,10 +56,13 @@ MakeMultibodyStateToBeltStateSystem() {
   Eigen::Matrix<double, 6, 8> D;  //wsg_state_measured of size 6, then 4*2 states
   // clang-format off
   //THERE MUST BE 6 STATES
-  D << -1, 1, 0, 0, 0, 0, 0, 0,
-        0, 0, -1, 1, 0, 0, 0, 0,
+  drake::log()->info("MakeMultibodyStateToBeltStateSystem matrix gain");
+  
+  D <<  1, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 1, 0, 0, 0, 0,
         0, 0, 0, 0, 1, 1, 0, 0,
         0, 0, 0, 0, 0, 0, 1, 1;
+        
   // clang-format on
   return std::make_unique<systems::MatrixGain<T>>(D);
 }
@@ -84,6 +89,11 @@ class MultibodyForceToBeltForceSystem : public systems::VectorSystem<T> {
     // gripper force = abs(-finger0 + finger1).
     using std::abs;
     (*output)(0) = abs(input(0) - input(1));
+    (*output)(1) = 0;
+    (*output)(2) = 0;
+    drake::log()->info("DoCalcVectorOutput in conveyor constants");
+    std::cout << (*output).size() << std::endl;
+    DRAKE_DEMAND(false);
   }
 };
 

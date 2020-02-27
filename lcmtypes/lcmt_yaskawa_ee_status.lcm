@@ -4,19 +4,11 @@ struct lcmt_yaskawa_ee_status
 {
   int64_t utime;  //< The timestamp in microseconds.
 
-  double actual_position_mm;
+  double actual_whisker_angle;
   double actual_pusher_position;
   double actual_puller_position;
 
-  // The combined force being applied by both gripper fingers in newtons.
-  // While some implementations may report a negative value for this field
-  // under some circumstances, it should always be interpreted as an unsigned
-  // quantity (absolute value).
-  double actual_force;
-  double actual_speed_mm_per_s;
+  double actual_whisker_speed;
   double actual_pusher_speed;
   double actual_puller_speed;
-
-
-
 }

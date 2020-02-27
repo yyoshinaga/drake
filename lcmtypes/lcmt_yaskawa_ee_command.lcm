@@ -4,10 +4,8 @@ struct lcmt_yaskawa_ee_command
 {
   int64_t utime;  //< The timestamp in microseconds.
 
-  double target_position_mm;
-  double pusher_position;
-  double puller_position;
-  double pusher_move;
-  double puller_move; 
-  double force;
+  boolean whiskers_down;
+  boolean pusher_move;
+  boolean puller_move; 
+
 }
