@@ -58,10 +58,12 @@ MakeMultibodyStateToBeltStateSystem() {
   //THERE MUST BE 6 STATES
   drake::log()->info("MakeMultibodyStateToBeltStateSystem matrix gain");
   
-  D <<  1, 1, 0, 0, 0, 0, 0, 0,
-        0, 0, 1, 1, 0, 0, 0, 0,
-        0, 0, 0, 0, 1, 1, 0, 0,
-        0, 0, 0, 0, 0, 0, 1, 1;
+  D <<  -1, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, -1, 1, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0, 0, 1;
         
   // clang-format on
   return std::make_unique<systems::MatrixGain<T>>(D);

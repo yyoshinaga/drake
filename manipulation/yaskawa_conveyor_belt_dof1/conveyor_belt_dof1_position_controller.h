@@ -65,23 +65,27 @@ class EndEffectorPdController : public systems::LeafSystem<double> {
                         double kp_constraint = 2000.0,
                         double kd_constraint = 5.0);
 
-  const systems::InputPort<double>& get_desired_state_input_port() const {
-    return get_input_port(desired_state_input_port_);
+  const systems::InputPort<double>& get_desired_whisker_state_input_port() const {
+    return get_input_port(desired_whisker_state_input_port_);
+  }
+
+  const systems::InputPort<double>& get_desired_belt_state_input_port() const {
+    return get_input_port(desired_belt_state_input_port_);
   }
 
   const systems::InputPort<double>& get_state_input_port() const {
     return get_input_port(state_input_port_);
   }
 
-  const systems::OutputPort<double>& get_generalized_actuation_output_port() const {
-    return get_output_port(generalized_actuation_output_port_);
+  const systems::OutputPort<double>& get_generalized_acceleration_output_port() const {
+    return get_output_port(generalized_acceleration_output_port_);
   }
 
  private:
-  Eigen::Vector4d CalcGeneralizedActuation(
+  Eigen::Vector4d CalcGeneralizedAcceleration(
       const systems::Context<double>& context) const;
 
-  void CalcGeneralizedActuationOutput(
+  void CalcGeneralizedAccelerationOutput(
       const systems::Context<double>& context,
       systems::BasicVector<double>* output_vector) const;
 
@@ -90,11 +94,46 @@ class EndEffectorPdController : public systems::LeafSystem<double> {
   const double kp_constraint_;
   const double kd_constraint_;
 
-  systems::InputPortIndex desired_state_input_port_{};
+  systems::InputPortIndex desired_whisker_state_input_port_{};
+  systems::InputPortIndex desired_belt_state_input_port_{};
   systems::InputPortIndex state_input_port_{};
-  systems::OutputPortIndex generalized_actuation_output_port_{};
+  systems::OutputPortIndex generalized_acceleration_output_port_{};
 
 };
+
+// This function takes in ee_commands which are boolean values and generates 
+// desired angles for the whiskers
+class EndEffectorGenerateAngleAndVelocity : public systems::LeafSystem<double> {
+ public:
+  DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(EndEffectorGenerateAngleAndVelocity)
+
+  EndEffectorGenerateAngleAndVelocity();
+
+  const systems::InputPort<double>& get_actuation_input_port() const {
+    return get_input_port(actuation_input_port_);
+  }
+
+  const systems::OutputPort<double>& get_angle_output_port() const {
+    return get_output_port(angle_output_port_);
+  }
+
+  const systems::OutputPort<double>& get_velocity_output_port() const {
+    return get_output_port(velocity_output_port_);
+  }
+
+ private:
+
+  void CalcAngleOutput(const systems::Context<double>& context,
+      systems::BasicVector<double>* output_vector) const;
+  void CalcVelocityOutput(const systems::Context<double>& context,
+      systems::BasicVector<double>* output_vector) const;
+
+  systems::InputPortIndex actuation_input_port_{};
+  systems::OutputPortIndex angle_output_port_{};
+  systems::OutputPortIndex velocity_output_port_{};
+
+};
+
 
 /// This class implements a controller for a Schunk WSG gripper in position
 /// control mode adding a discrete-derivative to estimate the desired
@@ -135,24 +174,25 @@ class EndEffectorPositionController : public systems::Diagram<double> {
     set_initial_position(&context->get_mutable_state(), desired_position);
   }
 
-  const systems::InputPort<double>& get_desired_position_input_port() const {
-    return get_input_port(desired_position_input_port_);
+  const systems::InputPort<double>& get_actuation_input_port() const {
+    return get_input_port(actuation_input_port_);
   }
 
   const systems::InputPort<double>& get_state_input_port() const {
     return get_input_port(state_input_port_);
   }
 
-  const systems::OutputPort<double>& get_generalized_actuation_output_port() const {
-    return get_output_port(generalized_actuation_output_port_);
+  const systems::OutputPort<double>& get_generalized_acceleration_output_port() const {
+    return get_output_port(generalized_acceleration_output_port_);
   }
 
  private:
   systems::StateInterpolatorWithDiscreteDerivative<double>* state_interpolator_;
 
-  systems::InputPortIndex desired_position_input_port_{};
+  systems::InputPortIndex actuation_input_port_{};
+
   systems::InputPortIndex state_input_port_{};
-  systems::OutputPortIndex generalized_actuation_output_port_{};
+  systems::OutputPortIndex generalized_acceleration_output_port_{};
 
 };
 

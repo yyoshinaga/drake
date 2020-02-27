@@ -820,8 +820,34 @@ void ManipulationStation<T>::Finalize(
         manipulation::yaskawa_conveyor_belt_dof1::kEndEffectorLcmStatusPeriod, ee_kp_, ee_kd_);
     ee_controller->set_name("ee_controller");
 
+
+    // const auto source1 =
+    //   builder.template AddSystem<systems::ConstantVectorSource<double>>(
+    //       0);
+    // const auto source2 =
+    //   builder.template AddSystem<systems::ConstantVectorSource<double>>(
+    //       0);
+    // const auto source3 =
+    //   builder.template AddSystem<systems::ConstantVectorSource<double>>(
+    //       0);
+    // const auto source4 =
+    //   builder.template AddSystem<systems::ConstantVectorSource<double>>(
+    //       0);
+          
+    // auto mux = builder.template AddSystem<systems::Multiplexer>(4);
+
+    // builder.Connect(source1->get_output_port(),mux->get_input_port(0));
+    // builder.Connect(source2->get_output_port(),mux->get_input_port(1));
+    // builder.Connect(source3->get_output_port(),mux->get_input_port(2));
+    // builder.Connect(source4->get_output_port(),mux->get_input_port(3));
+
+    // builder.Connect(mux->get_output_port(0),
+    //                 plant_->get_actuation_input_port(wsg_model_.model_instance));
+
+
+
     //Input accelerations to multibody plant - size 4
-    builder.Connect(ee_controller->get_generalized_force_output_port(),
+    builder.Connect(ee_controller->get_generalized_acceleration_output_port(),
                     plant_->get_actuation_input_port(wsg_model_.model_instance));
 
     //States sent from mbp to controller - size 8
@@ -829,19 +855,19 @@ void ManipulationStation<T>::Finalize(
                     ee_controller->get_state_input_port());
 
     //State interpolator of only position of size 3
-    builder.ExportInput(ee_controller->get_desired_position_input_port(),
-                        "ee_acc");
+    builder.ExportInput(ee_controller->get_actuation_input_port(),
+                        "ee_actuation");
 
-    // auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
-    //     manipulation::yaskawa_conveyor_belt_dof1::MakeMultibodyStateToBeltStateSystem<double>());
+    auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
+        manipulation::yaskawa_conveyor_belt_dof1::MakeMultibodyStateToBeltStateSystem<double>());
 
-    // //States sent from mbp to wsgState - size 8
-    // builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
-    //                 wsg_mbp_state_to_wsg_state->get_input_port());
+    //States sent from mbp to wsgState - size 8
+    builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
+                    wsg_mbp_state_to_wsg_state->get_input_port());
 
-    // //Should be size 8
-    // builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
-    //                      "ee_state_measured");
+    //Should be size 8
+    builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
+                         "ee_state_measured");
   }
 //----------------------------------------------------------------------------------
   builder.ExportOutput(plant_->get_generalized_contact_forces_output_port(
@@ -1003,13 +1029,6 @@ void ManipulationStation<T>::SetConveyorPosition(
   drake::log()->info("SetConveyorPosition 14");
 
 }
-
-
-
-
-
-
-
 
 template <typename T>
 Vector3<T> ManipulationStation<T>::GetWsgPosition(

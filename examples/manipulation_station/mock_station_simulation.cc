@@ -69,14 +69,14 @@ int do_main(int argc, char* argv[]) {
 
   if (FLAGS_setup == "manipulation_class") {
     station->SetupManipulationClassStation();
-    // station->AddManipulandFromFile(
-    //     "drake/examples/manipulation_station/models/package1.sdf",
-    //     math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
-    //                                  Eigen::Vector3d(1.75, 1.999, 1.2)));
-    // station->AddManipulandFromFile(
-    //     "drake/examples/manipulation_station/models/package2.sdf",
-    //     math::RigidTransform<double>(math::RollPitchYaw<double>(0, 0, 0.57),
-    //                                  Eigen::Vector3d(1.75, 2.7, 1.05)));
+    station->AddManipulandFromFile(
+        "drake/examples/manipulation_station/models/package1.sdf",
+        math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
+                                     Eigen::Vector3d(1.75, 1.999, 1.2)));
+    station->AddManipulandFromFile(
+        "drake/examples/manipulation_station/models/package2.sdf",
+        math::RigidTransform<double>(math::RollPitchYaw<double>(0, 0, 0.57),
+                                     Eigen::Vector3d(1.75, 2.7, 1.05)));
 
 
   } else if (FLAGS_setup == "clutter_clearing") {
@@ -97,9 +97,6 @@ int do_main(int argc, char* argv[]) {
 
   geometry::ConnectDrakeVisualizer(&builder, station->get_scene_graph(),
                                    station->GetOutputPort("pose_bundle"));
-
-  // geometry::ConnectDrakeVisualizer(&builder, conveyor_station->get_scene_graph(), 
-  //                                  conveyor_station->GetOutputPort("pose_bundle2"));
 
   auto lcm = builder.AddSystem<systems::lcm::LcmInterfaceSystem>();
 
@@ -163,8 +160,6 @@ int do_main(int argc, char* argv[]) {
 //                   conveyor_status_publisher->get_input_port());
 
 
-
-
   // Receive the ee commands.
   auto ee_command_subscriber = builder.AddSystem(
       systems::lcm::LcmSubscriberSystem::Make<drake::lcmt_yaskawa_ee_command>(
@@ -174,21 +169,21 @@ int do_main(int argc, char* argv[]) {
   builder.Connect(ee_command_subscriber->get_output_port(),
                   ee_command->GetInputPort("command_message"));
 
-
-
-DRAKE_DEMAND(false);
 //FIX ME: 
 /*
     Problem: Need to find out how Dorabot controls their ee motors. 
     PWM? PPM? Is the input acceleration or voltage? How accurate do we need to model the motor? 
     Depending on that, we need to change the command actuation port. 
+
+    ee_command should just send boolean values to the controller. 
+    The controller should use those values to determine how the motor should run. 
+    ee_state_measured should be the 6 states that the system needs
 */
 
-  //***Create acceleration_output_port instead of position_output_port***
+  // This is an actuation port instead of a position port. 
+  // It receives values of either on or off to actuate the end effector components: size 3
   builder.Connect(ee_command->get_actuation_output_port(),
                   station->GetInputPort("ee_actuation"));
-//   builder.Connect(ee_command->get_position_output_port(),
-//                   station->GetInputPort("ee_position"));
 
   // Publish the ee status.
   auto ee_status =
@@ -201,7 +196,7 @@ DRAKE_DEMAND(false);
           "EE_STATUS", lcm, 0.05 /* publish period */));
   builder.Connect(ee_status->get_output_port(0),
                   ee_status_publisher->get_input_port());
-  drake::log()->info("finished connecting ee stuff in mock station");
+  drake::log()->info("finished connecting ee ports in mock station");
 
   // TODO(russt): Publish the camera outputs.
 
@@ -212,10 +207,9 @@ DRAKE_DEMAND(false);
   auto& station_context =
       diagram->GetMutableSubsystemContext(*station, &context);
 
-
   // Get the initial Iiwa pose and initialize the iiwa_command to match.
   VectorXd q0 = station->GetIiwaPosition(station_context); //Yaskawa has q0 = size 6
-
+    // q0 << 0,0,0,0,1,0;
   iiwa_command->set_initial_position(
       &diagram->GetMutableSubsystemContext(*iiwa_command, &context), q0);
 

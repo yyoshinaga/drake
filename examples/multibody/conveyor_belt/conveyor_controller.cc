@@ -187,7 +187,7 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
     output->SetAtIndex(0,0); //acc
     output->SetAtIndex(1,0);
     // output->SetAtIndex(2,1);
-    drake::log()->info("input1: {}\n intput2: {}\n intput3: {}\n intput4: {}", inputVector[0], inputVector[1], inputVector[2], inputVector[3]); //inputVector[4], inputVector[5]
+    // drake::log()->info("input1: {}\n intput2: {}\n intput3: {}\n intput4: {}", inputVector[0], inputVector[1], inputVector[2], inputVector[3]); //inputVector[4], inputVector[5]
 }
 
 //Updates States - this is taken care in multibodyplant so there's no need to do anything here

@@ -82,8 +82,6 @@ void EndEffectorCommandReceiver::CalcActuationOutput(
   //   }
   // }
 
-  
-
   output->SetAtIndex(0, message.whiskers_down?1:0);  
   output->SetAtIndex(1, message.pusher_move?1:0);  //Pusher is moving?
   output->SetAtIndex(2, message.puller_move?1:0);  //Puller is moving?

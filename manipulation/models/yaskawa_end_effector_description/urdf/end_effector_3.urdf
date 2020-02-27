@@ -30,7 +30,7 @@
     </link>
 
     <!-- links of cylinder base connected with the ee_base -->
-    <!-- visual only? -->
+    <!-- visual only? DO NOT ERASE THIS!! -->
     <!-- <link name="conveyor_belt_dof1_link">
       <inertial>
         <mass value="1.2"/>
@@ -46,37 +46,7 @@
       </visual>
     </link> -->
 
-    <link name="pusher_link">
-      <visual>
-        <material name="green"/>
-        <origin xyz="0.3 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.01 0.5 0.2"/>
-        </geometry>
-      </visual>
-      <collision>
-        <origin xyz="0.3 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.1 0.5 0.2"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <link name="puller_link">
-      <visual>
-        <material name="blue"/>
-        <origin xyz="0.5 0 -0.15" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.4 0.5 0.01"/>
-        </geometry>
-      </visual>
-      <collision>   
-        <origin xyz="0.5 0 -0.15" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.4 0.5 0.1"/>
-        </geometry>
-      </collision>
-    </link>
+    
 
      <!-- virtual link, equivlent of TCP (Tool Center Point) -->
     <link name="whisker_right_link">
@@ -125,19 +95,69 @@
       </collision>
     </link>
 
+    <link name="pusher_link">
+      <inertial>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="green"/>
+        <origin xyz="0.0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.5 0.2"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0.0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.1 0.5 0.2"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="puller_link">
+      <inertial>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="blue"/>
+        <origin xyz="0.3 0 -0.15" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.4 0.5 0.01"/>
+        </geometry>
+      </visual>
+      <collision>   
+        <origin xyz="0.3 0 -0.15" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.4 0.5 0.1"/>
+        </geometry>
+      </collision>
+    </link>
 
     <!-- frame, equivlent of TCP (Tool Center Point) -->
     <frame link="ee_base" name="ee_tip_0" rpy="0 0 0" xyz="0.54 0 0"/>
 
     <!-- END LINKS -->
 
-    <!-- JOINTS -->
-    <!-- virtual joint, interfacing with arm -->
-    <!-- <joint name="ee_base_joint" type="fixed">
-      <parent link="ee_mount"/>
-      <child link="ee_base"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint> -->
+
+    <!-- joint whisker right -->
+    <joint name="whisker_right_joint" type="revolute">
+      <parent link="ee_base"/>
+      <child link="whisker_right_link"/>
+      <origin xyz="0.35 0 0" rpy="0 0 0"/>
+      <axis xyz="1 0 0"/>
+
+    </joint>
+    <!-- joint whisker left -->
+    <joint name="whisker_left_joint" type="revolute">
+      <parent link="ee_base"/>
+      <child link="whisker_left_link"/>
+      <origin xyz="0.35 0 0" rpy="0 0 0"/>
+      <axis xyz="1 0 0"/>
+    </joint>
 
     <joint name="pusher_joint" type="prismatic">
       <parent link="ee_base"/>
@@ -149,27 +169,10 @@
       <parent link="ee_base"/>
       <child link="puller_link"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-
-    </joint>
-
-    <!-- joint whisker right -->
-    <joint name="whisker_right_joint" type="revolute">
-      <parent link="ee_base"/>
-      <child link="whisker_right_link"/>
-      <origin xyz="0.35 0 0" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
-
-    </joint>
-    <!-- joint whisker left -->
-    <joint name="whisker_left_joint" type="revolute">
-      <parent link="ee_base"/>
-      <child link="whisker_left_link"/>
-      <origin xyz="0.35 0 0" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
-
     </joint>
     <!-- END JOINTS -->
 
+    <!-- DO NOT ERASE THIS!! -->
     <!-- virtual joint, connect ee_base to various link in end effector -->
     <!-- <joint name="conveyor_belt_dof1_joint" type="fixed">
       <parent link="ee_base"/>
@@ -231,13 +234,39 @@
     </actuator>
   </transmission> -->
 
-  <transmission name="pusher_tran">
+ 
+
+  <transmission name="yaskawa_ee_1">
+    <robotNamespace>/yaskawa</robotNamespace>
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="whisker_right_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="yaskawa_motor_1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="yaskawa_ee_2">
+    <robotNamespace>/yaskawa</robotNamespace>
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="whisker_left_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="yaskawa_motor_2">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+   <transmission name="pusher_tran">
     <robotNamespace>/yaskawa</robotNamespace>
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="pusher_joint">
       <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
-    <actuator name="yaskawa_motor_1">
+    <actuator name="yaskawa_motor_3">
       <hardwareInterface>PositionJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
@@ -248,30 +277,6 @@
     <robotNamespace>/yaskawa</robotNamespace>
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="puller_joint">
-      <hardwareInterface>PositionJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="yaskawa_motor_2">
-      <hardwareInterface>PositionJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-
-  <transmission name="yaskawa_ee_1">
-    <robotNamespace>/yaskawa</robotNamespace>
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="whisker_right_joint">
-      <hardwareInterface>PositionJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="yaskawa_motor_3">
-      <hardwareInterface>PositionJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-
-  <transmission name="yaskawa_ee_2">
-    <robotNamespace>/yaskawa</robotNamespace>
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="whisker_left_joint">
       <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="yaskawa_motor_4">

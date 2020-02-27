@@ -2,14 +2,22 @@
 
 #include "drake/math/saturate.h"
 #include "drake/systems/framework/diagram_builder.h"
+#include <gflags/gflags.h>
 
 namespace drake {
 namespace manipulation {
 namespace yaskawa_conveyor_belt_dof1 {
 
+DEFINE_double(angle_limit, M_PI/2, "movement limit");
+DEFINE_double(pusher_limit, 0.4, "movement limit");
+DEFINE_double(puller_limit, 0.3, "movement limit");
+DEFINE_double(pusher_initial, 0, "initial position");
+DEFINE_double(puller_initial, 0, "initial position");
+DEFINE_double(belt_speed, 0.01, "speed limit");
+
+
 using Eigen::Vector2d;
 using Eigen::Vector4d;
-
 using systems::BasicVector;
 
 const int kNumJoints = 4;
@@ -30,12 +38,15 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
   // Desired states include:
   // 1 set of whisker position,
   // 1 set of whisker velocity,
-  // 1 pusher position,
+  desired_whisker_state_input_port_ =
+      this->DeclareVectorInputPort("desired_whisker_state", BasicVector<double>(2))
+          .get_index();
+
+  // Desired states include:
   // 1 pusher velocity, 
-  // 1 puller position,
   // 1 pusher velocity
-  desired_state_input_port_ =
-      this->DeclareVectorInputPort("desired_state", BasicVector<double>(6))
+  desired_belt_state_input_port_ =
+      this->DeclareVectorInputPort("desired_belt_state", BasicVector<double>(2))
           .get_index();
 
   // Input includes 8 states:
@@ -52,24 +63,27 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
   // actuation for left whisker
   // acc for pusher
   // acc for puller
-  generalized_actuation_output_port_ =
+  generalized_acceleration_output_port_ =
       this->DeclareVectorOutputPort(
-            "generalized_actuation", BasicVector<double>(4),
-            &EndEffectorPdController::CalcGeneralizedActuationOutput)
+            "generalized_acceleration", BasicVector<double>(4),
+            &EndEffectorPdController::CalcGeneralizedAccelerationOutput)
           .get_index();    
 
   this->set_name("end_effector_controller");
 }
 
 //This is where you calculate accelerations for ee input
-Vector4d EndEffectorPdController::CalcGeneralizedActuation(
+Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
     const drake::systems::Context<double>& context) const {
-          drake::log()->info("calcgeneralizedactuation begin");
-
+    
   // Read the input ports.
-  const auto& desired_state = get_desired_state_input_port().Eval(context);
+  const auto& desired_whisker_state = get_desired_whisker_state_input_port().Eval(context);
+  const auto& desired_belt_state = get_desired_belt_state_input_port().Eval(context);
+
   // TODO(russt): Declare a proper input constraint.
   const auto& state = get_state_input_port().Eval(context);
+
+  drake::log()->info("state size: {} ", state.size());
 
   // f₀+f₁ = -kp_constraint*(q₀+q₁) - kd_constraint*(v₀+v₁).
   const double f0_plus_f1 = -kp_constraint_ * (state[0] + state[1]) -
@@ -77,30 +91,179 @@ Vector4d EndEffectorPdController::CalcGeneralizedActuation(
 
   // -f₀+f₁ = sat(kp_command*(q_d + q₀ - q₁) + kd_command*(v_d + v₀ - v₁)).
   const double neg_f0_plus_f1 =
-                        kp_command_ * (desired_state[0] + state[0] - state[1]) +
-                        kd_command_ * (desired_state[3] + state[4] - state[5]);
+                        kp_command_ * (desired_whisker_state[0] + state[0] - state[1]) +
+                        kd_command_ * (desired_whisker_state[1] + state[4] - state[5]);
 
+  // state[2] = pusher position
+  // state[3] = puller position
+  // state[6] = pusher velocity
+  // state[7] = puller velocity
 
-  //TODO: Use received status to control ee pusher and puller accelerations
+  //Use desired velocities from belt_state to create accelerations
+  // desired_belt_states are pusher and puller's velocities
+  double kd = 9;
+  double kp = 5;
 
-  drake::log()->info("calcgeneralizedactuation end");
+  double pusher_acc = 0; 
+  double puller_acc = 0;
+  double buffer = 0.01;
+
+  //Making sure push and pull is not on at once
+  DRAKE_DEMAND(!(desired_belt_state[0] && desired_belt_state[1]));
+
+  // If pusher is on,
+  if(desired_belt_state[0]){
+    drake::log()->info("pusher on");
+    DRAKE_DEMAND(false);
+
+    // If puller is not back at its initial position
+    if(FLAGS_puller_initial+buffer < state[3]){
+        puller_acc = kp*(FLAGS_puller_initial - state[3]) + kd*(- state[7]);
+        drake::log()->info("pusher trying to move but puller is not at intial position");
+
+    }
+    // If pusher is past its reach limit
+    else if(state[2] >= FLAGS_pusher_limit){
+        pusher_acc = kp*(FLAGS_pusher_limit - state[2]) + kd*(- state[6]);
+        drake::log()->info("pusher already past its limit");
+
+    }
+    // If pusher is at its initial position
+    else if(state[2] <= FLAGS_pusher_initial){
+        pusher_acc = kp*(FLAGS_pusher_initial - state[2]) + kd*(- state[6]);
+        drake::log()->info("pusher is already at initial position");
+
+    }
+    else{
+        pusher_acc = kd * (desired_belt_state[0] - state[6]);
+        drake::log()->info("pusher on");
+
+    }
+  }
+  // If puller is on, 
+  else if(desired_belt_state[1]){
+    drake::log()->info("puller on");
+    DRAKE_DEMAND(false);
+    // If pusher is not back at its initial position
+    if(FLAGS_pusher_initial+buffer < state[3]){
+        pusher_acc = kp*(FLAGS_pusher_initial - state[2]) + kd*(- state[6]);
+        drake::log()->info("puller trying to move but pusher is not at intial position");
+
+    }
+    // If puller is past its reach limit
+    else if(state[3] <= FLAGS_puller_limit){
+        puller_acc = kp*(FLAGS_puller_limit - state[3]) + kd*(- state[7]);
+        drake::log()->info("puller already past its limit");
+    }
+    // If puller is at its initial position
+    else if(state[3] >= FLAGS_puller_initial){
+        puller_acc = kp*(FLAGS_puller_initial - state[3]) + kd*(- state[7]);
+        drake::log()->info("puller is already at initial position");
+
+    }
+    else{
+        puller_acc = kd * (desired_belt_state[1] - state[7]);
+        drake::log()->info("puller on");
+    }
+  }
+
+  // If pusher and puller is off, go to initial postion and stay
+  else{
+    drake::log()->info("both off");
+    pusher_acc = kp*(FLAGS_pusher_initial - state[2]) + kd*(- state[6]);
+    puller_acc = kp*(FLAGS_puller_initial - state[3]) + kd*(- state[7]);
+  }
+
+  drake::log()->info("\ndesired_whisker_state: {}\nstate[0]: {} \nstate[1]: {}\nstate[2]: {}\nstate[3]: {}\nstate[4]: {}\nstate[5]: {}\nstate[6]: {}\nstate[7]: {}\ndesired_belt_state[0]: {}\ndesired_belt_state[1]: {}\npusher_acc: {}\npuller_acc: {}", 
+  desired_whisker_state[0],state[0],state[1],state[2],state[3],state[4],state[5],state[6],state[7],desired_belt_state[0],desired_belt_state[1],pusher_acc,puller_acc);
 
   // f₀ = (f₀+f₁)/2 - (-f₀+f₁)/2,
   // f₁ = (f₀+f₁)/2 + (-f₀+f₁)/2.
   return Vector4d(0.5 * f0_plus_f1 - 0.5 * neg_f0_plus_f1,
                   0.5 * f0_plus_f1 + 0.5 * neg_f0_plus_f1,
-                  0,
-                  0.1 );
+                  pusher_acc,
+                  puller_acc);
 }
 
 //actuations/acceleration for each component
-void EndEffectorPdController::CalcGeneralizedActuationOutput(
+void EndEffectorPdController::CalcGeneralizedAccelerationOutput(
     const drake::systems::Context<double>& context,
     drake::systems::BasicVector<double>* output_vector) const {
 
-  drake::log()->info("calcgeneralizedactuationOutput begin");
-  output_vector->SetFromVector(CalcGeneralizedActuation(context));
-  drake::log()->info("calcgeneralizedActuationOutput end");
+    output_vector->SetFromVector(CalcGeneralizedAcceleration(context));
+
+
+}
+
+
+EndEffectorGenerateAngleAndVelocity::EndEffectorGenerateAngleAndVelocity(){
+  actuation_input_port_ =
+      this->DeclareVectorInputPort("actuation", BasicVector<double>(3))
+          .get_index();
+
+  angle_output_port_ =
+      this->DeclareVectorOutputPort(
+            "angle", BasicVector<double>(1),
+            &EndEffectorGenerateAngleAndVelocity::CalcAngleOutput)
+          .get_index();    
+
+  velocity_output_port_ =
+      this->DeclareVectorOutputPort(
+            "velocity", BasicVector<double>(2),
+            &EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput)
+          .get_index(); 
+
+  this->set_name("end_effector_angle_and_velocity_generator");
+}
+
+//Input: boolean on/off for moving whiskers
+//Output: Whiskers desired angle
+void EndEffectorGenerateAngleAndVelocity::CalcAngleOutput(
+    const drake::systems::Context<double>& context,
+    drake::systems::BasicVector<double>* output_vector) const {
+
+    const auto& actuation = get_actuation_input_port().Eval(context);
+
+    if(actuation[0]){
+        //Move whiskers to grasping angle
+        output_vector->SetAtIndex(0, M_PI/2);
+    }
+    else{
+        //Return whiskers to initial positions
+        output_vector->SetAtIndex(0, 0);
+    }
+}
+
+//Input: boolean on/off for moving pusher and puller
+//Output: Velocity for pusher and puller
+void EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput(
+    const drake::systems::Context<double>& context,
+    drake::systems::BasicVector<double>* output_vector) const {
+
+    const auto& actuation = get_actuation_input_port().Eval(context);
+    
+    // If both pusher and puller is on, something has gone wrong.
+    // AKA: conveyor belt cannot push and pull at the same time
+    DRAKE_DEMAND(!(actuation[1] && actuation[2]));
+
+    output_vector->SetAtIndex(0, FLAGS_belt_speed); 
+    output_vector->SetAtIndex(1, -FLAGS_belt_speed);
+
+
+    //If pusher or puller is 'on', set velocity to desired velocity
+    if(actuation[1]){
+        output_vector->SetAtIndex(0, FLAGS_belt_speed); 
+        output_vector->SetAtIndex(1, 0);
+    }
+    else if(actuation[2]){
+        output_vector->SetAtIndex(0, 0);
+        output_vector->SetAtIndex(1, FLAGS_belt_speed); 
+    }
+    else{ 
+        //If both are false, conveyor belt goes back to initial position
+        output_vector->SetAtIndex(0, 0); 
+        output_vector->SetAtIndex(1, 0); 
+    }
 }
 
 EndEffectorPositionController::EndEffectorPositionController(double time_step,
@@ -111,23 +274,34 @@ EndEffectorPositionController::EndEffectorPositionController(double time_step,
   systems::DiagramBuilder<double> builder;
 
   auto pd_controller = builder.AddSystem<EndEffectorPdController>(
-      kp_command, kd_command, kp_constraint, kd_constraint);
+        kp_command, kd_command, kp_constraint, kd_constraint);
 
   state_interpolator_ =
       builder.AddSystem<systems::StateInterpolatorWithDiscreteDerivative>(
-          3, time_step);
+        1, time_step);
 
+  auto angle_and_velocity_generator = 
+        builder.AddSystem<EndEffectorGenerateAngleAndVelocity>();
+
+  actuation_input_port_ = builder.ExportInput(
+      angle_and_velocity_generator->get_actuation_input_port(), "ee_angle_and_velocity");
+
+  builder.Connect(angle_and_velocity_generator->get_angle_output_port(),
+                  state_interpolator_->get_input_port());
+
+  // For whiskers
   builder.Connect(state_interpolator_->get_output_port(),
-                  pd_controller->get_desired_state_input_port());
+                  pd_controller->get_desired_whisker_state_input_port());
 
-  desired_position_input_port_ = builder.ExportInput(
-      state_interpolator_->get_input_port(), "desired_position");
+  // For pusher and puller
+  builder.Connect(angle_and_velocity_generator->get_velocity_output_port(),
+                  pd_controller->get_desired_belt_state_input_port());
 
   state_input_port_ = builder.ExportInput(
       pd_controller->get_state_input_port(), "state");
 
-  generalized_actuation_output_port_ = builder.ExportOutput(
-      pd_controller->get_generalized_actuation_output_port(), "generalized_actuation");
+  generalized_acceleration_output_port_ = builder.ExportOutput(
+      pd_controller->get_generalized_acceleration_output_port(), "generalized_acceleration");
 
   builder.BuildInto(this);
 }
