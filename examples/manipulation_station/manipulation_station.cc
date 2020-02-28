@@ -470,9 +470,9 @@ void ManipulationStation<T>::SetDefaultState(
 
   // SetWsgPosition(station_context, state, eePosition);
   // SetWsgVelocity(station_context, state, Vector3<T>::Zero(0));
-  // Vector3<T> conveyorPosition1;
-  // conveyorPosition1 << 0, 0, 1; //x_pos, theta, alpha
-  // SetConveyorPosition(station_context, state, conveyorPosition1, 1);
+  Vector3<T> conveyorPosition1;
+  conveyorPosition1 << 0.25, 0, 0; //x_pos, theta, alpha
+  SetConveyorPosition(station_context, state, conveyorPosition1, 1);
 
   // Vector2<T> conveyorPosition2(2);
   // conveyorPosition2 << 0.16, 0; //x_pos, theta
@@ -790,13 +790,13 @@ void ManipulationStation<T>::Finalize(
     //                 belt_controller3->get_input_port(0)); 
   
 
-    // // Approximate desired state command from a discrete derivative of the
-    // // position command input port.
-    // auto desired_state_from_position_1 = builder.template AddSystem<
-    //     systems::StateInterpolatorWithDiscreteDerivative>(3, plant_->time_step());
-    // desired_state_from_position_1->set_name("desired_state_from_position_belt_1");
-    // builder.Connect(belt_controller1->get_output_port(0),
-    //                 desired_state_from_position_1->get_input_port());
+    // Approximate desired state command from a discrete derivative of the
+    // position command input port.
+    auto desired_state_from_position_1 = builder.template AddSystem<
+        systems::StateInterpolatorWithDiscreteDerivative>(3, plant_->time_step());
+    desired_state_from_position_1->set_name("desired_state_from_position_belt_1");
+    builder.Connect(belt_controller1->get_output_port(0),
+                    desired_state_from_position_1->get_input_port());
 
     // // Approximate desired state command from a discrete derivative of the
     // // position command input port.
@@ -819,32 +819,6 @@ void ManipulationStation<T>::Finalize(
         manipulation::yaskawa_conveyor_belt_dof1::EndEffectorPositionController>(
         manipulation::yaskawa_conveyor_belt_dof1::kEndEffectorLcmStatusPeriod, ee_kp_, ee_kd_);
     ee_controller->set_name("ee_controller");
-
-
-    // const auto source1 =
-    //   builder.template AddSystem<systems::ConstantVectorSource<double>>(
-    //       0);
-    // const auto source2 =
-    //   builder.template AddSystem<systems::ConstantVectorSource<double>>(
-    //       0);
-    // const auto source3 =
-    //   builder.template AddSystem<systems::ConstantVectorSource<double>>(
-    //       0);
-    // const auto source4 =
-    //   builder.template AddSystem<systems::ConstantVectorSource<double>>(
-    //       0);
-          
-    // auto mux = builder.template AddSystem<systems::Multiplexer>(4);
-
-    // builder.Connect(source1->get_output_port(),mux->get_input_port(0));
-    // builder.Connect(source2->get_output_port(),mux->get_input_port(1));
-    // builder.Connect(source3->get_output_port(),mux->get_input_port(2));
-    // builder.Connect(source4->get_output_port(),mux->get_input_port(3));
-
-    // builder.Connect(mux->get_output_port(0),
-    //                 plant_->get_actuation_input_port(wsg_model_.model_instance));
-
-
 
     //Input accelerations to multibody plant - size 4
     builder.Connect(ee_controller->get_generalized_acceleration_output_port(),
@@ -1282,7 +1256,7 @@ void ManipulationStation<T>::AddDefaultConveyor(
         "drake/manipulation/models/conveyor_belt_description/sdf/"
         "conveyor_simple_robot.sdf");
 
-    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(2.5, 2.0, 0.8));
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7018, 2.32042, 0.8636-0.1375));
                                   //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
                                   //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 

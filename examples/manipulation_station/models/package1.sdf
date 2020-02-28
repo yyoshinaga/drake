@@ -18,7 +18,7 @@
       <pose frame=''>0 0 0.075 0 0 0</pose>
       <geometry>
         <box> 
-          <size>0.3 0.3 0.15</size>
+          <size>0.2 0.25 0.15</size>
         </box>
       </geometry>
       <material>
@@ -42,62 +42,62 @@
       <pose>0 0 0.075 0 0 0</pose>
       <geometry>
         <box> 
-          <size>0.299 0.299 0.149</size>
+          <size>0.199 0.249 0.149</size>
         </box>
       </geometry>
     </collision>
 
     <collision name='point_collision1'>
-      <pose>0.15 0.15 0 0 0 0</pose>
+      <pose>0.1 0.125 0 0 0 0</pose>
       <geometry>
         <sphere><radius>1e-7</radius></sphere>
       </geometry>
     </collision>
 
     <collision name='point_collision2'>
-      <pose>0.15 -0.15 0 0 0 0</pose>
+      <pose>0.1 -0.125 0 0 0 0</pose>
       <geometry>
         <sphere><radius>1e-7</radius></sphere>
       </geometry>
     </collision>
 
     <collision name='point_collision3'>
-      <pose>-0.15 0.15 0 0 0 0</pose>
+      <pose>-0.1 0.125 0 0 0 0</pose>
       <geometry>
         <sphere><radius>1e-7</radius></sphere>
       </geometry>
     </collision>
 
     <collision name='point_collision4'>
-      <pose>-0.15 -0.15 0 0 0 0</pose>
+      <pose>-0.1 -0.125 0 0 0 0</pose>
       <geometry>
         <sphere><radius>1e-7</radius></sphere>
       </geometry>
     </collision>
 
     <collision name='point_collision5'>
-      <pose>0.15 0.15 0.075 0 0 0</pose>
+      <pose>0.1 0.125 0.075 0 0 0</pose>
       <geometry>
         <sphere><radius>1e-7</radius></sphere>
       </geometry>
     </collision>
 
     <collision name='point_collision6'>
-      <pose>0.15 -0.15 0.075 0 0 0</pose>
+      <pose>0.1 -0.125 0.075 0 0 0</pose>
       <geometry>
         <sphere><radius>1e-7</radius></sphere>
       </geometry>
     </collision>
 
     <collision name='point_collision7'>
-      <pose>-0.15 0.15 0.075 0 0 0</pose>
+      <pose>-0.1 0.125 0.075 0 0 0</pose>
       <geometry>
         <sphere><radius>1e-7</radius></sphere>
       </geometry>
     </collision>
 
     <collision name='point_collision8'>
-      <pose>-0.15 -0.15 0.075 0 0 0</pose>
+      <pose>-0.1 -0.125 0.075 0 0 0</pose>
       <geometry>
         <sphere><radius>1e-7</radius></sphere>
       </geometry>

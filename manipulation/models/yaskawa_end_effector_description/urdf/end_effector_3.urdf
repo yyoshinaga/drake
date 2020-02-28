@@ -79,7 +79,7 @@
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
       <visual>
-        <material name="blue"/>
+        <material name="red"/>
         <geometry>
           <box size="0.33 0.39 0.003"/> <!-- Approximation of whiskers -->
           <!-- <mesh filename="../mesh/CBEE_v4_whisker_drake.obj" /> -->

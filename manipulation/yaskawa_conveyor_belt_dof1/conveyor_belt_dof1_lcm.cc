@@ -44,44 +44,6 @@ void EndEffectorCommandReceiver::CalcActuationOutput(
   const auto& message =
       this->get_input_port(0).Eval<lcmt_yaskawa_ee_command>(context);
 
-  // // Get the states from the plant
-  // const systems::BasicVector<double>* input_vector =
-  //     this->EvalVectorInput(context, 0);
-  // auto inputVector = input_vector->CopyToVector();
-
-  // double whiskerAcc = 0;
-  // double pusherAcc = 0;
-  // double pullerAcc = 0;
-
-  // //TODO: The acceleration calculations need to be modified.
-
-  // //If the message transfer started and position is not infinity, 
-  // if (message.utime != 0.0) {
-  //   //If true, make whiskers go down. Otherwise move them back up
-  //   if(message.whiskers_down){
-  //     whiskerAcc = FLAGS_whiskers_P*(M_PI/2-inputVector[0])+FLAGS_whiskers_D*(-inputVector[3]);
-  //   }
-  //   else{
-  //     whiskerAcc = FLAGS_whiskers_P*(-inputVector[0])+FLAGS_whiskers_D*(-inputVector[3]);
-  //   }
-
-  //   //If true, move pusher to max position. Otherwise move them back to initial position
-  //   if(message.pusher_move){
-  //     pusherAcc = FLAGS_pusher_P*(FLAGS_pusher_max-inputVector[1])+FLAGS_pusher_D*(-inputVector[4]);
-  //   }
-  //   else{
-  //     pusherAcc = FLAGS_pusher_P*(FLAGS_pusher_init-inputVector[1])+FLAGS_pusher_D*(-inputVector[4]);
-  //   }
-
-  //   //If true, move pusher to max position. Otherwise move them back to initial position
-  //   if(message.puller_move){
-  //     pullerAcc = FLAGS_puller_P*(FLAGS_puller_max-inputVector[2])+FLAGS_puller_D*(-inputVector[5]);
-  //   }
-  //   else{
-  //     pullerAcc = FLAGS_puller_P*(FLAGS_puller_init-inputVector[2])+FLAGS_puller_D*(-inputVector[5]);
-  //   }
-  // }
-
   output->SetAtIndex(0, message.whiskers_down?1:0);  
   output->SetAtIndex(1, message.pusher_move?1:0);  //Pusher is moving?
   output->SetAtIndex(2, message.puller_move?1:0);  //Puller is moving?

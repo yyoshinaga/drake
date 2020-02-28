@@ -83,8 +83,6 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
   // TODO(russt): Declare a proper input constraint.
   const auto& state = get_state_input_port().Eval(context);
 
-  drake::log()->info("state size: {} ", state.size());
-
   // f₀+f₁ = -kp_constraint*(q₀+q₁) - kd_constraint*(v₀+v₁).
   const double f0_plus_f1 = -kp_constraint_ * (state[0] + state[1]) -
                             kd_constraint_ * (state[4] + state[5]);
@@ -102,7 +100,7 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
   //Use desired velocities from belt_state to create accelerations
   // desired_belt_states are pusher and puller's velocities
   double kd = 9;
-  double kp = 5;
+  double kp = 7;
 
   double pusher_acc = 0; 
   double puller_acc = 0;
@@ -169,13 +167,12 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
 
   // If pusher and puller is off, go to initial postion and stay
   else{
-    drake::log()->info("both off");
     pusher_acc = kp*(FLAGS_pusher_initial - state[2]) + kd*(- state[6]);
     puller_acc = kp*(FLAGS_puller_initial - state[3]) + kd*(- state[7]);
   }
 
-  drake::log()->info("\ndesired_whisker_state: {}\nstate[0]: {} \nstate[1]: {}\nstate[2]: {}\nstate[3]: {}\nstate[4]: {}\nstate[5]: {}\nstate[6]: {}\nstate[7]: {}\ndesired_belt_state[0]: {}\ndesired_belt_state[1]: {}\npusher_acc: {}\npuller_acc: {}", 
-  desired_whisker_state[0],state[0],state[1],state[2],state[3],state[4],state[5],state[6],state[7],desired_belt_state[0],desired_belt_state[1],pusher_acc,puller_acc);
+//   drake::log()->info("\ndesired_whisker_state: {}\nstate[0]: {} \nstate[1]: {}\nstate[2]: {}\nstate[3]: {}\nstate[4]: {}\nstate[5]: {}\nstate[6]: {}\nstate[7]: {}\ndesired_belt_state[0]: {}\ndesired_belt_state[1]: {}\npusher_acc: {}\npuller_acc: {}", 
+//   desired_whisker_state[0],state[0],state[1],state[2],state[3],state[4],state[5],state[6],state[7],desired_belt_state[0],desired_belt_state[1],pusher_acc,puller_acc);
 
   // f₀ = (f₀+f₁)/2 - (-f₀+f₁)/2,
   // f₁ = (f₀+f₁)/2 + (-f₀+f₁)/2.
