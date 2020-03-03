@@ -46,8 +46,6 @@ class ConveyorController : public systems::LeafSystem<T>
     void Update(const systems::Context<T>& context,
                 systems::DiscreteValues<T>* updates) const;
 
-    void Output(const systems::Context<T>& context,
-            systems::BasicVector<T>* result) const;
 
 };
 
