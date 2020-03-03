@@ -70,7 +70,7 @@
 
     <link name='collision_link1'>
       <inertial>
-        <mass>0.5</mass>
+        <mass>5</mass>
         <inertia>
           <ixx>1</ixx>
           <ixy>0</ixy>
@@ -152,16 +152,30 @@
       </collision> 
     </link> 
 
+    <link name='collision_frame_1'>
+      <pose frame=''>0 0.0775 0.1375 0 0 0</pose>
+      <visual name='visual_02'>
+        <geometry>
+          <box>
+            <size>0.1 0.1 0.1</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 1 1 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+
 
     <!-- When you uncomment this, make sure to increase the frame number --> 
     <link name='collision_link2'>
       <inertial>
-        <mass>10</mass>
+        <mass>0.5</mass>
         <inertia>
           <ixx>1</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>1</iyy>
+          <iyy>0.1</iyy>
           <iyz>0</iyz>
           <izz>1</izz>
         </inertia>
@@ -238,9 +252,7 @@
       </collision> 
     </link>  
 
-    <link name='collision_frame_1'>
-      <pose frame=''>0 0.15 0 0 0 0</pose>
-    </link>
+
 
     <joint name="zeroth_joint" type="prismatic">
       <parent>base_link</parent>
@@ -255,9 +267,17 @@
       </axis>
     </joint>
 
-    <joint name="collision_to_frame_extention" type="fixed">
+    <joint name="first_joint" type="revolute">
       <parent>first_link</parent>
       <child>collision_link1</child>
+      <axis>
+        <dynamics>
+          <friction>9</friction>
+          <damping>5</damping>
+          <spring_stiffness>10</spring_stiffness>
+        </dynamics>
+        <xyz>1 0 0</xyz>
+      </axis>
     </joint>
 
     <!-- <joint name="cyl_joint" type="fixed">
@@ -265,28 +285,20 @@
       <child>cylinder_link</child>
     </joint> -->
 
-    <joint name="first_joint" type="revolute">
+    <joint name="collision_to_frame_extention" type="fixed">
       <parent>collision_link1</parent>
       <child>collision_frame_1</child>
-      <axis>
-        <dynamics>
-          <friction>9</friction>
-          <damping>1</damping>
-          <spring_stiffness>1</spring_stiffness>
-        </dynamics>
-        <xyz>1 0 0</xyz>
-      </axis>
     </joint>
 
     <joint name="second_joint" type="revolute">
-      <pose frame=''>0 -0.15 0 0 0 0</pose>
+      <pose frame=''>0 -0.0775 0 0 0 0</pose>
       <parent>collision_frame_1</parent>
       <child>collision_link2</child>
       <axis>
         <dynamics>
           <friction>9</friction>
-          <damping>1</damping>
-          <spring_stiffness>1</spring_stiffness>
+          <damping>5</damping>
+          <spring_stiffness>10</spring_stiffness>
         </dynamics>
         <xyz>1 0 0</xyz>
       </axis>

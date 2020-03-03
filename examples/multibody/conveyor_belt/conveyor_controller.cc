@@ -21,7 +21,7 @@ DEFINE_double(alpha_desired, std::atan2(FLAGS_belt_radius,FLAGS_platform_length)
 DEFINE_double(P, 50.0, "Proportional gain");
 DEFINE_double(D, 30.0, "Derivative gain");
 DEFINE_double(P2, 8.0, "Proportional gain that is higher");
-DEFINE_double(D2, 50.0, "Derivative gain that is higher");
+DEFINE_double(D2, 70.0, "Derivative gain that is higher");
 DEFINE_double(P3, 10.0, "Proportional gain that is higher");
 DEFINE_double(D3, 50.0, "Derivative gain that is higher");
 
@@ -33,7 +33,8 @@ ConveyorController<T>::ConveyorController(std::vector<geometry::FrameId> _frame_
     input_port_index = this->DeclareInputPort(systems::kVectorValued, 6).get_index();
 
     // Declares the states
-    this->DeclareContinuousState(3, 3, 0); //3 position vectors, 3 velocity vectors, 0 miscellaneous vectors
+    this->DeclareContinuousState(3, 3, 0); //3 position vectors, 3 velocity vectors, 1 miscellaneous vectors
+    this->DeclareDiscreteState(1);    // location
 
     // A 3D output vector for position: x_pos, theta, gamma
     output_port_index = this->DeclareVectorOutputPort("conveyor_state", systems::BasicVector<T>(3),
@@ -42,6 +43,11 @@ ConveyorController<T>::ConveyorController(std::vector<geometry::FrameId> _frame_
     // Accelerations of x_pos and theta is sent to multibody plants (mbp). Reason is because mbp doesn't want velocities
     pose_output_port = this->DeclareVectorOutputPort("pose_output", systems::BasicVector<T>(3), 
                                 &ConveyorController::CalcPoseOutput).get_index();    //1
+
+    this->DeclarePeriodicDiscreteUpdateEvent(1/50, 0.0, &ConveyorController::Update);
+
+    this->DeclareVectorOutputPort("Sn", systems::BasicVector<double>(1),
+                                &ConveyorController::Output);
 }
 
 template<typename T>
@@ -57,8 +63,44 @@ void ConveyorController<T>::CopyStateOut(const systems::Context<T>& context, sys
     // Write system output.
     output->SetAtIndex(0, continuous_state_vector.CopyToVector()[0]);
     output->SetAtIndex(1, continuous_state_vector.CopyToVector()[1]);
-    // output->SetAtIndex(2, continuous_state_vector.CopyToVector()[2]);
+    output->SetAtIndex(2, continuous_state_vector.CopyToVector()[2]);
+}
 
+template<typename T>
+void ConveyorController<T>::Output(const systems::Context<T>& context,
+            systems::BasicVector<T>* result) const {
+(*result)[0] = 0;
+}
+
+template<typename T>
+void ConveyorController<T>::Update(const systems::Context<T>& context,
+                                    systems::DiscreteValues<T>* updates) const {
+    drake::log()->info("THIS MESSAGE SHOULD APPEAR");
+
+    const double location = context.get_discrete_state()[0];
+
+    const systems::VectorBase<T>& inputVector =
+      context.get_continuous_state_vector(); 
+    drake::log()->info("discrete location: {} {} {}", inputVector[0], inputVector[1], inputVector[2]);
+
+      drake::log()->info("intputvector size: {}",(*updates).size());
+
+    const double epsilon = 0.01;
+    if(inputVector[0] < -FLAGS_belt_length/2 && (location == 1 || location == 0)){
+        (*updates)[0] = 1;
+    }
+    else if(inputVector[0] > FLAGS_belt_length/2 && (location == 3 || location == 2)){
+        (*updates)[0] = 3;
+    }
+    else{
+        if((inputVector[1] <= 0+epsilon || inputVector[1] >= 2*M_PI-epsilon) && (location == 0 || location == 3)){
+            (*updates)[0] = 0;
+        }
+        else if((inputVector[1] <= M_PI+epsilon && inputVector[1] >= M_PI-epsilon) && (location == 2 || location == 1)){
+            (*updates)[0] = 2;
+        }
+        else{drake::log()->info("failed to find correct location"); DRAKE_DEMAND(false);}
+    }
 }
 
 template<typename T>
@@ -69,6 +111,10 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
     const systems::BasicVector<T>* input_vector =
         this->EvalVectorInput(context, 0);
     auto inputVector = input_vector->CopyToVector();
+
+    const double location = context.get_discrete_state()[0];
+    drake::log()->info("GEtting location from contini: {} {}  ", location, inputVector[1]);
+
 
     // Set positions to variables
     const double x_pos = inputVector[0];
@@ -105,12 +151,14 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
 
         //Makes theta converge around 0 degrees
         if(theta > 2*M_PI-buffer){    
-            output->SetAtIndex(omega_idx, 10*(2*M_PI+epsilon-theta)+30*(-omega)); //W_z strict
+            output->SetAtIndex(omega_idx, FLAGS_P*(2*M_PI+epsilon-theta)+FLAGS_D*(-omega)); //W_z strict
+            drake::log()->info("theta neg");
         }
         else if(theta < 0+buffer){
-            output->SetAtIndex(omega_idx, 10*(-theta)+30*(-omega)); //W_z strict
+            output->SetAtIndex(omega_idx, FLAGS_P*(-theta)+FLAGS_D*(-omega)); //W_z strict
+            drake::log()->info("theta plus");
         }
-        else{ drake::log()->info("error location 0: theta value is outside of range near 0"); DRAKE_DEMAND(false);}
+        else{ drake::log()->info("error location 0: theta value is outside of range near 0"); /*DRAKE_DEMAND(false);*/}
 
         //If close to goal, start decelerating using PD control
         if(x_pos < -FLAGS_belt_length/2+buffer){
@@ -123,12 +171,11 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
             drake::log()->info("accelerating");
         }
         else{ output->SetAtIndex(x_vel_idx,0); drake::log()->info("const vel {}",x_vel); }
-
     }
     //Location 1
-    else if((x_pos <= -FLAGS_belt_length/2 && theta < M_PI) || (theta > 0+buffer && theta < M_PI)){
+    else if((x_pos <= -FLAGS_belt_length/2 || theta > 0+epsilon) && theta < M_PI){
         drake::log()->info("location 1");
-        output->SetAtIndex(x_vel_idx, 10*(-FLAGS_belt_length/2+epsilon-x_pos)+30*(-x_vel)); //V_x strict
+        output->SetAtIndex(x_vel_idx, FLAGS_P*(-FLAGS_belt_length/2+epsilon-x_pos)+FLAGS_D*(-x_vel)); //V_x strict
 
         //If close to goal, start decelerating using PD control
         if(theta > M_PI-buffer){
@@ -138,14 +185,15 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
         //Otherwise accelerate until hit desired constant velocity using PD control
         else if(omega > FLAGS_desired_belt_rot_vel+epsilon || omega < FLAGS_desired_belt_rot_vel-epsilon){
             output->SetAtIndex(omega_idx, FLAGS_D2*(FLAGS_desired_belt_rot_vel-omega)); //W_z
+
             drake::log()->info("accelerating");
         }
         else{ output->SetAtIndex(omega_idx,0); drake::log()->info("const omega {}",omega); }
     }
     //Location 2
-    else if(x_pos < FLAGS_belt_length/2 && x_pos > -FLAGS_belt_length/2 && (theta <= M_PI+epsilon  && theta >= M_PI-epsilon )){
+    else if(x_pos < FLAGS_belt_length/2 && x_pos > -FLAGS_belt_length/2 && (theta <= M_PI+epsilon && theta >= M_PI-epsilon )){
         drake::log()->info("location 2");
-        output->SetAtIndex(omega_idx, 10*(M_PI-theta)+30*(-omega)); //W_z strict
+        output->SetAtIndex(omega_idx, 1000000*(M_PI-theta)+FLAGS_D*(-omega)); //W_z strict
 
         //If close to goal, start decelerating using PD control
         if(x_pos > FLAGS_belt_length/2-buffer){
@@ -160,7 +208,7 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
         else{ output->SetAtIndex(x_vel_idx,0); drake::log()->info("const vel {}",x_vel); }
     }
     //Location 3
-    else if((x_pos >= FLAGS_belt_length/2 && theta < 2*M_PI) || (theta > M_PI+buffer && theta < 2*M_PI)){
+    else if((x_pos >= FLAGS_belt_length/2 || theta > M_PI+buffer) && theta < 2*M_PI){
         drake::log()->info("location 3");
         output->SetAtIndex(x_vel_idx, 10*(FLAGS_belt_length/2-epsilon-x_pos)+30*(-x_vel)); //V_x gets pushed back
 
@@ -175,29 +223,29 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
             drake::log()->info("accelerating");
         }
         else{ output->SetAtIndex(omega_idx,0); drake::log()->info("const omega {}",omega); }
-
     }
     else{   
         drake::log()->info("error --> x_pos is > L: {},  x_pos < -L: {} ", x_pos >= FLAGS_belt_length/2, x_pos <= -FLAGS_belt_length/2);
         drake::log()->info("error --> theta < 0: {},  theta > 2PI: {} ", theta < 0, theta > 2*M_PI);
         drake::log()->info("Location 0 condition --> {} {} {} ", x_pos < FLAGS_belt_length/2 , x_pos > -FLAGS_belt_length/2 , (theta <= 0+epsilon || theta >= 2*M_PI-epsilon)); 
-        drake::log()->info("Location 1 condition --> {} {} or {} {}", x_pos <= -FLAGS_belt_length/2 , theta < M_PI, theta > buffer , theta < M_PI); 
+        drake::log()->info("Location 1 condition --> ({} or {}) and {}", x_pos <= -FLAGS_belt_length/2, theta > buffer , theta < M_PI); 
         drake::log()->info("Location 2 condition --> {} {} {} ", x_pos < FLAGS_belt_length/2 , x_pos > -FLAGS_belt_length/2 , (theta <= M_PI+epsilon  && theta >= M_PI-epsilon )); 
-        drake::log()->info("Location 3 condition --> {} {} or {} {}", x_pos >= FLAGS_belt_length/2 , theta < 2*M_PI, theta > M_PI+buffer , theta < 2*M_PI); 
-        // DRAKE_DEMAND(false);
+        drake::log()->info("Location 3 condition --> ({} or {}) and {}", x_pos >= FLAGS_belt_length/2, theta > M_PI+buffer , theta < 2*M_PI); 
+        DRAKE_DEMAND(false);
     }
 
     //For alpha:
     if(x_pos < -FLAGS_belt_length/2 || x_pos > FLAGS_belt_radius){
         //Time to start moving alpha
-        if(theta > FLAGS_theta_limit || (theta > M_PI && theta > FLAGS_theta_limit+M_PI)){  
-            output->SetAtIndex(beta_idx, FLAGS_P3*(FLAGS_alpha_desired-alpha)+FLAGS_D3*(-beta));
-            drake::log()->info("should come here1 {}", FLAGS_P3*(FLAGS_alpha_desired-alpha)+FLAGS_D3*(-beta));
-
+        if(theta > FLAGS_theta_limit || (theta > M_PI && theta > FLAGS_theta_limit+M_PI)){ 
+ 
+            output->SetAtIndex(beta_idx, FLAGS_P3*(-FLAGS_alpha_desired-alpha)+FLAGS_D3*(-beta));
+            drake::log()->info("should start rotating alpha {}", FLAGS_P3*(FLAGS_alpha_desired-alpha)+FLAGS_D3*(-beta));
         }
         else{
+
             output->SetAtIndex(beta_idx, FLAGS_P3*((M_PI-theta)-alpha)+FLAGS_D3*(-beta));
-            drake::log()->info("should come here2 {} ", FLAGS_P3*((M_PI-theta)-alpha)+FLAGS_D3*(-beta));
+            drake::log()->info("should be flat alpha {} ", FLAGS_P3*((M_PI-theta)-alpha)+FLAGS_D3*(-beta));
         }
     }
     else{
@@ -205,7 +253,9 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
         drake::log()->info("last {} ",FLAGS_P3*(-alpha)+FLAGS_D3*(-beta));
     }
 
-        output->SetAtIndex(beta_idx, 0);
+    // output->SetAtIndex(beta_idx, 0);
+    // output->SetAtIndex(beta_idx, 0);
+            // output->SetAtIndex(2, 30*(-alpha)+15*(-beta)); //W_z strict
 
 
     // output->SetAtIndex(0,-1); //acc
@@ -229,6 +279,9 @@ void ConveyorController<T>::SetDefaultState(const systems::Context<T>&,
     xc0 << FLAGS_theta_start, FLAGS_x_pos_start, 0, 0, 0, 0;  // initial state values.
     
     state->get_mutable_continuous_state().SetFromVector(xc0);
+
+    systems::DiscreteValues<double>& xd =  state->get_mutable_discrete_state();
+    xd[0] = 0;  // xd_0
     drake::log()->info("set default state2");
 }
 

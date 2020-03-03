@@ -38,10 +38,17 @@ class ConveyorController : public systems::LeafSystem<T>
                         systems::BasicVector<T>* output) const;
 
     void SetDefaultState(const systems::Context<T>&,
-                        systems::State<T>* state) const;
+                          systems::State<T>* state) const;
 
     void DoCalcTimeDerivatives(const systems::Context<T>& context,
                                 systems::ContinuousState<T>* derivatives) const;
+
+    void Update(const systems::Context<T>& context,
+                systems::DiscreteValues<T>* updates) const;
+
+    void Output(const systems::Context<T>& context,
+            systems::BasicVector<T>* result) const;
+
 };
 
 }
