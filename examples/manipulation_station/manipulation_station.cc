@@ -470,20 +470,10 @@ void ManipulationStation<T>::SetDefaultState(
 
   // SetWsgPosition(station_context, state, eePosition);
   // SetWsgVelocity(station_context, state, Vector3<T>::Zero(0));
-  Vector3<T> conveyorPosition1;
-  conveyorPosition1 << 0.25, 0, 0; //x_pos, theta, alpha
+  Vector4<T> conveyorPosition1;
+  conveyorPosition1 << 0.25, 0, 0, 0; //x_pos, theta, alpha
   SetConveyorPosition(station_context, state, conveyorPosition1, 1);
 
-  // Vector2<T> conveyorPosition2(2);
-  // conveyorPosition2 << 0.16, 0; //x_pos, theta
-  // SetConveyorPosition(station_context, state, conveyorPosition2, 2);
-
-  // Vector2<T> conveyorPosition3(2);
-  // conveyorPosition3 << 0.3, 0; //x_pos, theta
-  // SetConveyorPosition(station_context, state, conveyorPosition3, 3);
-
-
-  // SetConveyorVelocity(station_context, state, VectorX<T>::Zero(2));
   drake::log()->info("SetDefaultState 8");
 }
 
@@ -764,54 +754,22 @@ void ManipulationStation<T>::Finalize(
 
   //Conveyor belt connections
   {
-    // auto vector_source_system = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorControl<double>>());
-    // auto robot_plant = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorPlant<double>>(frame_ids));
     auto belt_controller1 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids1));
-    // auto belt_controller2 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids2));
-    // auto belt_controller3 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids3));
-
-
+ 
     //Velocity sending
     builder.Connect(belt_controller1->get_output_port(1),
                     plant_->get_actuation_input_port(conveyor_model_1_.model_instance));
-    // builder.Connect(belt_controller2->get_output_port(1),
-    //                 plant_->get_actuation_input_port(conveyor_model_2_.model_instance));
-    // builder.Connect(belt_controller3->get_output_port(1),
-    //                 plant_->get_actuation_input_port(conveyor_model_3_.model_instance));
-  
     //Receive the states
     builder.Connect(plant_->get_state_output_port(conveyor_model_1_.model_instance),
                     belt_controller1->get_input_port(0)); 
-    // //Receive the states
-    // builder.Connect(plant_->get_state_output_port(conveyor_model_2_.model_instance),
-    //                 belt_controller2->get_input_port(0)); 
-    // //Receive the states
-    // builder.Connect(plant_->get_state_output_port(conveyor_model_3_.model_instance),
-    //                 belt_controller3->get_input_port(0)); 
-  
 
     // Approximate desired state command from a discrete derivative of the
     // position command input port.
     auto desired_state_from_position_1 = builder.template AddSystem<
-        systems::StateInterpolatorWithDiscreteDerivative>(3, plant_->time_step());
+        systems::StateInterpolatorWithDiscreteDerivative>(4, plant_->time_step());
     desired_state_from_position_1->set_name("desired_state_from_position_belt_1");
     builder.Connect(belt_controller1->get_output_port(0),
                     desired_state_from_position_1->get_input_port());
-
-    // // Approximate desired state command from a discrete derivative of the
-    // // position command input port.
-    // auto desired_state_from_position_2 = builder.template AddSystem<
-    //     systems::StateInterpolatorWithDiscreteDerivative>(2, plant_->time_step());
-    // desired_state_from_position_2->set_name("desired_state_from_position_belt_2");
-    // builder.Connect(belt_controller2->get_output_port(0),
-    //                 desired_state_from_position_2->get_input_port());
-    // // Approximate desired state command from a discrete derivative of the
-    // // position command input port.
-    // auto desired_state_from_position_3 = builder.template AddSystem<
-    //     systems::StateInterpolatorWithDiscreteDerivative>(2, plant_->time_step());
-    // desired_state_from_position_3->set_name("desired_state_from_position_belt_3");
-    // builder.Connect(belt_controller3->get_output_port(0),
-    //                 desired_state_from_position_3->get_input_port());
   }
 
   {
@@ -1256,7 +1214,7 @@ void ManipulationStation<T>::AddDefaultConveyor(
         "drake/manipulation/models/conveyor_belt_description/sdf/"
         "conveyor_simple_robot.sdf");
 
-    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7018, 2.32042, 0.8636-0.1375));
+    RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7018, 2.32042, 0.8636-0.06875));
                                   //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
                                   //(offset dist b/w robot center and beginning of conveyor + center of conveyor)
 
@@ -1268,7 +1226,7 @@ void ManipulationStation<T>::AddDefaultConveyor(
         plant_->GetFrameByName("base_link", model_idx), X_BM);
 
     //Frame_ids size is 4 for 4 robot links
-    for(int i = 0; i < 4; i++) {
+    for(int i = 0; i < 5; i++) {
       frame_ids.push_back({plant_->GetBodyFrameIdOrThrow(plant_->GetBodyIndices(model_idx)[i])});
     }
 }

@@ -45,7 +45,9 @@
       <pose frame=''>0 0 0 0 0 0</pose>
         <geometry>
           <box> 
-            <size>0.05 0.05 0.275</size>
+            <!-- <size>0.05 0.05 0.275</size> -->
+            <size>0.05 0.05 0.13</size>
+
           </box>
         </geometry>
         <material>
@@ -84,10 +86,10 @@
       <self_collide>0</self_collide>
       <!-- <kinematic>1</kinematic> -->
        <visual name='visual_01'>
-        <pose frame=''>0 0 0.15 0 0 0</pose>
+        <pose frame=''>0 0 0.075 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.6 0.15 0.025</size>
+            <size>0.6 0.1 0.02</size>
           </box>
         </geometry>
         <material>
@@ -96,12 +98,12 @@
       </visual>
 
       <collision name='surface'>
-        <pose frame=''>0 0 0.15 0 0 0</pose>
+        <pose frame=''>0 0 0.075 0 0 0</pose>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
         <geometry>
           <box>
-            <size>0.6 0.15 0.025</size>
+            <size>0.6 0.1 0.02</size>
           </box>
         </geometry>
         <surface>
@@ -153,7 +155,7 @@
     </link> 
 
     <link name='collision_frame_1'>
-      <pose frame=''>0 0.0775 0.1375 0 0 0</pose>
+      <pose frame=''>0 0.05  0.06875 0 0 0</pose>
       <visual name='visual_02'>
         <geometry>
           <box>
@@ -169,7 +171,7 @@
 
     <!-- When you uncomment this, make sure to increase the frame number --> 
     <link name='collision_link2'>
-      <pose frame=''>0 0.155 0.15 0 0 0</pose>
+      <pose frame=''>0 0.1 0.075 0 0 0</pose>
 
       <inertial>
         <mass>0.5</mass>
@@ -188,7 +190,7 @@
        <visual name='visual_02'>
         <geometry>
           <box>
-            <size>0.6 0.15 0.025</size>
+            <size>0.6 0.1 0.02</size>
           </box>
         </geometry>
         <material>
@@ -201,7 +203,7 @@
         <max_contacts>10</max_contacts>
         <geometry>
           <box>
-            <size>0.6 0.15 0.025</size>
+            <size>0.6 0.1 0.02</size>
           </box>
         </geometry>
         <surface>
@@ -252,6 +254,106 @@
       </collision> 
     </link>  
 
+    <link name='collision_frame_2'>
+      <pose frame=''>0 0.15  0.06875 0 0 0</pose>
+      <visual name='visual_02'>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 1 1 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <link name='collision_link3'>
+      <pose frame=''>0 0.2 0.075 0 0 0</pose>
+
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>1</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.1</iyy>
+          <iyz>0</iyz>
+          <izz>1</izz>
+        </inertia>
+      </inertial>
+      <gravity>0</gravity>
+      <self_collide>0</self_collide>
+      <kinematic>1</kinematic>
+       <visual name='visual_03'>
+        <geometry>
+          <box>
+            <size>0.6 0.1 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0.5 0 1.0</diffuse>
+        </material>
+      </visual>
+
+      <collision name='surface3'>
+        <laser_retro>0</laser_retro>
+        <max_contacts>10</max_contacts>
+        <geometry>
+          <box>
+            <size>0.6 0.1 0.02</size>
+          </box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.6</mu>
+              <mu2>0.6</mu2>
+              <fdir1>0 0 0</fdir1>
+              <slip1>0</slip1>
+              <slip2>0</slip2>
+            </ode>
+            <torsional>
+              <coefficient>1</coefficient>
+              <patch_radius>0</patch_radius>
+              <surface_radius>0</surface_radius>
+              <use_patch_radius>1</use_patch_radius>
+              <ode>
+                <slip>0</slip>
+              </ode>
+            </torsional>
+          </friction>
+          <bounce>
+            <restitution_coefficient>0</restitution_coefficient>
+            <threshold>1e+06</threshold>
+          </bounce>
+          <contact>
+            <collide_without_contact>0</collide_without_contact>
+            <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
+            <collide_bitmask>1</collide_bitmask>
+            <ode>
+              <soft_cfm>0</soft_cfm>
+              <soft_erp>0.2</soft_erp>
+              <kp>1e+13</kp>
+              <kd>1</kd>
+              <max_vel>0.01</max_vel>
+              <min_depth>0</min_depth>
+            </ode>
+            <bullet>
+              <split_impulse>1</split_impulse>
+              <split_impulse_penetration_threshold>-0.01</split_impulse_penetration_threshold>
+              <soft_cfm>0</soft_cfm>
+              <soft_erp>0.2</soft_erp>
+              <kp>1e+13</kp>
+              <kd>1</kd>
+            </bullet>
+          </contact>
+        </surface>
+      </collision> 
+    </link>  
+
+
+
     <joint name="zeroth_joint" type="prismatic">
       <parent>base_link</parent>
       <child>first_link</child>
@@ -291,8 +393,7 @@
     <joint name="second_joint" type="revolute">
       <parent>collision_frame_1</parent>
       <child>collision_link2</child>
-      <pose>0 -0.0775 -0.0125 0 0 0</pose>
-
+      <pose>0 -0.05 -0.0125 0 0 0</pose>
       <axis>
         <dynamics>
           <friction>9</friction>
@@ -302,6 +403,25 @@
         <xyz>1 0 0</xyz>
       </axis>
     </joint>     
+
+    <joint name="collision_to_frame_extention2" type="fixed">
+      <parent>collision_link2</parent>
+      <child>collision_frame_2</child>
+    </joint>
+
+    <joint name="third_joint" type="revolute">
+      <parent>collision_frame_2</parent>
+      <child>collision_link3</child>
+      <pose>0 -0.05 -0.0125 0 0 0</pose>
+      <axis>
+        <dynamics>
+          <friction>9</friction>
+          <damping>5</damping>
+          <spring_stiffness>10</spring_stiffness>
+        </dynamics>
+        <xyz>1 0 0</xyz>
+      </axis>
+    </joint>  
 
     <transmission name="tran_0">
       <robotNamespace>/conveyor</robotNamespace>
@@ -338,7 +458,17 @@
         <mechanicalReduction>1</mechanicalReduction>
       </actuator>
     </transmission>
-
+    <transmission name="tran_3">
+      <robotNamespace>/conveyor</robotNamespace>
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="third_joint">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="motor_3">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
 
 
     <!-- <frame name='top_center'>

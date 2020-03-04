@@ -69,15 +69,18 @@ int do_main(int argc, char* argv[]) {
 
   if (FLAGS_setup == "manipulation_class") {
     station->SetupManipulationClassStation();
-    station->AddManipulandFromFile(
-        "drake/examples/manipulation_station/models/package1.sdf",
-        math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
-                                     Eigen::Vector3d(1.6, 2.62, 1.08)));
+    // station->AddManipulandFromFile(
+    //     "drake/examples/manipulation_station/models/package1.sdf",
+    //     math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
+    //                                  Eigen::Vector3d(1.6, 2.62, 1.08)));
     // station->AddManipulandFromFile(
     //     "drake/examples/manipulation_station/models/package2.sdf",
     //     math::RigidTransform<double>(math::RollPitchYaw<double>(0, 0, 0.57),
     //                                  Eigen::Vector3d(1.75, 2.7, 1.05)));
-
+    // station->AddManipulandFromFile(
+    //     "drake/examples/manipulation_station/models/package3.sdf",
+    //     math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
+    //                                  Eigen::Vector3d(1.6, 2.62, 0.95)));
 
   } else if (FLAGS_setup == "clutter_clearing") {
     station->SetupClutterClearingStation();

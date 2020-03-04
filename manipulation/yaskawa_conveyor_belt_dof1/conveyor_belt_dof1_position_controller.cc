@@ -118,24 +118,20 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
     if(FLAGS_puller_initial+buffer < state[3]){
         puller_acc = kp*(FLAGS_puller_initial - state[3]) + kd*(- state[7]);
         drake::log()->info("pusher trying to move but puller is not at intial position");
-
     }
     // If pusher is past its reach limit
     else if(state[2] >= FLAGS_pusher_limit){
         pusher_acc = kp*(FLAGS_pusher_limit - state[2]) + kd*(- state[6]);
         drake::log()->info("pusher already past its limit");
-
     }
     // If pusher is at its initial position
     else if(state[2] <= FLAGS_pusher_initial){
         pusher_acc = kp*(FLAGS_pusher_initial - state[2]) + kd*(- state[6]);
         drake::log()->info("pusher is already at initial position");
-
     }
     else{
         pusher_acc = kd * (desired_belt_state[0] - state[6]);
         drake::log()->info("pusher on");
-
     }
   }
   // If puller is on, 
@@ -146,7 +142,6 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
     if(FLAGS_pusher_initial+buffer < state[3]){
         pusher_acc = kp*(FLAGS_pusher_initial - state[2]) + kd*(- state[6]);
         drake::log()->info("puller trying to move but pusher is not at intial position");
-
     }
     // If puller is past its reach limit
     else if(state[3] <= FLAGS_puller_limit){
@@ -157,7 +152,6 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
     else if(state[3] >= FLAGS_puller_initial){
         puller_acc = kp*(FLAGS_puller_initial - state[3]) + kd*(- state[7]);
         drake::log()->info("puller is already at initial position");
-
     }
     else{
         puller_acc = kd * (desired_belt_state[1] - state[7]);
@@ -166,10 +160,10 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
   }
 
   // If pusher and puller is off, go to initial postion and stay
-  else{
+//   else{
     pusher_acc = kp*(FLAGS_pusher_initial - state[2]) + kd*(- state[6]);
-    puller_acc = kp*(FLAGS_puller_initial - state[3]) + kd*(- state[7]);
-  }
+    puller_acc = 10*(FLAGS_puller_initial - state[3]) + 9*(- state[7]);
+//   }
 
 //   drake::log()->info("\ndesired_whisker_state: {}\nstate[0]: {} \nstate[1]: {}\nstate[2]: {}\nstate[3]: {}\nstate[4]: {}\nstate[5]: {}\nstate[6]: {}\nstate[7]: {}\ndesired_belt_state[0]: {}\ndesired_belt_state[1]: {}\npusher_acc: {}\npuller_acc: {}", 
 //   desired_whisker_state[0],state[0],state[1],state[2],state[3],state[4],state[5],state[6],state[7],desired_belt_state[0],desired_belt_state[1],pusher_acc,puller_acc);
