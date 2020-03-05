@@ -50,7 +50,7 @@ namespace {
 using Eigen::VectorXd;
 // using examples::multibody::conveyor_belt::ConveyorStation;
 
-DEFINE_double(target_realtime_rate, 1.0,
+DEFINE_double(target_realtime_rate, 0.25,
               "Playback speed.  See documentation for "
               "Simulator::set_target_realtime_rate() for details.");
 DEFINE_double(duration, std::numeric_limits<double>::infinity(),
