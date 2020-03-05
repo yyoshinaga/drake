@@ -10,7 +10,7 @@ namespace conveyor_belt {
 DEFINE_double(belt_length, 3, "The length of the belt in meters");
 DEFINE_double(belt_radius, 0.075, "The radius of the belt in meters");
 DEFINE_double(platform_length, 0.05, "Platform length in the sdf file");
-DEFINE_int32(num_of_platforms, 5, "The number of discrete green platforms that form the entire belt");
+DEFINE_int32(num_of_platforms, 7, "The number of discrete green platforms that form the entire belt");
 DEFINE_double(desired_belt_velocity, 0.5, "Desired velocity of belt in 0.9652 meters/seconds which is 190ft/min");
 DEFINE_double(desired_belt_rot_vel, FLAGS_desired_belt_velocity/FLAGS_belt_radius, "Desired velocity of belt in meters/seconds");
 DEFINE_double(alpha_limit, M_PI-(2*std::atan2(FLAGS_belt_radius,FLAGS_platform_length/2)), "alpha while rotating");
@@ -233,39 +233,41 @@ void ConveyorController<T>::CalcPoseOutput(const systems::Context<T>& context ,
         DRAKE_DEMAND(false);
     }
 
+
+
     const int n = FLAGS_num_of_platforms;
-    for(int i = 0; i < n-1; i++){
+    for(int i = 2; i < n+1; i++){
+        double sum = 0;
+        //Sum up all the angles:
+        for(int j = 1; j < i; j++){
+            sum+=inputVector[j];
+        }
         //For alpha:
         if(location == 1 ){
             //Time to start moving alpha
-            if(-inputVector[2+i] >= FLAGS_alpha_limit && inputVector[2+i] < M_PI){ 
-                output->SetAtIndex(2+i, 500*(-FLAGS_alpha_limit-inputVector[2+i])+500*(-inputVector[6+i]));
-                drake::log()->info("rotating alpha {}:\n flagAlphaDes: {}\n alpha: {}",i,-FLAGS_alpha_limit , inputVector[2+i]);
+            if(-inputVector[i] >= FLAGS_alpha_limit && inputVector[i] < M_PI){ 
+                output->SetAtIndex(i, 500*(-FLAGS_alpha_limit-inputVector[i])+500*(-inputVector[1+n+i]));
+                drake::log()->info("rotating alpha {}:\n flagAlphaDes: {}\n alpha: {}",i,-FLAGS_alpha_limit , inputVector[i]);
                 // DRAKE_DEMAND(false);
             }
             else{
-                double sum = 0;
-                //Sum up all the angles:
-                for(int j = 1; j < 2+i; j++){
-                    sum+=inputVector[j];
-                }
-
-                output->SetAtIndex(2+i,5000*(-sum - inputVector[2+i])+200*(-inputVector[6+i]));
+                output->SetAtIndex(i,5000*(-sum - inputVector[i])+200*(-inputVector[1+n+i]));
                 drake::log()->info("flat alpha {}:\n alpha: {}\n theta:{}\n M_PI-theta:{} ",i, alpha, theta, M_PI-theta);
             }
         }
         else if( location == 3){
             //Time to start moving alpha
-            if( inputVector[1+i] < 2*M_PI-buffer && inputVector[1+i] > M_PI && inputVector[1+i] > FLAGS_alpha_limit+M_PI){ 
-                output->SetAtIndex(2+i, 1000*(-(M_PI-FLAGS_alpha_limit)-inputVector[2+i])+500*(-inputVector[6+i]));
+            if( inputVector[i-1] < 2*M_PI-buffer && inputVector[i-1] > M_PI && inputVector[i-1] > FLAGS_alpha_limit+M_PI){ 
+                output->SetAtIndex(i, 1000*(-(M_PI-FLAGS_alpha_limit)-inputVector[i])+500*(-inputVector[1+n+i]));
             }
             else{
-                output->SetAtIndex(2+i, 2500*((-inputVector[1+i])-inputVector[2+i])+200*(-inputVector[6+i]));
+                output->SetAtIndex(i, 2500*((-inputVector[i-1])-inputVector[i])+200*(-inputVector[1+n+i]));
             }
         }
         else{
             //Straighten out the conveyor belt
-            output->SetAtIndex(2+i, 5000*(-inputVector[2+i])+500*(-inputVector[6+i]));
+            output->SetAtIndex(i, 1000*(-sum)+500*(-inputVector[1+n+i]));
+            drake::log()->info("0 alpha {}",i);
         }
     }
 }

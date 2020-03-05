@@ -470,8 +470,8 @@ void ManipulationStation<T>::SetDefaultState(
 
   // SetWsgPosition(station_context, state, eePosition);
   // SetWsgVelocity(station_context, state, Vector3<T>::Zero(0));
-  Vector6<T> conveyorPosition1;
-  conveyorPosition1 << 0.25,0,0,0,0,0; //x_pos,theta,alpha,beta,gamma,delta
+  VectorX<T> conveyorPosition1(8);
+  conveyorPosition1 << 0.25,0,0,0,0,0,0,0; //x_pos,theta,alpha,beta,gamma,delta
   SetConveyorPosition(station_context, state, conveyorPosition1, 1);
 
   drake::log()->info("SetDefaultState 8");
@@ -766,7 +766,7 @@ void ManipulationStation<T>::Finalize(
     // Approximate desired state command from a discrete derivative of the
     // position command input port.
     auto desired_state_from_position_1 = builder.template AddSystem<
-        systems::StateInterpolatorWithDiscreteDerivative>(6, plant_->time_step());
+        systems::StateInterpolatorWithDiscreteDerivative>(8, plant_->time_step());
     desired_state_from_position_1->set_name("desired_state_from_position_belt_1");
     builder.Connect(belt_controller1->get_output_port(0),
                     desired_state_from_position_1->get_input_port());
@@ -1225,8 +1225,8 @@ void ManipulationStation<T>::AddDefaultConveyor(
         model_num, sdf_path, model_idx, plant_->world_frame(),
         plant_->GetFrameByName("base_link", model_idx), X_BM);
 
-    //Frame_ids size is 7 for 5 platform robot links
-    for(int i = 0; i < 7; i++) {
+    //Frame_ids size is 9 for 7 platform robot links
+    for(int i = 0; i < 9; i++) {
       frame_ids.push_back({plant_->GetBodyFrameIdOrThrow(plant_->GetBodyIndices(model_idx)[i])});
     }
 }
