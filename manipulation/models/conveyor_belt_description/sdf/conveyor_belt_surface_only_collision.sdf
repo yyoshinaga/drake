@@ -246,7 +246,7 @@
         <!-- <cast_shadows>1</cast_shadows>
         <transparency>0</transparency> -->
       </visual>
-      <!-- <collision name='surface'>
+      <collision name='surface'>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
         <pose frame=''>0 0 0 0 -0 0</pose>
@@ -258,11 +258,11 @@
         <surface>
           <friction>
             <ode>
-              <mu>0.1</mu>
-              <mu2>0</mu2>
-              <fdir1>0 0 0</fdir1>
-              <slip1>0</slip1>
-              <slip2>0</slip2>
+              <mu>1.5</mu>
+              <mu2>1.5</mu2>
+              <fdir1>0 1 0</fdir1>
+              <slip1>1</slip1>
+              <slip2>1</slip2>
             </ode>
             <torsional>
               <coefficient>1</coefficient>
@@ -300,7 +300,7 @@
             </bullet>
           </contact>
         </surface>
-      </collision>  -->
+      </collision> 
     </link>
 
     <!-- <frame name='top_center'>

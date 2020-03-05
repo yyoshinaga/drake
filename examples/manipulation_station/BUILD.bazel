@@ -35,7 +35,6 @@ drake_cc_library(
         "//manipulation/models/yaskawa_end_effector_description:models",
         "//manipulation/models/PB_Layout_V2_description:models",
         "//manipulation/models/conveyor_belt_description:models",
-        "//manipulation/models/allegro_hand_description:models",
 
     ],
     visibility = ["//visibility:public"],
@@ -45,7 +44,6 @@ drake_cc_library(
         "//geometry/render:render_engine_vtk",
         "//manipulation/schunk_wsg:schunk_wsg_constants",
         "//manipulation/schunk_wsg:schunk_wsg_position_controller",
-        # "//manipulation/conveyor_belt:conveyor_belt_velocity_controller",
 
         "//math:geometric_transform",
         "//multibody/parsing",
@@ -57,14 +55,9 @@ drake_cc_library(
         #Added on:
         "//systems/controllers",
         "//systems/primitives",
-        "//examples/multibody/conveyor_belt:conveyor_plant",
-        "//examples/multibody/conveyor_belt:conveyor_control",
-        "//examples/multibody/conveyor_belt:conveyor_controller",
+        "//examples/multibody/conveyor_belt:conveyor_controller2",
         "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_constants",
         "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_position_controller",
-
-        "//examples/multibody/conveyor_belt:conveyor_station",
-
     ],
 )
 
@@ -117,8 +110,6 @@ drake_cc_binary(
         "//systems/analysis:simulator",
         "//systems/lcm",
         "@gflags",
-        "//examples/multibody/conveyor_belt:conveyor_station",
-
     ],
 )
 

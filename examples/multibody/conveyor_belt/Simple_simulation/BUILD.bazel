@@ -26,40 +26,56 @@ drake_cc_package_library(
 )
 
 drake_cc_library(
-    name="conveyor_controller",
-    hdrs=["conveyor_controller.h"],
-    srcs=["conveyor_controller.cc"],
-    visibility = ["//visibility:public"],
-    deps=[
-        "//systems/framework:leaf_system",
-        "//common:essential",
-
+    name = "conveyor_plant",
+    srcs = ["conveyor_plant.cc"],
+    hdrs = ["conveyor_plant.h"],
+    deps = [
         "//common:find_resource",
         "//common:default_scalars",
         "//math:geometric_transform",
+        "//systems/controllers:linear_quadratic_regulator",
+        "//systems/framework:leaf_system",
         "//systems/primitives:affine_system",
         "//geometry:geometry_visualization",
         "//multibody/plant",
-    ]
+    ],
 )
 
 drake_cc_library(
-    name="conveyor_controller2",
-    hdrs=["conveyor_controller2.h"],
-    srcs=["conveyor_controller2.cc"],
+    name="conveyor_control",
+    hdrs=["conveyor_control.h"],
+    srcs=["conveyor_control.cc"],
     visibility = ["//visibility:public"],
     deps=[
         "//systems/framework:leaf_system",
         "//common:essential",
-
-        "//common:find_resource",
-        "//common:default_scalars",
-        "//math:geometric_transform",
-        "//systems/primitives:affine_system",
-        "//geometry:geometry_visualization",
-        "//multibody/plant",
     ]
 )
 
+drake_cc_binary(
+    name = "conveyor_simulation",
+    srcs = ["conveyor_simulation.cc"],
+    add_test_rule = 1,
+    data = ["//manipulation/models/conveyor_belt_description:models"
+    ],
+    test_rule_args = [
+        "--simulation_time=0.1",
+        "--target_realtime_rate=0.0",
+    ],
+    deps = [
+        "//common:find_resource",
+        "//geometry:geometry_visualization",
+        ":conveyor_plant",
+        ":conveyor_control",
+
+        "//multibody/parsing",
+        "//systems/analysis:simulator",
+        "//systems/framework:diagram",
+        "//systems/primitives:affine_system",
+        "//systems/controllers",
+        "//systems/primitives",
+        "@gflags",
+    ],
+)
 
 install_data()

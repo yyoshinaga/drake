@@ -744,8 +744,6 @@
       </collision> 
     </link>  
 
-
-
     <joint name="zeroth_joint" type="prismatic">
       <parent>base_link</parent>
       <child>first_link</child>

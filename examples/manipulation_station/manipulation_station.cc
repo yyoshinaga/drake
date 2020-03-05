@@ -30,9 +30,7 @@
 #include "drake/systems/primitives/multiplexer.h"
 #include "drake/systems/primitives/wrap_to_system.h"
 
-#include "drake/examples/multibody/conveyor_belt/conveyor_plant.h"
-#include "drake/examples/multibody/conveyor_belt/conveyor_control.h"
-#include "drake/examples/multibody/conveyor_belt/conveyor_controller.h"
+#include "drake/examples/multibody/conveyor_belt/conveyor_controller2.h"
 
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_position_controller.h"
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_constants.h"
@@ -470,8 +468,8 @@ void ManipulationStation<T>::SetDefaultState(
 
   // SetWsgPosition(station_context, state, eePosition);
   // SetWsgVelocity(station_context, state, Vector3<T>::Zero(0));
-  VectorX<T> conveyorPosition1(8);
-  conveyorPosition1 << 0.25,0,0,0,0,0,0,0; //x_pos,theta,alpha,beta,gamma,delta
+  Vector2<T> conveyorPosition1;
+  conveyorPosition1 << 1.5,0; //x_pos,theta,alpha,beta,gamma,delta
   SetConveyorPosition(station_context, state, conveyorPosition1, 1);
 
   drake::log()->info("SetDefaultState 8");
@@ -754,19 +752,20 @@ void ManipulationStation<T>::Finalize(
 
   //Conveyor belt connections
   {
-    auto belt_controller1 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids1));
+    auto belt_controller1 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController2<double>>(frame_ids1));
  
     //Velocity sending
     builder.Connect(belt_controller1->get_output_port(1),
                     plant_->get_actuation_input_port(conveyor_model_1_.model_instance));
+
     //Receive the states
     builder.Connect(plant_->get_state_output_port(conveyor_model_1_.model_instance),
                     belt_controller1->get_input_port(0)); 
 
     // Approximate desired state command from a discrete derivative of the
-    // position command input port.
+    // position command input port. Insert # of positions only
     auto desired_state_from_position_1 = builder.template AddSystem<
-        systems::StateInterpolatorWithDiscreteDerivative>(8, plant_->time_step());
+        systems::StateInterpolatorWithDiscreteDerivative>(2, plant_->time_step());
     desired_state_from_position_1->set_name("desired_state_from_position_belt_1");
     builder.Connect(belt_controller1->get_output_port(0),
                     desired_state_from_position_1->get_input_port());
@@ -918,6 +917,7 @@ template <typename T>
 void ManipulationStation<T>::SetConveyorPosition(
     const drake::systems::Context<T>& station_context, systems::State<T>* state,
     const Eigen::Ref<const drake::VectorX<T>>& q, const int num) const {
+      drake::log()->info("q size: {}",q.size());
   const int num_belt_positions =
       plant_->num_positions(conveyor_model_1_.model_instance);
   DRAKE_DEMAND(state != nullptr);
@@ -1212,7 +1212,7 @@ void ManipulationStation<T>::AddDefaultConveyor(
 
     const std::string sdf_path = FindResourceOrThrow(
         "drake/manipulation/models/conveyor_belt_description/sdf/"
-        "conveyor_simple_robot.sdf");
+        "pusher.sdf");
 
     RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7018, 2.32042, 0.8636-0.06875));
                                   //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
@@ -1226,7 +1226,7 @@ void ManipulationStation<T>::AddDefaultConveyor(
         plant_->GetFrameByName("base_link", model_idx), X_BM);
 
     //Frame_ids size is 9 for 7 platform robot links
-    for(int i = 0; i < 9; i++) {
+    for(int i = 0; i < 3; i++) {
       frame_ids.push_back({plant_->GetBodyFrameIdOrThrow(plant_->GetBodyIndices(model_idx)[i])});
     }
 }

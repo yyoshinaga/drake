@@ -45,6 +45,51 @@
           <size>0.199 0.249 0.049</size>
         </box>
       </geometry>
+       <surface>
+          <friction>
+            <ode>
+              <mu>0.4</mu>
+              <mu2>0</mu2>
+              <fdir1>0 0 0</fdir1>
+              <slip1>1</slip1>
+              <slip2>0</slip2>
+            </ode>
+            <torsional>
+              <coefficient>1</coefficient>
+              <patch_radius>0</patch_radius>
+              <surface_radius>0</surface_radius>
+              <use_patch_radius>1</use_patch_radius>
+              <ode>
+                <slip>0</slip>
+              </ode>
+            </torsional>
+          </friction>
+          <bounce>
+            <restitution_coefficient>0</restitution_coefficient>
+            <threshold>1e+06</threshold>
+          </bounce>
+          <contact>
+            <collide_without_contact>0</collide_without_contact>
+            <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
+            <collide_bitmask>1</collide_bitmask>
+            <ode>
+              <soft_cfm>0</soft_cfm>
+              <soft_erp>0.2</soft_erp>
+              <kp>1e+13</kp>
+              <kd>1</kd>
+              <max_vel>0.01</max_vel>
+              <min_depth>0</min_depth>
+            </ode>
+            <bullet>
+              <split_impulse>1</split_impulse>
+              <split_impulse_penetration_threshold>-0.01</split_impulse_penetration_threshold>
+              <soft_cfm>0</soft_cfm>
+              <soft_erp>0.2</soft_erp>
+              <kp>1e+13</kp>
+              <kd>1</kd>
+            </bullet>
+          </contact>
+        </surface>
     </collision>
 
     <collision name='point_collision1'>
@@ -102,6 +147,62 @@
         <sphere><radius>1e-7</radius></sphere>
       </geometry>
     </collision>
+<!-- place more contact points on the bottom middle of the box-->
+    <!-- <collision name='point_collision9'>
+      <pose>0.1 0.0625 0 0 0 0</pose>
+      <geometry>
+        <sphere><radius>1e-7</radius></sphere>
+      </geometry>
+    </collision>
+
+    <collision name='point_collision10'>
+      <pose>0.1 -0.0625 0 0 0 0</pose>
+      <geometry>
+        <sphere><radius>1e-7</radius></sphere>
+      </geometry>
+    </collision>
+
+    <collision name='point_collision11'>
+      <pose>-0.1 0.0625 0 0 0 0</pose>
+      <geometry>
+        <sphere><radius>1e-7</radius></sphere>
+      </geometry>
+    </collision>
+
+    <collision name='point_collision12'>
+      <pose>-0.1 -0.0625 0 0 0 0</pose>
+      <geometry>
+        <sphere><radius>1e-7</radius></sphere>
+      </geometry>
+    </collision>
+
+    <collision name='point_collision13'>
+      <pose>0.1 0.030 0 0 0</pose>
+      <geometry>
+        <sphere><radius>1e-7</radius></sphere>
+      </geometry>
+    </collision>
+
+    <collision name='point_collision14'>
+      <pose>0.1 -0.03 0 0 0 0</pose>
+      <geometry>
+        <sphere><radius>1e-7</radius></sphere>
+      </geometry>
+    </collision>
+
+    <collision name='point_collision15'>
+      <pose>-0.1 0.03 0 0 0 0</pose>
+      <geometry>
+        <sphere><radius>1e-7</radius></sphere>
+      </geometry>
+    </collision>
+
+    <collision name='point_collision16'>
+      <pose>-0.1 -0.03 0 0 0 0</pose>
+      <geometry>
+        <sphere><radius>1e-7</radius></sphere>
+      </geometry>
+    </collision> -->
 
    </link>
 </model>

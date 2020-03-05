@@ -192,6 +192,50 @@ drake_cc_library(
 #     ],
 # )
 
+drake_cc_library(
+    name = "primitive_executor",
+    srcs = [
+        "primitive_executor.cc",
+    ],
+    hdrs = [
+        "primitive_executor.h",
+    ],
+    data = [
+        "//manipulation/models/yaskawa_description:models",
+        "//manipulation/models/yaskawa_end_effector_description:models",
+        "//manipulation/models/conveyor_belt_description:models",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//examples/yaskawa_arm:yaskawa_common",
+        "//attic/manipulation/planner:constraint_relaxing_ik",
+        "//attic/multibody/parsers",
+        "//lcmtypes:iiwa",
+        "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_constants",
+        "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_position_controller",
+        "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_lcm",
+        "//multibody/parsing",
+        "//multibody/plant",
+        "@gflags",
+        "//lcm",
+        "@lcmtypes_bot2_core",
+        "@lcmtypes_robotlocomotion",
+    ],
+)
+
+drake_cc_binary(
+    name = "primitive_runner",
+    srcs = ["primitive_runner.cc"],
+    deps = [
+        "//examples/yaskawa_arm:primitive_executor",
+        "//examples/kuka_iiwa_arm:lcm_plan_interpolator",
+        "//lcm:drake_lcm",
+        "//systems/analysis:simulator",
+        "@gflags",
+
+    ],
+)
+
 drake_cc_binary(
     name = "yaskawa_plan_runner",
     srcs = ["yaskawa_plan_runner.cc"],

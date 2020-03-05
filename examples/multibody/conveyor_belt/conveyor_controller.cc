@@ -11,7 +11,7 @@ DEFINE_double(belt_length, 3, "The length of the belt in meters");
 DEFINE_double(belt_radius, 0.075, "The radius of the belt in meters");
 DEFINE_double(platform_length, 0.05, "Platform length in the sdf file");
 DEFINE_int32(num_of_platforms, 7, "The number of discrete green platforms that form the entire belt");
-DEFINE_double(desired_belt_velocity, 0.5, "Desired velocity of belt in 0.9652 meters/seconds which is 190ft/min");
+DEFINE_double(desired_belt_velocity, 0.96, "Desired velocity of belt in 0.9652 meters/seconds which is 190ft/min");
 DEFINE_double(desired_belt_rot_vel, FLAGS_desired_belt_velocity/FLAGS_belt_radius, "Desired velocity of belt in meters/seconds");
 DEFINE_double(alpha_limit, M_PI-(2*std::atan2(FLAGS_belt_radius,FLAGS_platform_length/2)), "alpha while rotating");
 

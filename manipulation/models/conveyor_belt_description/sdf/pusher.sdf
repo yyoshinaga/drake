@@ -1,0 +1,214 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='conveyor'>
+    <!--
+    This model is identical to the extra heavy duty table in nearly
+    every respect except that the collision tags are present only for
+    the surface link. This leads to a large speedup in simulations
+    involving the table due to a decrease in number of collision
+    checks needed.
+    -->
+    <link name='base_link'>
+
+      <visual name='visual_base'>
+      <pose frame=''>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>1 0.5 0 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <!-- <link name='cylinder_link'>
+      <gravity>0</gravity>
+
+      <visual name='visual_cylinder'>
+        <pose frame=''>0 -1.5 0 0 -1.57 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.136</radius>
+              <length>0.5</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <diffuse>1 0.5 0 1.0</diffuse>
+          </material>
+        </visual>
+    </link> -->
+
+    <link name='first_link'>
+      <visual name='visual_1'>
+      <pose frame=''>0 0 0 0 0 0</pose>
+        <geometry>
+          <box> 
+            <!-- <size>0.05 0.05 0.275</size> -->
+            <size>0.05 0.05 0.2</size>
+
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <!-- <link name='connector_link_01'>
+      <visual name='visual_01'>
+        <pose> 0 0 0.1 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>1 1 0 1.0</diffuse>
+        </material>
+      </visual>
+    </link> -->
+
+    <link name='collision_link1'>
+      <inertial>
+        <mass>100</mass>
+        <inertia>
+          <ixx>1</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1</iyy>
+          <iyz>0</iyz>
+          <izz>1</izz>
+        </inertia>
+      </inertial>
+
+      <self_collide>0</self_collide>
+      <!-- <kinematic>1</kinematic> -->
+      <visual name='visual_01'>
+        <pose frame=''>0 0 0.125 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.6 0.02 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0.5 0 1.0</diffuse>
+        </material>
+      </visual>
+
+      <collision name='surface'>
+        <pose frame=''>0 0 0.125 0 0 0</pose>
+        <laser_retro>0</laser_retro>
+        <max_contacts>10</max_contacts>
+        <geometry>
+          <box>
+            <size>0.6 0.02 0.05</size>
+          </box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.6</mu>
+              <mu2>0.6</mu2>
+              <fdir1>0 0 0</fdir1>
+              <slip1>0</slip1>
+              <slip2>0</slip2>
+            </ode>
+            <torsional>
+              <coefficient>1</coefficient>
+              <patch_radius>0</patch_radius>
+              <surface_radius>0</surface_radius>
+              <use_patch_radius>1</use_patch_radius>
+              <ode>
+                <slip>0</slip>
+              </ode>
+            </torsional>
+          </friction>
+          <bounce>
+            <restitution_coefficient>0</restitution_coefficient>
+            <threshold>1e+06</threshold>
+          </bounce>
+          <contact>
+            <collide_without_contact>0</collide_without_contact>
+            <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
+            <collide_bitmask>1</collide_bitmask>
+            <ode>
+              <soft_cfm>0</soft_cfm>
+              <soft_erp>0.2</soft_erp>
+              <kp>1e+13</kp>
+              <kd>1</kd>
+              <max_vel>0.01</max_vel>
+              <min_depth>0</min_depth>
+            </ode>
+            <bullet>
+              <split_impulse>1</split_impulse>
+              <split_impulse_penetration_threshold>-0.01</split_impulse_penetration_threshold>
+              <soft_cfm>0</soft_cfm>
+              <soft_erp>0.2</soft_erp>
+              <kp>1e+13</kp>
+              <kd>1</kd>
+            </bullet>
+          </contact>
+        </surface>
+      </collision> 
+    </link> 
+
+    <joint name="zeroth_joint" type="prismatic">
+      <parent>base_link</parent>
+      <child>first_link</child>
+      <axis>
+        <dynamics>
+          <friction>9</friction>
+          <damping>5</damping>
+          <spring_stiffness>10</spring_stiffness>
+        </dynamics>
+        <xyz>0 1 0</xyz>
+      </axis>
+    </joint>
+
+    <joint name="first_joint" type="prismatic">
+      <parent>first_link</parent>
+      <child>collision_link1</child>
+      <axis>
+        <dynamics>
+          <friction>9</friction>
+          <damping>5</damping>
+          <spring_stiffness>10</spring_stiffness>
+        </dynamics>
+        <xyz>1 0 0</xyz>
+      </axis>
+    </joint>
+
+    <!-- <joint name="cyl_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>cylinder_link</child>
+    </joint> -->
+
+
+    <transmission name="tran_0">
+      <robotNamespace>/conveyor</robotNamespace>
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="zeroth_joint">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="motor_0">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+    <transmission name="tran_1">
+      <robotNamespace>/conveyor</robotNamespace>
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="first_joint">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="motor_1">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+    
+  </model>
+</sdf>
