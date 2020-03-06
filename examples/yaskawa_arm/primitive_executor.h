@@ -22,6 +22,8 @@
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_position_controller.h"
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_lcm.h"
 
+namespace real_lcm = lcm;
+
 namespace drake {
 namespace examples{
 namespace yaskawa_arm_runner{
@@ -39,7 +41,7 @@ public:
     // Eigen::VectorXd getEEInfo();
 
 private:
-    lcm::LCM lcm_;
+    real_lcm::LCM lcm_;
     std::string yaskawa_urdf_;
     std::string ee_urdf_;
 
@@ -55,11 +57,16 @@ private:
     std::vector<Eigen::Quaterniond> object_quaternions_;
     bool object_update_;
 
-    void HandleStatusYaskawa(const lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status);
-    void HandleStatusGripper(const lcm::ReceiveBuffer*, const std::string&, const lcmt_yaskawa_ee_status* status);
-    void HandleStatusPackage(const lcm::ReceiveBuffer*, const std::string&, const bot_core::robot_state_t* status);
+    void HandleStatusYaskawa(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status);
+    void HandleStatusGripper(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_yaskawa_ee_status* status);
+    void HandleStatusPackage(const real_lcm::ReceiveBuffer*, const std::string&, const bot_core::robot_state_t* status);
 
-    multibody::MultibodyPlant<double> plant_;
+    drake::multibody::ModelInstanceIndex AddAndWeldModelFrom(
+        const std::string& model_path, const std::string& model_name,
+        const drake::multibody::Frame<double>& parent, const std::string& child_frame_name,
+        const math::RigidTransform<double>& X_PC, multibody::MultibodyPlant<double>* plant);
+
+    multibody::MultibodyPlant<double>* plant_;
     std::unique_ptr<systems::Context<double>> context_;
     std::vector<std::string> joint_names_;
     int status_count_{0};

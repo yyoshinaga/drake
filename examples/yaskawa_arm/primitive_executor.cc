@@ -18,6 +18,9 @@ namespace drake {
 namespace examples {
 namespace yaskawa_arm_runner{
 
+using multibody::MultibodyPlant;
+using drake::math::RigidTransform;
+
 const char kYaskawaUrdf[] =
       "drake/manipulation/models/yaskawa_description/urdf/"
         "yaskawa_no_collision.urdf";
@@ -26,19 +29,19 @@ const char kYaskawaUrdf[] =
     //         "urdf/end_effector_3.urdf";
 
 
-    PrimitiveExecutor::PrimitiveExecutor(): plant_(0.0) {
+    PrimitiveExecutor::PrimitiveExecutor() {
         yaskawa_urdf_ =
             (!FLAGS_urdf.empty() ? FLAGS_urdf : FindResourceOrThrow(kYaskawaUrdf));
         // ee_urdf_ = 
         //     (!FLAGS_urdf.empty() ? FLAGS_urdf : FindResourceOrThrow(kEEUrdf));
 
-        const auto X_WI = RigidTransform<double>::Identity();
-        auto iiwa_instance = internal::AddAndWeldModelFrom(
-            sdf_path, "yaskawa", plant_->world_frame(), "arm_base", X_WI, plant_);
+        const auto X_WI = math::RigidTransform<double>::Identity();
+        auto iiwa_instance = PrimitiveExecutor::AddAndWeldModelFrom(
+            yaskawa_urdf_, "yaskawa", plant_->world_frame(), "arm_base", X_WI, plant_);
 
         // const drake::multibody::Frame<T>& link6 =
         //     plant_->GetFrameByName("ee_mount", iiwa_model_.model_instance);
-        // const RigidTransform<double> X_6G(RollPitchYaw<double>(0, 0, 0),
+        // const math::RigidTransform<double> X_6G(RollPitchYaw<double>(0, 0, 0),
         //                                     Vector3d(0, 0, 0.114));
         // auto wsg_instance = internal::AddAndWeldModelFrom(sdf_path, "gripper", link6,
         //                                                     "ee_base", X_6G, plant_);
@@ -46,22 +49,22 @@ const char kYaskawaUrdf[] =
         //           const drake::multibody::ModelInstanceIndex new_model =
         // multibody::Parser(&plant_).AddModelFromFile(yaskawa_urdf_);
 
-        //         plant_.WeldFrames(plant_.world_frame(),
-        //                         plant_.GetBodyByName("arm_base").body_frame());
+        //         plant_->WeldFrames(plant_->world_frame(),
+        //                         plant_->GetBodyByName("arm_base").body_frame());
 
-        plant_.Finalize();
-        context_ = plant_.CreateDefaultContext();
+        plant_->Finalize();
+        context_ = plant_->CreateDefaultContext();
 
         lcm_.subscribe(FLAGS_lcm_status_channel, &PrimitiveExecutor::HandleStatusYaskawa, this);
         lcm_.subscribe(FLAGS_lcm_gripper_status_channel, &PrimitiveExecutor::HandleStatusGripper, this);
-        lcm_.subscribe(FLAGS_lcm_belt_status_channel, &PrimitiveExecutor::HandleStatusBelt, this);
-        lcm_.subscribe(FLAGS_lcm_package_channel, &PrimitiveExecutor::HandleStatusPackage, this);
+        // lcm_.subscribe(FLAGS_lcm_belt_status_channel, &PrimitiveExecutor::HandleStatusBelt, this);
+        lcm_.subscribe(FLAGS_lcm_package_state_channel, &PrimitiveExecutor::HandleStatusPackage, this);
 
         std::map<int, std::string> position_names;
-        const int num_positions = plant_.num_positions();
-        for (int i = 0; i < plant_.num_joints(); ++i) {
+        const int num_positions = plant_->num_positions();
+        for (int i = 0; i < plant_->num_joints(); ++i) {
             const multibody::Joint<double>& joint =
-                plant_.get_joint(multibody::JointIndex(i));
+                plant_->get_joint(multibody::JointIndex(i));
             if (joint.num_positions() == 0) {
                 continue;
             }
@@ -90,27 +93,28 @@ const char kYaskawaUrdf[] =
     int PrimitiveExecutor::action_Grip(double width, double force, double time)
     {
         while(lcm_.handle() >= 0 && !ee_update_);
-        uint64_t init_time = ee_status_.utime / 1e6;
-        double final_time = init_time + time;
-        // drake::log()->info("Init time: {}", init_time);
-        // drake::log()->info("final time: {}", final_time);
-        while(lcm_.handle() >= 0 && (ee_status_.utime / 1e6) < final_time + 1)
-        {
-            if(ee_update_)
-            {
-                ee_update_ = false;
-                // drake::log()->info("looping: {}", ee_status_.utime / 1e6);
-                double cur_dt_time = (ee_status_.utime/1e6 - init_time);
+        // uint64_t init_time = ee_status_.utime / 1e6;
+        // double final_time = init_time + time;
+        // // drake::log()->info("Init time: {}", init_time);
+        // // drake::log()->info("final time: {}", final_time);
+        // while(lcm_.handle() >= 0 && (ee_status_.utime / 1e6) < final_time + 1)
+        // {
+        //     if(ee_update_)
+        //     {
+        //         ee_update_ = false;
+        //         // drake::log()->info("looping: {}", ee_status_.utime / 1e6);
+        //         double cur_dt_time = (ee_status_.utime/1e6 - init_time);
 
-                lcmt_yaskawa_ee_command command{};
+        //         lcmt_yaskawa_ee_command command{};
                 
-                command.target_position_mm = ee_status_.actual_position_mm + (width - ee_status_.actual_position_mm) * (cur_dt_time / time);
+        //         command.target_position_mm = ee_status_.actual_position_mm + (width - ee_status_.actual_position_mm) * (cur_dt_time / time);
                 
-                command.utime = ee_status_.utime;
-                command.force = force;
-                lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
-            }
-        }
+        //         command.utime = ee_status_.utime;
+        //         command.force = force;
+        //         lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
+        //     }
+        // }
+        
         return 1;
     }
 
@@ -128,7 +132,7 @@ const char kYaskawaUrdf[] =
         waypoints.push_back(wp);
 
         // Create the plan
-        manipulation::planner::ConstraintRelaxingIk ik(urdf_, FLAGS_ee_name, Isometry3<double>::Identity());
+        manipulation::planner::ConstraintRelaxingIk ik(yaskawa_urdf_, FLAGS_ee_name, Isometry3<double>::Identity());
         
         Eigen::VectorXd iiwa_q(iiwa_status_.num_joints);
         for (int i = 0; i < iiwa_status_.num_joints; i++) {
@@ -175,19 +179,19 @@ const char kYaskawaUrdf[] =
 
     }
 
-    void PrimitiveExecutor::HandleStatusObject(const lcm::ReceiveBuffer*, const std::string&, const bot_core::robot_state_t* status){
+    void PrimitiveExecutor::HandleStatusPackage(const real_lcm::ReceiveBuffer*, const std::string&, const bot_core::robot_state_t* status){
         object_positions_ = Eigen::Vector3d (status->pose.translation.x, status->pose.translation.y, status->pose.translation.z);
         object_quaternions_ = Eigen::Quaterniond (status->pose.rotation.w, status->pose.rotation.x, status->pose.rotation.y, status->pose.rotation.z);
         object_update_ = true;
     }
 
 
-    void PrimitiveExecutor::HandleStatusGripper(const lcm::ReceiveBuffer*, const std::string&, const lcmt_schunk_wsg_status* status) {
+    void PrimitiveExecutor::HandleStatusGripper(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_yaskawa_ee_status* status) {
         ee_status_ = *status;
         ee_update_ = true;
     }
 
-    void PrimitiveExecutor::HandleStatusYaskawa(const lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status){
+    void PrimitiveExecutor::HandleStatusYaskawa(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status){
         iiwa_status_ = *status;
         iiwa_update_ = true;
 
@@ -199,11 +203,11 @@ const char kYaskawaUrdf[] =
         }
 
         if (status_count_ % 100 == 1) {
-            plant_.SetPositions(context_.get(), iiwa_q);
+            plant_->SetPositions(context_.get(), iiwa_q);
 
             const math::RigidTransform<double> ee_pose =
-                plant_.EvalBodyPoseInWorld(
-                    *context_, plant_.GetBodyByName(FLAGS_ee_name));
+                plant_->EvalBodyPoseInWorld(
+                    *context_, plant_->GetBodyByName(FLAGS_ee_name));
             const math::RollPitchYaw<double> rpy(ee_pose.rotation());
             drake::log()->info("End effector at: {} {}",
                                 ee_pose.translation().transpose(),
@@ -215,8 +219,8 @@ const char kYaskawaUrdf[] =
 
     drake::multibody::ModelInstanceIndex PrimitiveExecutor::AddAndWeldModelFrom(
         const std::string& model_path, const std::string& model_name,
-        const drake::multibody::Frame<T>& parent, const std::string& child_frame_name,
-        const RigidTransform<double>& X_PC, MultibodyPlant<T>* plant) {
+        const drake::multibody::Frame<double>& parent, const std::string& child_frame_name,
+        const math::RigidTransform<double>& X_PC, MultibodyPlant<double>* plant) {
 
         DRAKE_THROW_UNLESS(!plant->HasModelInstanceNamed(model_name));
 

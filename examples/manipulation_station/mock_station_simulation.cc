@@ -80,7 +80,7 @@ int do_main(int argc, char* argv[]) {
     station->AddManipulandFromFile(
         "drake/examples/manipulation_station/models/package3.sdf",
         math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
-                                     Eigen::Vector3d(1.6, 3.5, 0.95)));
+                                     Eigen::Vector3d(1.6, 3.95, 0.95)));
 
   } else if (FLAGS_setup == "clutter_clearing") {
     station->SetupClutterClearingStation();

@@ -55,6 +55,7 @@ drake_cc_library(
         #Added on:
         "//systems/controllers",
         "//systems/primitives",
+        "//examples/multibody/conveyor_belt:conveyor_controller",
         "//examples/multibody/conveyor_belt:conveyor_controller2",
         "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_constants",
         "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_position_controller",

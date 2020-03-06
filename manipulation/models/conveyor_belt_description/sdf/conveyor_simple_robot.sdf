@@ -46,8 +46,7 @@
         <geometry>
           <box> 
             <!-- <size>0.05 0.05 0.275</size> -->
-            <size>0.05 0.05 0.13</size>
-
+            <size>0.05 0.05 0.15</size>
           </box>
         </geometry>
         <material>
@@ -791,6 +790,7 @@
           <spring_stiffness>10</spring_stiffness>
         </dynamics>
         <xyz>1 0 0</xyz>
+        <limit lower="-1.0" upper="0.0" effort="0.0" velocity="0.0"/>
       </axis>
     </joint>     
 
@@ -810,6 +810,7 @@
           <spring_stiffness>10</spring_stiffness>
         </dynamics>
         <xyz>1 0 0</xyz>
+        <limit lower="-1.0" upper="0.0" effort="0.0" velocity="0.0"/>
       </axis>
     </joint>  
 
@@ -829,6 +830,7 @@
           <spring_stiffness>10</spring_stiffness>
         </dynamics>
         <xyz>1 0 0</xyz>
+        <limit lower="-1.0" upper="0.0" effort="0.0" velocity="0.0"/>
       </axis>
     </joint>  
 
@@ -848,6 +850,7 @@
           <spring_stiffness>10</spring_stiffness>
         </dynamics>
         <xyz>1 0 0</xyz>
+        <limit lower="-1.0" upper="0.0" effort="0.0" velocity="0.0"/>
       </axis>
     </joint> 
 
@@ -867,6 +870,7 @@
           <spring_stiffness>10</spring_stiffness>
         </dynamics>
         <xyz>1 0 0</xyz>
+        <limit lower="-1.0" upper="0.0" effort="0.0" velocity="0.0"/>
       </axis>
     </joint>  
 
@@ -886,6 +890,7 @@
           <spring_stiffness>10</spring_stiffness>
         </dynamics>
         <xyz>1 0 0</xyz>
+        <limit lower="-1.0" upper="0.0" effort="0.0" velocity="0.0"/>
       </axis>
     </joint>  
 
