@@ -5,7 +5,7 @@
 #include <vector>
 #include <gflags/gflags.h>
 #include "robotlocomotion/robot_plan_t.hpp"
-
+#include <Eigen/Geometry> 
 #include "drake/common/drake_assert.h"
 #include "drake/common/find_resource.h"
 
@@ -28,17 +28,20 @@ namespace drake {
 namespace examples{
 namespace yaskawa_arm_runner{
 
-
 class PrimitiveExecutor
 {
 public:
     PrimitiveExecutor();
 
-    int action_Grip(double width, double force, double time = 5.0);
-    int action_GoToPoint(Eigen::Vector3d position, Eigen::Vector3d orientation, double time = 7.0);
-    std::vector<Eigen::Vector3d> getObjectLocations();
-    std::vector<Eigen::Quaterniond> getObjectQuats();
-    // Eigen::VectorXd getEEInfo();
+    //Define actions that the arm can take
+    int action_Collect(const double time);
+    int action_Release(const double time);
+    int action_WhiskersUp();
+    int action_WhiskersDown();
+    int action_GoToPoint(const Eigen::Vector3d position, const Eigen::Vector3d orientation, const double time);
+
+    Eigen::Vector3d getObjectLocation();
+    Eigen::Quaterniond getObjectQuat();
 
 private:
     real_lcm::LCM lcm_;
@@ -51,25 +54,33 @@ private:
     bool ee_update_;
 
     lcmt_iiwa_status iiwa_status_;
-    bool iiwa_update_;
+    bool yaskawa_update_;
 
-    std::vector<Eigen::Vector3d> object_positions_;
-    std::vector<Eigen::Quaterniond> object_quaternions_;
+    Eigen::Vector3d object_position_;
+    Eigen::Quaterniond object_quaternion_;
     bool object_update_;
 
     void HandleStatusYaskawa(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status);
     void HandleStatusGripper(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_yaskawa_ee_status* status);
     void HandleStatusPackage(const real_lcm::ReceiveBuffer*, const std::string&, const bot_core::robot_state_t* status);
 
-    drake::multibody::ModelInstanceIndex AddAndWeldModelFrom(
-        const std::string& model_path, const std::string& model_name,
-        const drake::multibody::Frame<double>& parent, const std::string& child_frame_name,
-        const math::RigidTransform<double>& X_PC, multibody::MultibodyPlant<double>* plant);
+    bool is_at_desired_position();
+    bool is_whisker_down();
+    bool is_carrying();
+    bool is_at_shelf();
+    bool is_at_belt();
+    bool is_moving();
+    bool is_pickable();
+    bool is_at_package_location();
 
-    multibody::MultibodyPlant<double>* plant_;
+    multibody::MultibodyPlant<double> plant_;
     std::unique_ptr<systems::Context<double>> context_;
     std::vector<std::string> joint_names_;
     int status_count_{0};
+
+    drake::multibody::ModelInstanceIndex yaskawa_model_idx;
+    drake::multibody::ModelInstanceIndex ee_model_idx;
+
 
 };
 

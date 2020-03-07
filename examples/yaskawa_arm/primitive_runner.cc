@@ -11,24 +11,26 @@
 int main(int , char** ) {
     drake::examples::yaskawa_arm_runner::PrimitiveExecutor p_executor;
 
-    Eigen::Vector3d object_location = p_executor.getObjectLocations()[0];
-    p_executor.action_Grip(100, 20);
-    // p_executor.action_GoToPoint(Eigen::Vector3d(.75, 0, .15), Eigen::Vector3d(0.0, 1.57, 0.0));
-    std::cout << object_location << std::endl;
-    object_location(0) -= .02;
-    object_location(2) += .2;
-    std::cout << object_location << std::endl;
-    p_executor.action_GoToPoint(object_location, Eigen::Vector3d(0.0, 1.57, 0.0));
-    // p_executor.action_GoToPoint(object_location, Eigen::Vector3d(0.0, 1.57, 0.0));
+    // Eigen::Vector3d object_location = p_executor.getObjectLocation();
+    p_executor.action_Collect(1);
+    drake::log()->info("action: Collect");
+    // // p_executor.action_GoToPoint(Eigen::Vector3d(.75, 0, .15), Eigen::Vector3d(0.0, 1.57, 0.0));
+    // std::cout << object_location << std::endl;
 
-    object_location(2) -= .1;
-    std::cout << object_location << std::endl;
-    p_executor.action_GoToPoint(object_location, Eigen::Vector3d(0.0, 1.57, 0.0));
-    p_executor.action_Grip(40, 17);
-    object_location(2) += .2;
-    object_location(0) -= .1;
-    std::cout << object_location << std::endl;
-    p_executor.action_GoToPoint(object_location, Eigen::Vector3d(0.0, 1.57, 0.0));
-    p_executor.action_Grip(80, 40);
+    // object_location(0) -= .02;
+    // object_location(2) += .2;
+    // std::cout << object_location << std::endl;
+    // p_executor.action_GoToPoint(object_location, Eigen::Vector3d(0.0, 1.57, 0.0));
+    // // p_executor.action_GoToPoint(object_location, Eigen::Vector3d(0.0, 1.57, 0.0));
+
+    // object_location(2) -= .1;
+    // std::cout << object_location << std::endl;
+    // p_executor.action_GoToPoint(object_location, Eigen::Vector3d(0.0, 1.57, 0.0));
+    // p_executor.action_Grip(40, 17);
+    // object_location(2) += .2;
+    // object_location(0) -= .1;
+    // std::cout << object_location << std::endl;
+    // p_executor.action_GoToPoint(object_location, Eigen::Vector3d(0.0, 1.57, 0.0));
+    // p_executor.action_Grip(80, 40);
 
 }
