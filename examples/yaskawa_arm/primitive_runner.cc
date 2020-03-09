@@ -12,8 +12,16 @@ int main(int , char** ) {
     drake::examples::yaskawa_arm_runner::PrimitiveExecutor p_executor;
 
     // Eigen::Vector3d object_location = p_executor.getObjectLocation();
-    p_executor.action_Collect(1);
+
+    p_executor.action_GoHome();
+
     drake::log()->info("action: Collect");
+    p_executor.action_Collect(1.0) ? drake::log()->info("success") : drake::log()->info("collect failed");
+
+    // drake::log()->info("action: Release");
+    // p_executor.action_Release(1.0) ? drake::log()->info("success") : drake::log()->info("release failed");
+
+
     // // p_executor.action_GoToPoint(Eigen::Vector3d(.75, 0, .15), Eigen::Vector3d(0.0, 1.57, 0.0));
     // std::cout << object_location << std::endl;
 

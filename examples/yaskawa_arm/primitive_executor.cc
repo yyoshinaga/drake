@@ -5,7 +5,7 @@ DEFINE_string(lcm_status_channel, "IIWA_STATUS",
               "Channel on which to listen for lcmt_iiwa_status messages.");
 DEFINE_string(lcm_plan_channel, "COMMITTED_ROBOT_PLAN",
               "Channel on which to send robot_plan_t messages.");
-DEFINE_string(ee_name, "yaskawa_link_ee", "Name of the end effector link");
+DEFINE_string(ee_name, "ee_mount", "Name of the end effector link");
 
 // Gripper channels
 DEFINE_string(lcm_gripper_status_channel, "EE_STATUS", "Channel on which to listen for lcmt_ee_status messages");
@@ -14,8 +14,8 @@ DEFINE_string(lcm_gripper_command_channel, "EE_COMMAND", "Channel on which to se
 // Channel for detecting the object's position
 DEFINE_string(lcm_package_state_channel, "PACKAGE_STATE", "Channel on which to listen for robot_state_t messages for the object");
 
-DEFINE_double(whiskers_up_angle, 1.57, "The angle at which the whiskers are in the open position");
-DEFINE_double(whiskers_down_angle, 0, "The angle at which the whiskers are in the closed position");
+DEFINE_double(whiskers_up_angle, -0.1, "The angle at which the whiskers are in the open position");
+DEFINE_double(whiskers_down_angle, -1.4, "The angle at which the whiskers are in the closed position");
 
 namespace drake {
 namespace examples {
@@ -99,15 +99,28 @@ const char kEEUrdf[] =
         object_update_ = false;
     }
 
+//-------------------------------- actions ---------------------------------------------------
+    
+    // TODO: Finish this function
+    int PrimitiveExecutor::action_GoHome(){
+        // while(lcm_.handle() >= 0 && !ee_update_);
+        // while(lcm_.handle() >= 0 is_at_desired_position()){
+
+        // }
+
+        return 1;
+    }
+
     int PrimitiveExecutor::action_Collect(const double time) {
         while(lcm_.handle() >= 0 && !ee_update_);
 
         //Checks: 
-        if(is_whisker_down() ||  
+        if(!are_whiskers_up() ||  
             is_carrying() || 
             !is_at_belt() || 
             !is_pickable() ||  
             !is_at_package_location()){
+            printer(0,1,0,1,0,1,0,1,1);
             return 0; //If any of the checks fail, function returns 0.
         }
 
@@ -119,10 +132,6 @@ const char kEEUrdf[] =
 
                 lcmt_yaskawa_ee_command command{};
                 command.utime = ee_status_.utime;
-
-                //Make sure the whiskers are at the upward position
-                DRAKE_DEMAND(ee_status_.actual_whisker_angle >= FLAGS_whiskers_up_angle);
-
                 command.puller_move = true;
                 
                 lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
@@ -135,10 +144,11 @@ const char kEEUrdf[] =
         while(lcm_.handle() >= 0 && !ee_update_);
 
         //Checks: 
-        if(!is_whisker_down() || 
-            !is_carrying() ||
-            !is_at_shelf()){
-                return 0; //If any of the checks fail, function returns 0.
+        if(!are_whiskers_up() || 
+           !is_carrying() ||
+           !is_at_shelf()){
+            printer(0,1,0,1,1,0,0,0,0);
+            return 0; //If any of the checks fail, function returns 0.
         }
 
         double final_time = static_cast<double>(ee_status_.utime / 1e6) + time;
@@ -149,7 +159,6 @@ const char kEEUrdf[] =
 
                 lcmt_yaskawa_ee_command command{};
                 command.utime = ee_status_.utime;
-
                 command.pusher_move = true;
                 
                 lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
@@ -162,10 +171,10 @@ const char kEEUrdf[] =
         while(lcm_.handle() >= 0 && !ee_update_);
 
         //Checks: 
-        if(!is_whisker_down()){ return 1; } //Action already completed
+        if(are_whiskers_up()){ return 1; }  //Action already completed
         if(is_moving()){ return 0; }        //If any of the checks fail, function returns 0.
 
-        while(lcm_.handle() >= 0 && is_whisker_down()){
+        while(lcm_.handle() >= 0 && !are_whiskers_up()){    //While whiskers not up, keep running
             if(ee_update_){
                 ee_update_ = false;
 
@@ -183,10 +192,10 @@ const char kEEUrdf[] =
         while(lcm_.handle() >= 0 && !ee_update_);
 
         //Checks: 
-        if(is_whisker_down()){ return 1; }  //Action already completed
-        if(is_carrying()){ return 0; }      //If any of the checks fail, function returns 0.
+        if(are_whiskers_down()){ return 1; }    //Action already completed
+        if(is_carrying()){ return 0; }          //If any of the checks fail, function returns 0.
 
-        while(lcm_.handle() >= 0 && !is_whisker_down()){
+        while(lcm_.handle() >= 0 && !are_whiskers_down()){  //While whiskers not up, keep running
             if(ee_update_){
                 ee_update_ = false;
 
@@ -261,6 +270,9 @@ const char kEEUrdf[] =
         return 1;
     }
 
+
+//---------------------------------------- STATUSES ----------------------------------------------------
+
     void PrimitiveExecutor::HandleStatusPackage(const real_lcm::ReceiveBuffer*, const std::string&, const bot_core::robot_state_t* status){
         drake::log()->info("status->pose.rotation.w: {}",status->pose.rotation.w);
         object_position_ = Eigen::Vector3d (status->pose.translation.x, status->pose.translation.y, status->pose.translation.z);
@@ -277,15 +289,15 @@ const char kEEUrdf[] =
         iiwa_status_ = *status;
         yaskawa_update_ = true;
 
-        status_count_++;
 
         Eigen::VectorXd iiwa_q(status->num_joints);
         for (int i = 0; i < status->num_joints; i++) {
             iiwa_q[i] = status->joint_position_measured[i];
         }
 
+        status_count_++;    //Increase this count for the if statement below
         if (status_count_ % 100 == 1) {
-            plant_.SetPositions(context_.get(), iiwa_q);
+            plant_.SetPositions(context_.get(),yaskawa_model_idx, iiwa_q);
 
             const math::RigidTransform<double> ee_pose =
                 plant_.EvalBodyPoseInWorld(
@@ -307,7 +319,7 @@ const char kEEUrdf[] =
         return object_quaternion_;
     }
  
-
+    // TODO: Finish this function
     bool PrimitiveExecutor::is_at_desired_position(){
 
         VectorX<double> positions = plant_.GetPositions(*context_, yaskawa_model_idx);  
@@ -315,11 +327,16 @@ const char kEEUrdf[] =
 
         return 1;
     }
-    bool PrimitiveExecutor::is_whisker_down(){
+    bool PrimitiveExecutor::are_whiskers_up(){
+        drake::log()->info("whisker angle: {} {}",ee_status_.actual_whisker_angle, FLAGS_whiskers_up_angle);
+        return ee_status_.actual_whisker_angle >= FLAGS_whiskers_up_angle;
+    }
+    bool PrimitiveExecutor::are_whiskers_down(){
+        drake::log()->info("whisker angle: {} {}",ee_status_.actual_whisker_angle, FLAGS_whiskers_down_angle);
         return ee_status_.actual_whisker_angle <= FLAGS_whiskers_down_angle;
     }
     bool PrimitiveExecutor::is_carrying(){
-        return 1;
+        return 0;
     }
     bool PrimitiveExecutor::is_at_shelf(){
         return 1;
@@ -344,6 +361,32 @@ const char kEEUrdf[] =
         return 1;
     }
 
+    void PrimitiveExecutor::printer(bool desPos, bool whiskUp, bool whiskDwn, bool carry, bool atShlf, 
+                                    bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc){
+        drake::log()->info("Check printer starts below:");
+
+        if(desPos)   
+            drake::log()->info("    at desired position: {}",is_at_desired_position());
+        if(whiskUp)
+            drake::log()->info("    whiskers up: {}",are_whiskers_up());
+        if(whiskDwn)
+            drake::log()->info("    whiskers down: {}",are_whiskers_down());
+        if(carry)
+            drake::log()->info("    is carrying: {}",is_carrying());
+        if(atShlf)
+            drake::log()->info("    at shelf: {}",is_at_shelf());
+        if(atBlt)
+            drake::log()->info("    is at belt: {}",is_at_belt());
+        if(isMvng)
+            drake::log()->info("    is moving: {}",is_moving());
+        if(isPckble)
+            drake::log()->info("    is pickable: {}",is_pickable());
+        if(atPkgLoc)
+            drake::log()->info("    is at package location: {}",is_at_package_location());
+
+        drake::log()->info("Printer end");
+
+    }
 
 }
 }

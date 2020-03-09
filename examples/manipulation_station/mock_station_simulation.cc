@@ -50,7 +50,7 @@ namespace {
 using Eigen::VectorXd;
 // using examples::multibody::conveyor_belt::ConveyorStation;
 
-DEFINE_double(target_realtime_rate, 0.25,
+DEFINE_double(target_realtime_rate, 1.0,
               "Playback speed.  See documentation for "
               "Simulator::set_target_realtime_rate() for details.");
 DEFINE_double(duration, std::numeric_limits<double>::infinity(),
@@ -77,10 +77,10 @@ int do_main(int argc, char* argv[]) {
     //     "drake/examples/manipulation_station/models/package2.sdf",
     //     math::RigidTransform<double>(math::RollPitchYaw<double>(0, 0, 0.57),
     //                                  Eigen::Vector3d(1.75, 2.7, 1.05)));
-    station->AddManipulandFromFile(
-        "drake/examples/manipulation_station/models/package3.sdf",
-        math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
-                                     Eigen::Vector3d(1.6, 3.95, 0.95)));
+    // station->AddManipulandFromFile(
+    //     "drake/examples/manipulation_station/models/package3.sdf",
+    //     math::RigidTransform<double>(math::RotationMatrix<double>::Identity(),
+    //                                  Eigen::Vector3d(1.6, 3.95, 0.95)));
 
   } else if (FLAGS_setup == "clutter_clearing") {
     station->SetupClutterClearingStation();

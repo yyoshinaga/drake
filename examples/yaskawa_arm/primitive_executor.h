@@ -34,6 +34,7 @@ public:
     PrimitiveExecutor();
 
     //Define actions that the arm can take
+    int action_GoHome();
     int action_Collect(const double time);
     int action_Release(const double time);
     int action_WhiskersUp();
@@ -64,14 +65,43 @@ private:
     void HandleStatusGripper(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_yaskawa_ee_status* status);
     void HandleStatusPackage(const real_lcm::ReceiveBuffer*, const std::string&, const bot_core::robot_state_t* status);
 
+    // This function checks to see whether the yaskawa arm's end effector frame is 
+    // at its desired pose. Includes translation and orientation. 
     bool is_at_desired_position();
-    bool is_whisker_down();
+
+    // This function compares status' whisker angle to the FLAGS_whiskers_up_angle. 
+    // The up position is set to 0 deg (0 rad)
+    bool are_whiskers_up();
+
+    // This function compares status' whisker angle to the FLAGS_whiskers_down_angle. 
+    // Currently the down position is set to -90deg (-1.57 rad)
+    bool are_whiskers_down();
+
+    // This function checks to see if the end effector is carrying a box
     bool is_carrying();
+
+    // This function checks to see if the end effector is by the shelf
     bool is_at_shelf();
+
+    // This function checks to see if the end effector is at the belt location
     bool is_at_belt();
+
+    // This function checks to see if the arm is currently moving
     bool is_moving();
+
+    // This function checks to see if the box is too large to be picked up
+    // by the end effector
     bool is_pickable();
+
+    // This function checks to see if the end effector is positioned correctly at
+    // the belt and moved to the correct spot at the belt to pick up the package. 
+    // The package could potentially be towards the right side of the belt or the 
+    // left side of the belt. 
     bool is_at_package_location();
+
+    //Prints checker functions
+    void printer(bool desPos, bool whiskUp, bool whiskDwn, bool car, bool atShlf, 
+                 bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc);
 
     multibody::MultibodyPlant<double> plant_;
     std::unique_ptr<systems::Context<double>> context_;
