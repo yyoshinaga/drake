@@ -48,6 +48,7 @@ private:
     real_lcm::LCM lcm_;
     std::string yaskawa_urdf_;
     std::string ee_urdf_;
+    math::RigidTransform<double> ee_pose;
 
     RigidBodyTree<double> tree_;
 
@@ -67,7 +68,7 @@ private:
 
     // This function checks to see whether the yaskawa arm's end effector frame is 
     // at its desired pose. Includes translation and orientation. 
-    bool is_at_desired_position();
+    bool is_at_desired_position(VectorX<double> des_pos);
 
     // This function compares status' whisker angle to the FLAGS_whiskers_up_angle. 
     // The up position is set to 0 deg (0 rad)
@@ -96,8 +97,8 @@ private:
     // This function checks to see if the end effector is positioned correctly at
     // the belt and moved to the correct spot at the belt to pick up the package. 
     // The package could potentially be towards the right side of the belt or the 
-    // left side of the belt. 
-    bool is_at_package_location();
+    // left side of the belt. Adds amount x to the belt location.
+    bool is_at_package_location(double x);
 
     //Prints checker functions
     void printer(bool desPos, bool whiskUp, bool whiskDwn, bool car, bool atShlf, 

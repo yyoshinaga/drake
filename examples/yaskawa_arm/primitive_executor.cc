@@ -299,8 +299,7 @@ const char kEEUrdf[] =
         if (status_count_ % 100 == 1) {
             plant_.SetPositions(context_.get(),yaskawa_model_idx, iiwa_q);
 
-            const math::RigidTransform<double> ee_pose =
-                plant_.EvalBodyPoseInWorld(
+            ee_pose = plant_.EvalBodyPoseInWorld(
                     *context_, plant_.GetBodyByName(FLAGS_ee_name));
             const math::RollPitchYaw<double> rpy(ee_pose.rotation());
             drake::log()->info("End effector at: {} {}",
@@ -319,11 +318,43 @@ const char kEEUrdf[] =
         return object_quaternion_;
     }
  
+// ----------------------------------- Checker ------------------------------------------
     // TODO: Finish this function
-    bool PrimitiveExecutor::is_at_desired_position(){
+    bool PrimitiveExecutor::is_at_desired_position(VectorX<double> des_pos){
 
-        VectorX<double> positions = plant_.GetPositions(*context_, yaskawa_model_idx);  
-        drake::log()->info("reading position size: {}", positions.size());
+        DRAKE_DEMAND(des_pos.size() == 6);
+
+        // Is this another way to obtain end effector position?
+        // VectorX<double> positions = plant_.GetPositions(*context_, yaskawa_model_idx); 
+        ee_pose = plant_.EvalBodyPoseInWorld(
+                *context_, plant_.GetBodyByName(FLAGS_ee_name));
+
+        const math::RollPitchYaw<double> rpy(ee_pose.rotation());
+
+        drake::log()->info("translation: \n{} \n{} \n{}\nrotation: \n{}\n{}\n{}",
+            ee_pose.translation().transpose()[0],
+            ee_pose.translation().transpose()[1],
+            ee_pose.translation().transpose()[2],
+            rpy.vector().transpose()[0],
+            rpy.vector().transpose()[1],
+            rpy.vector().transpose()[2],
+        );
+
+        const double buffer = 0.01; //Temporary value
+
+        for(int i = 0; i < 6; i++){
+            if(i < 3){
+                if(des_pos[i] - ee_pose.translation().transpose()[i] < buffer){
+                    return 0;
+                }
+            }
+            else {
+                if(des_pos[i] - rpy.vector().transpose()[i] < buffer){
+                    return 0;
+                }  
+            }
+        }
+        // drake::log()->info("reading position size: {}", positions.size());
 
         return 1;
     }
@@ -339,10 +370,14 @@ const char kEEUrdf[] =
         return 0;
     }
     bool PrimitiveExecutor::is_at_shelf(){
-        return 1;
+        VectorX<double> atShelf(6);
+        atShelf << 0.4,0.3,0.9,0,0,0;
+        is_at_desired_position(atShelf) ? return 1 : return 0;
     }
     bool PrimitiveExecutor::is_at_belt(){   //TODO:Forward Kinematics
-        return 1;
+        VectorX<double> atBelt(6);
+        atBelt << 0.4,0.3,0.4,0,0,0;
+        is_at_desired_position(atBelt) ? return 1 :return 0;
     }
     bool PrimitiveExecutor::is_moving(){
  
@@ -357,8 +392,10 @@ const char kEEUrdf[] =
     bool PrimitiveExecutor::is_pickable(){
         return 1;
     }
-    bool PrimitiveExecutor::is_at_package_location(){
-        return 1;
+    bool PrimitiveExecutor::is_at_package_location(double x){
+        VectorX<double> atPkg(6);
+        atPkg << 0.4+x,0.3,0.4,0,0,0;
+        is_at_desired_position(atPkg) ? return 1 : return 0;
     }
 
     void PrimitiveExecutor::printer(bool desPos, bool whiskUp, bool whiskDwn, bool carry, bool atShlf, 
