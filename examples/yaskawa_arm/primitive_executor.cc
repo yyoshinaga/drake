@@ -119,7 +119,7 @@ const char kEEUrdf[] =
             is_carrying() || 
             !is_at_belt() || 
             !is_pickable() ||  
-            !is_at_package_location()){
+            !is_at_package_location(0.1)){
             printer(0,1,0,1,0,1,0,1,1);
             return 0; //If any of the checks fail, function returns 0.
         }
@@ -212,8 +212,11 @@ const char kEEUrdf[] =
     int PrimitiveExecutor::action_GoToPoint(const Eigen::Vector3d position, const Eigen::Vector3d orientation, const double time) {
         while(lcm_.handle() >= 0 && !yaskawa_update_);
 
+        VectorX<double> des_pos(6);
+        des_pos << position, orientation;
+
         //Checks:
-        if(is_at_desired_position()){ return 1; } //Action already completed
+        if(is_at_desired_position(des_pos)){ return 1; } //Action already completed
 
         drake::manipulation::planner::ConstraintRelaxingIk::IkCartesianWaypoint wp;    
         wp.pose.translation() = position;
@@ -337,7 +340,7 @@ const char kEEUrdf[] =
             ee_pose.translation().transpose()[2],
             rpy.vector().transpose()[0],
             rpy.vector().transpose()[1],
-            rpy.vector().transpose()[2],
+            rpy.vector().transpose()[2]
         );
 
         const double buffer = 0.01; //Temporary value
@@ -372,12 +375,12 @@ const char kEEUrdf[] =
     bool PrimitiveExecutor::is_at_shelf(){
         VectorX<double> atShelf(6);
         atShelf << 0.4,0.3,0.9,0,0,0;
-        is_at_desired_position(atShelf) ? return 1 : return 0;
+        return is_at_desired_position(atShelf) ? 1 : 0;
     }
     bool PrimitiveExecutor::is_at_belt(){   //TODO:Forward Kinematics
         VectorX<double> atBelt(6);
         atBelt << 0.4,0.3,0.4,0,0,0;
-        is_at_desired_position(atBelt) ? return 1 :return 0;
+        return is_at_desired_position(atBelt) ? 1 : 0;
     }
     bool PrimitiveExecutor::is_moving(){
  
@@ -395,15 +398,16 @@ const char kEEUrdf[] =
     bool PrimitiveExecutor::is_at_package_location(double x){
         VectorX<double> atPkg(6);
         atPkg << 0.4+x,0.3,0.4,0,0,0;
-        is_at_desired_position(atPkg) ? return 1 : return 0;
+        return is_at_desired_position(atPkg) ? 1 : 0;
     }
 
     void PrimitiveExecutor::printer(bool desPos, bool whiskUp, bool whiskDwn, bool carry, bool atShlf, 
                                     bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc){
         drake::log()->info("Check printer starts below:");
-
+        VectorX<double> atBelt(6);
+        atBelt << 0.4,0.3,0.4,0,0,0;
         if(desPos)   
-            drake::log()->info("    at desired position: {}",is_at_desired_position());
+            drake::log()->info("    at desired position: {}",is_at_desired_position(atBelt));
         if(whiskUp)
             drake::log()->info("    whiskers up: {}",are_whiskers_up());
         if(whiskDwn)
@@ -419,7 +423,7 @@ const char kEEUrdf[] =
         if(isPckble)
             drake::log()->info("    is pickable: {}",is_pickable());
         if(atPkgLoc)
-            drake::log()->info("    is at package location: {}",is_at_package_location());
+            drake::log()->info("    is at package location: {}",is_at_package_location(0.1));
 
         drake::log()->info("Printer end");
 
