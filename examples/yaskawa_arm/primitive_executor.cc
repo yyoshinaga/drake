@@ -55,7 +55,7 @@ const char kEEUrdf[] =
         ee_model_idx =
             parser.AddModelFromFile(ee_urdf_, "gripper");   
 
-        //Add EE to model
+        // Add EE to model
         const drake::multibody::Frame<double>& ee_frame =
             plant_.GetFrameByName("ee_mount", yaskawa_model_idx);
 
@@ -77,8 +77,9 @@ const char kEEUrdf[] =
 
         //Retrieving position names for the yaskawa arm
         std::map<int, std::string> position_names;
-        const int num_positions = plant_.num_positions();
-        for (int i = 0; i < plant_.num_joints(); ++i) {
+        const int num_positions = plant_.num_positions(yaskawa_model_idx);
+        for (int i = 0; i < 9; ++i) {  //There exists 9? joints on only the arm (including fixed)
+
             const multibody::Joint<double>& joint =
                 plant_.get_joint(multibody::JointIndex(i));
             if (joint.num_positions() == 0) {
@@ -87,6 +88,7 @@ const char kEEUrdf[] =
             DRAKE_DEMAND(joint.num_positions() == 1);
             DRAKE_DEMAND(joint.position_start() < num_positions);
             position_names[joint.position_start()] = joint.name();
+
         }
 
         DRAKE_DEMAND(static_cast<int>(position_names.size()) == num_positions);
@@ -97,6 +99,7 @@ const char kEEUrdf[] =
         ee_update_ = false;
         yaskawa_update_ = false;
         object_update_ = false;
+        has_package = false;
     }
 
 //-------------------------------- actions ---------------------------------------------------
@@ -118,9 +121,14 @@ const char kEEUrdf[] =
         if(!are_whiskers_up() ||  
             is_carrying() || 
             !is_at_belt() || 
+            !is_pusher_back()||
+            is_puller_back()||
             !is_pickable() ||  
-            !is_at_package_location(0.1)){
-            printer(0,1,0,1,0,1,0,1,1);
+            !is_at_package_location(0.0)){
+            printer(0,1,0,1,0,1,1,1,0,1,1);
+            drake::log()->info("is pusher back? {}",is_pusher_back());
+                        drake::log()->info("is puller back: {}",is_puller_back());
+
             return 0; //If any of the checks fail, function returns 0.
         }
 
@@ -132,11 +140,16 @@ const char kEEUrdf[] =
 
                 lcmt_yaskawa_ee_command command{};
                 command.utime = ee_status_.utime;
+                command.whiskers_down = false;
+                command.pusher_move = false;
                 command.puller_move = true;
                 
                 lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
             }
         }
+
+        has_package = true; //Assumes package has been collected
+        drake::log()->info("Package received");
         return 1;
     }
 
@@ -146,8 +159,10 @@ const char kEEUrdf[] =
         //Checks: 
         if(!are_whiskers_up() || 
            !is_carrying() ||
+           !is_pusher_back() ||
+           is_puller_back() ||
            !is_at_shelf()){
-            printer(0,1,0,1,1,0,0,0,0);
+            printer(0,1,0,1,1,1,1,0,0,0,0);
             return 0; //If any of the checks fail, function returns 0.
         }
 
@@ -159,11 +174,15 @@ const char kEEUrdf[] =
 
                 lcmt_yaskawa_ee_command command{};
                 command.utime = ee_status_.utime;
+                command.whiskers_down = false;
                 command.pusher_move = true;
-                
+                command.puller_move = true;
+
                 lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
             }
         }
+
+        has_package = false; //Assumes package has been dropped
         return 1;
     }
 
@@ -242,9 +261,11 @@ const char kEEUrdf[] =
         times.push_back(0);
         times.push_back(time);
 
+
         drake::log()->info("executing ik result");
         if (ik_res.info[0] == 1) {
             drake::log()->info("IK sol size {}", ik_res.q_sol.size());
+            yaskawa_update_ = false;   
 
             // Convert the resulting waypoints into the format expected by
             // ApplyJointVelocityLimits and EncodeKeyFrames.
@@ -256,19 +277,21 @@ const char kEEUrdf[] =
             // Ensure that the planned motion would not exceed the joint
             // velocity limits.  This function will scale the supplied
             // times if needed.
-            examples::yaskawa_arm::ApplyJointVelocityLimits(q_mat, &times);
+            examples::yaskawa_arm::ApplyJointVelocityLimits(q_mat, &times);  
             robotlocomotion::robot_plan_t plan =
                 examples::yaskawa_arm::EncodeKeyFrames(joint_names_, times, ik_res.info, q_mat);
-            // drake::log()->info("publishing");
+
+            drake::log()->info("publishing");
             lcm_.publish(FLAGS_lcm_plan_channel, &plan);
         }
 
-        //What is this? 
-        // double init_time = iiwa_status_.utime / 1e6;
-        // double final_time = init_time + time;
-        // drake::log()->info("Init time: {}", init_time);
-        // drake::log()->info("final time: {}", final_time);
-        // while(lcm_.handle() >= 0 && (iiwa_status_.utime / 1e6) < final_time + 3);
+        drake::log()->info("time start: {}",ee_status_.utime / 1e6);
+        // const double final_time = static_cast<double>(ee_status_.utime / 1e6) + time;
+
+        //Don't finish function until the arm finishes its movement
+        while(lcm_.handle() >= 0 && !is_at_desired_position(des_pos)){
+            // drake::log()->info("final time : {}\n{}",final_time,ee_status_.utime/ 1e6);
+        };
 
         return 1;
     }
@@ -286,12 +309,15 @@ const char kEEUrdf[] =
     void PrimitiveExecutor::HandleStatusGripper(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_yaskawa_ee_status* status) {
         ee_status_ = *status;
         ee_update_ = true;
+        drake::log()->info("acutal pusher: {}",ee_status_.actual_pusher_position);
+        drake::log()->info("actual puller: {}",ee_status_.actual_puller_position);
+
+
     }
 
     void PrimitiveExecutor::HandleStatusYaskawa(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status){
         iiwa_status_ = *status;
         yaskawa_update_ = true;
-
 
         Eigen::VectorXd iiwa_q(status->num_joints);
         for (int i = 0; i < status->num_joints; i++) {
@@ -299,15 +325,16 @@ const char kEEUrdf[] =
         }
 
         status_count_++;    //Increase this count for the if statement below
+
         if (status_count_ % 100 == 1) {
             plant_.SetPositions(context_.get(),yaskawa_model_idx, iiwa_q);
 
             ee_pose = plant_.EvalBodyPoseInWorld(
                     *context_, plant_.GetBodyByName(FLAGS_ee_name));
-            const math::RollPitchYaw<double> rpy(ee_pose.rotation());
-            drake::log()->info("End effector at: {} {}",
-                                ee_pose.translation().transpose(),
-                                rpy.vector().transpose());
+            // const math::RollPitchYaw<double> rpy(ee_pose.rotation());
+            // drake::log()->info("End effector at: {} {}",
+            //                     ee_pose.translation().transpose(),
+            //                     rpy.vector().transpose());
         }
     }
 
@@ -323,41 +350,34 @@ const char kEEUrdf[] =
  
 // ----------------------------------- Checker ------------------------------------------
     // TODO: Finish this function
-    bool PrimitiveExecutor::is_at_desired_position(VectorX<double> des_pos){
+    bool PrimitiveExecutor::is_at_desired_position(VectorX<double> des_pos){    //TODO:Forward Kinematics
 
         DRAKE_DEMAND(des_pos.size() == 6);
 
-        // Is this another way to obtain end effector position?
-        // VectorX<double> positions = plant_.GetPositions(*context_, yaskawa_model_idx); 
-        ee_pose = plant_.EvalBodyPoseInWorld(
-                *context_, plant_.GetBodyByName(FLAGS_ee_name));
-
         const math::RollPitchYaw<double> rpy(ee_pose.rotation());
 
-        drake::log()->info("translation: \n{} \n{} \n{}\nrotation: \n{}\n{}\n{}",
-            ee_pose.translation().transpose()[0],
-            ee_pose.translation().transpose()[1],
-            ee_pose.translation().transpose()[2],
-            rpy.vector().transpose()[0],
-            rpy.vector().transpose()[1],
-            rpy.vector().transpose()[2]
-        );
+        // drake::log()->info("\ntranslation-des_pos: \n{} \n{} \n{}\nrotation: \n{}\n{}\n{}",
+        //     ee_pose.translation()[0]-des_pos[0],
+        //     ee_pose.translation()[1]-des_pos[1],
+        //     ee_pose.translation()[2]-des_pos[2],
+        //     rpy.vector()[0]-des_pos[3],
+        //     rpy.vector()[1]-des_pos[4],
+        //     rpy.vector()[2]-des_pos[5]
+        // );
 
-        const double buffer = 0.01; //Temporary value
+        const double buffer = 0.05; //Temporary value
 
         for(int i = 0; i < 6; i++){
-            if(i < 3){
-                if(des_pos[i] - ee_pose.translation().transpose()[i] < buffer){
-                    return 0;
-                }
+            if(i < 3 && abs(des_pos[i] - ee_pose.translation()[i]) > buffer){
+                // drake::log()->info("failing at: {} {}",i,des_pos[i] - ee_pose.translation()[i]);
+                return 0;
             }
-            else {
-                if(des_pos[i] - rpy.vector().transpose()[i] < buffer){
-                    return 0;
-                }  
+            else if(i >= 3 && abs(des_pos[i] - rpy.vector()[i-3]) > buffer){
+                // drake::log()->info("failing at: {} {}",i,des_pos[i] - rpy.vector()[i-3]);
+                return 0;
             }
         }
-        // drake::log()->info("reading position size: {}", positions.size());
+        drake::log()->info("Finished moving");
 
         return 1;
     }
@@ -370,17 +390,27 @@ const char kEEUrdf[] =
         return ee_status_.actual_whisker_angle <= FLAGS_whiskers_down_angle;
     }
     bool PrimitiveExecutor::is_carrying(){
-        return 0;
+        return has_package;
     }
     bool PrimitiveExecutor::is_at_shelf(){
         VectorX<double> atShelf(6);
-        atShelf << 0.4,0.3,0.9,0,0,0;
+        atShelf << 0.6,0.75,1.7,0,0.4,1.65;     //Approximation for now
         return is_at_desired_position(atShelf) ? 1 : 0;
     }
-    bool PrimitiveExecutor::is_at_belt(){   //TODO:Forward Kinematics
+    bool PrimitiveExecutor::is_at_belt(){   
         VectorX<double> atBelt(6);
-        atBelt << 0.4,0.3,0.4,0,0,0;
+        atBelt << 1.65,0.1,0.7,0,0,1.57;        //Approximation for now
         return is_at_desired_position(atBelt) ? 1 : 0;
+    }
+
+    bool PrimitiveExecutor::is_pusher_back(){
+        drake::log()->info("is pusher back? : {}",ee_status_.actual_pusher_position);
+        return ee_status_.actual_pusher_position <= 0.0;
+    }
+    bool PrimitiveExecutor::is_puller_back(){
+        drake::log()->info("is puller back? : {}",ee_status_.actual_puller_position);
+
+        return ee_status_.actual_puller_position <= -0.01;
     }
     bool PrimitiveExecutor::is_moving(){
  
@@ -392,20 +422,20 @@ const char kEEUrdf[] =
         }
         return 1;
     }
-    bool PrimitiveExecutor::is_pickable(){
+    bool PrimitiveExecutor::is_pickable(){  //TODO: Finish this function
         return 1;
     }
     bool PrimitiveExecutor::is_at_package_location(double x){
         VectorX<double> atPkg(6);
-        atPkg << 0.4+x,0.3,0.4,0,0,0;
+        atPkg << 1.65+x,0.1,0.7,0,0,1.57;
         return is_at_desired_position(atPkg) ? 1 : 0;
     }
 
-    void PrimitiveExecutor::printer(bool desPos, bool whiskUp, bool whiskDwn, bool carry, bool atShlf, 
-                                    bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc){
+    void PrimitiveExecutor::printer(bool desPos, bool whiskUp, bool whiskDwn, bool carry, bool atShlf,  
+                                    bool pshBck, bool pllBck, bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc){
         drake::log()->info("Check printer starts below:");
         VectorX<double> atBelt(6);
-        atBelt << 0.4,0.3,0.4,0,0,0;
+        atBelt << 1.65,0.1,0.7,0,0,1.57;
         if(desPos)   
             drake::log()->info("    at desired position: {}",is_at_desired_position(atBelt));
         if(whiskUp)
@@ -416,6 +446,10 @@ const char kEEUrdf[] =
             drake::log()->info("    is carrying: {}",is_carrying());
         if(atShlf)
             drake::log()->info("    at shelf: {}",is_at_shelf());
+        if(pshBck)
+            drake::log()->info("    push is back: {}",is_pusher_back());
+        if(pllBck)
+            drake::log()->info("    pull is back: {}",is_puller_back());
         if(atBlt)
             drake::log()->info("    is at belt: {}",is_at_belt());
         if(isMvng)
@@ -423,7 +457,7 @@ const char kEEUrdf[] =
         if(isPckble)
             drake::log()->info("    is pickable: {}",is_pickable());
         if(atPkgLoc)
-            drake::log()->info("    is at package location: {}",is_at_package_location(0.1));
+            drake::log()->info("    is at package location: {}",is_at_package_location(0.0));
 
         drake::log()->info("Printer end");
 

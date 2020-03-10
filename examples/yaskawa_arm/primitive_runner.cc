@@ -13,13 +13,22 @@ int main(int , char** ) {
 
     // Eigen::Vector3d object_location = p_executor.getObjectLocation();
 
-    p_executor.action_GoHome();
+    // p_executor.action_GoHome();
+
+    drake::log()->info("action: goToPoint");
+    p_executor.action_GoToPoint(Eigen::Vector3d(1.65, 0.1, 0.7), Eigen::Vector3d(0.0, 0.0,1.57),10.0);
 
     drake::log()->info("action: Collect");
-    p_executor.action_Collect(1.0) ? drake::log()->info("success") : drake::log()->info("collect failed");
+    DRAKE_DEMAND(p_executor.action_Collect(1.0) ? true : false);
 
-    // drake::log()->info("action: Release");
-    // p_executor.action_Release(1.0) ? drake::log()->info("success") : drake::log()->info("release failed");
+    drake::log()->info("action: goToPoint");
+    p_executor.action_GoToPoint(Eigen::Vector3d(1.0, -0.1, 1.7), Eigen::Vector3d(0.0, 0.0,1.65),5.0);
+
+    drake::log()->info("action: goToPoint");
+    p_executor.action_GoToPoint(Eigen::Vector3d(0.6, 0.75, 1.7), Eigen::Vector3d(0.0, 0.4,1.65),5.0);
+
+    drake::log()->info("action: Release");
+    DRAKE_DEMAND(p_executor.action_Release(1.0) ? true : false);
 
 
     // // p_executor.action_GoToPoint(Eigen::Vector3d(.75, 0, .15), Eigen::Vector3d(0.0, 1.57, 0.0));

@@ -81,6 +81,9 @@ class EndEffectorPdController : public systems::LeafSystem<double> {
     return get_output_port(generalized_acceleration_output_port_);
   }
 
+  void Update(const systems::Context<double>& context,
+            systems::DiscreteValues<double>* updates) const;
+
  private:
   Eigen::Vector4d CalcGeneralizedAcceleration(
       const systems::Context<double>& context) const;

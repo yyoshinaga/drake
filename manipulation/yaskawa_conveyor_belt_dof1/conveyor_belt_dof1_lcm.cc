@@ -12,18 +12,6 @@ namespace drake {
 namespace manipulation {
 namespace yaskawa_conveyor_belt_dof1 {
 
-DEFINE_double(whiskers_P, 8.0, "Proportional gain");
-DEFINE_double(whiskers_D, 8.0, "Derivative gain");
-DEFINE_double(pusher_P, 8.0, "Proportional gain");
-DEFINE_double(pusher_D, 8.0, "Derivative gain");
-DEFINE_double(puller_P, 8.0, "Proportional gain");
-DEFINE_double(puller_D, 8.0, "Derivative gain");
-
-DEFINE_double(pusher_init, 8.0, "Initial position");
-DEFINE_double(pusher_max, 8.0, "Max position");
-DEFINE_double(puller_init, 8.0, "Initial position");
-DEFINE_double(puller_max, 8.0, "Max position");
-
 using systems::BasicVector;
 using systems::Context;
 
@@ -112,6 +100,10 @@ void EndEffectorStatusSender::OutputStatus(const Context<double>& context,
   // The position and speed reported in this message are between the
   // two fingers rather than the position/speed of a single finger
   // (so effectively doubled).
+
+
+  drake::log()->info("aaaaaaaa! output states: {} {} ",state[1],state[2]);
+
   status.actual_whisker_angle = state[0];
   status.actual_pusher_position = state[1];
   status.actual_puller_position = state[2];

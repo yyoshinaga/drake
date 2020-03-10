@@ -191,6 +191,7 @@ int do_main(int argc, char* argv[]) {
   // Publish the ee status.
   auto ee_status =
       builder.AddSystem<manipulation::yaskawa_conveyor_belt_dof1::EndEffectorStatusSender>();
+      
   builder.Connect(station->GetOutputPort("ee_state_measured"),
                   ee_status->get_state_input_port());
 

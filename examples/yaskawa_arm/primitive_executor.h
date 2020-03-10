@@ -49,19 +49,27 @@ private:
     std::string yaskawa_urdf_;
     std::string ee_urdf_;
     math::RigidTransform<double> ee_pose;
-
     RigidBodyTree<double> tree_;
+
+    //States of the robot: 
+
+    // Since collision detection is difficult, the code assumes that once it calls
+    // action_Collect(), this variable will turn true. Once it calls action_Release(),
+    // this variable will turn false. Default is false.
+    bool has_package; 
+
+    //Statuses
+    lcmt_iiwa_status iiwa_status_;
+    bool yaskawa_update_;
 
     lcmt_yaskawa_ee_status ee_status_;
     bool ee_update_;
-
-    lcmt_iiwa_status iiwa_status_;
-    bool yaskawa_update_;
 
     Eigen::Vector3d object_position_;
     Eigen::Quaterniond object_quaternion_;
     bool object_update_;
 
+    //Subscriber functions
     void HandleStatusYaskawa(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status);
     void HandleStatusGripper(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_yaskawa_ee_status* status);
     void HandleStatusPackage(const real_lcm::ReceiveBuffer*, const std::string&, const bot_core::robot_state_t* status);
@@ -94,6 +102,10 @@ private:
     // by the end effector
     bool is_pickable();
 
+    bool is_pusher_back();
+
+    bool is_puller_back();
+
     // This function checks to see if the end effector is positioned correctly at
     // the belt and moved to the correct spot at the belt to pick up the package. 
     // The package could potentially be towards the right side of the belt or the 
@@ -101,8 +113,8 @@ private:
     bool is_at_package_location(double x);
 
     //Prints checker functions
-    void printer(bool desPos, bool whiskUp, bool whiskDwn, bool car, bool atShlf, 
-                 bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc);
+    void printer(bool desPos, bool whiskUp, bool whiskDwn, bool carry, bool atShlf,  
+                bool pshBck, bool pllBck, bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc);
 
     multibody::MultibodyPlant<double> plant_;
     std::unique_ptr<systems::Context<double>> context_;

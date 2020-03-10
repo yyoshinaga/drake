@@ -10,9 +10,9 @@ namespace yaskawa_conveyor_belt_dof1 {
 
 DEFINE_double(angle_limit, M_PI/2, "movement limit");
 DEFINE_double(pusher_limit, 0.1, "movement limit");
-DEFINE_double(puller_limit, -0.1, "movement limit");
-DEFINE_double(pusher_initial, 0, "initial position");
-DEFINE_double(puller_initial, 0.1, "initial position");
+DEFINE_double(puller_limit, -0.3, "movement limit");
+DEFINE_double(pusher_initial, 0.0, "initial position");
+DEFINE_double(puller_initial, 0, "initial position");
 DEFINE_double(belt_speed, 0.1, "speed limit");
 
 
@@ -34,6 +34,10 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
   DRAKE_DEMAND(kd_command >= 0);
   DRAKE_DEMAND(kp_constraint >= 0);
   DRAKE_DEMAND(kd_constraint >= 0);
+
+  this->DeclareDiscreteState(1);    // ee states - where to put the pusher and puller
+  this->DeclarePeriodicDiscreteUpdateEvent(0.0025, 0.0, &EndEffectorPdController::Update);
+
 
   // Desired states include:
   // 1 set of whisker position,
@@ -72,6 +76,36 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
   this->set_name("end_effector_controller");
 }
 
+void EndEffectorPdController::Update(const systems::Context<double>& context,
+                                    systems::DiscreteValues<double>* updates) const {
+
+    const double ee_state = context.get_discrete_state()[0];
+
+    // Get continuous states from the plant
+    const auto& desired_belt_state = get_desired_belt_state_input_port().Eval(context);
+    
+    const double pusher_state = desired_belt_state[0];
+    const double puller_state = desired_belt_state[1];
+
+
+    if(pusher_state == 0 && puller_state == 0 && ee_state == 2){
+        //Default
+        (*updates)[0] = 0;
+    }
+    else if(pusher_state == 0 && puller_state == 1 && ee_state == 0){
+        //Carry 
+        (*updates)[0] = 1;
+    }
+    else if(pusher_state == 1.0 && ee_state == 1){
+        //Pushing to shelf
+        (*updates)[0] = 2;
+    }
+    else{
+        drake::log()->info("remain belt state cycle:\n {}\n {}\n {}",pusher_state,puller_state,ee_state);
+    }
+
+}
+
 //This is where you calculate accelerations for ee input
 Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
     const drake::systems::Context<double>& context) const {
@@ -99,70 +133,113 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
 
   //Use desired velocities from belt_state to create accelerations
   // desired_belt_states are pusher and puller's velocities
-  const double kp = 7;
-  const double kd = 9;
+  const double kp = 50;
+  const double kd = 30;
 
-  const double kp_2 = 7;
-  const double kd_2 = 9;
+  const double kp_2 = 100;
+  const double kd_2 = 50;
 
   double pusher_acc = 0; 
   double puller_acc = 0;
-  const double buffer = 0.01;
+  const double buffer = 0.01;    
+  const double ee_state = context.get_discrete_state()[0];
+
 
   //Making sure push and pull is not on at once
-  DRAKE_DEMAND(!(desired_belt_state[0] && desired_belt_state[1]));
+//   DRAKE_DEMAND(!(desired_belt_state[0] && desired_belt_state[1]));
+    drake::log()->info("desired belt state:\n {}\n {}",desired_belt_state[0],desired_belt_state[1]);
 
   // If pusher is on,
   if(desired_belt_state[0]){
     drake::log()->info("pusher on\npos at: {}",state[2]);
+    double goalPos; //Could be used for pusher or puller (This is a temporary hack)
 
     // If puller is not back at its initial position
     if(FLAGS_puller_initial+buffer < state[3]){
+        if(ee_state == 0 || ee_state == 1){ goalPos = FLAGS_pusher_initial; }
+        else { goalPos = FLAGS_pusher_limit; }
+
+        pusher_acc = kp_2*(goalPos-state[2])+kd_2*(- state[6]);
         puller_acc = kp_2*(FLAGS_puller_initial - state[3]) + kd_2*(- state[7]);
         drake::log()->info("pusher trying to move but puller is not at\ninitial position: {}",state[3]);
     }
     // If pusher is past its reach limit
     else if(state[2] >= FLAGS_pusher_limit){
+        if(ee_state == 0){ goalPos = FLAGS_puller_initial; }
+        else { goalPos = FLAGS_puller_limit; }
+
         pusher_acc = kp*(FLAGS_pusher_limit - state[2]) + kd*(- state[6]);
+        puller_acc = kp_2*(goalPos - state[3]) + kd_2*(- state[7]);
         drake::log()->info("pusher already past its limit");
     }
     // If pusher is at its initial position
-    else if(state[2] <= FLAGS_pusher_initial){
+    else if(state[2] <= FLAGS_pusher_initial-buffer){
+        if(ee_state == 0){ goalPos = FLAGS_puller_initial; }
+        else { goalPos = FLAGS_puller_limit; }
+
         pusher_acc = kp*(FLAGS_pusher_initial - state[2]) + kd*(- state[6]);
+        puller_acc = kp_2*(goalPos - state[3]) + kd_2*(- state[7]);
         drake::log()->info("pusher is already at initial position");
+        DRAKE_DEMAND(false);
+        //Why would you push to initial position? 
     }
     else{
+        if(ee_state == 0){ goalPos = FLAGS_puller_initial; }
+        else { goalPos = FLAGS_puller_limit; }
+
         pusher_acc = kd * (desired_belt_state[0] - state[6]);
+        puller_acc = kp_2*(goalPos - state[3]) + kd_2*(- state[7]);
         drake::log()->info("pusher normally on");
     }
   }
   // If puller is on, 
   else if(desired_belt_state[1]){
     drake::log()->info("puller on\npos at: {}",state[3]);
+    double goalPos; //Could be used for pusher or puller (This is a temporary hack)
+
     // If pusher is not back at its initial position
     if(FLAGS_pusher_initial+buffer < state[2]){
-        pusher_acc = kp_2*(FLAGS_pusher_initial - state[2]) + kd_2*(- state[6]);
+        if(ee_state == 0){ goalPos = FLAGS_puller_initial; }
+        else { goalPos = FLAGS_puller_limit; }
+
+        pusher_acc = kp_2*(goalPos-state[2])+kp_2*(FLAGS_pusher_initial - state[2]) + kd_2*(- state[6]);
+        puller_acc = kp_2*(goalPos - state[3]) + kd_2*(- state[7]);
         drake::log()->info("puller trying to move but pusher is not at\ninitial position: {}",state[2]);
     }
     // If puller is past its reach limit
     else if(state[3] <= FLAGS_puller_limit){
+        if(ee_state == 0 || ee_state == 1){ goalPos = FLAGS_pusher_initial; }
+        else { goalPos = FLAGS_pusher_limit; }
+
+        pusher_acc = kp_2*(goalPos-state[2])+kd_2*(- state[6]);
         puller_acc = kp*(FLAGS_puller_limit - state[3]) + kd*(- state[7]);
+
         drake::log()->info("puller already past its limit {}",state[3]);
     }
     // If puller is at its initial position
-    else if(state[3] >= FLAGS_puller_initial){
+    else if(state[3] >= FLAGS_puller_initial+buffer){
+        if(ee_state == 0 || ee_state == 1){ goalPos = FLAGS_pusher_initial; }
+        else { goalPos = FLAGS_pusher_limit; }
+
+        pusher_acc = kd_2*(- state[6]);
         puller_acc = kp*(FLAGS_puller_initial - state[3]) + kd*(- state[7]);
         drake::log()->info("puller is already at initial position");
+        DRAKE_DEMAND(false);
+        //Why would you pull to initial position? 
     }
     else{
+        if(ee_state == 0 || ee_state == 1){ goalPos = FLAGS_pusher_initial; }
+        else { goalPos = FLAGS_pusher_limit; }
+
+        pusher_acc = kp_2*(goalPos-state[2])+kd_2*(- state[6]);
         puller_acc = kd * (desired_belt_state[1] - state[7]);
         drake::log()->info("puller normally on");
     }
   }
 
-  // If pusher and puller are both off, go to initial postion and stay
+  // If pusher and puller are both off, go to maintain current state
   else{
-    drake::log()->info("goto initial position for both pusher and puller");
+    drake::log()->info("go back to initial position for both pusher and puller");
     pusher_acc = kp_2*(FLAGS_pusher_initial - state[2]) + kd_2*(- state[6]);
     puller_acc = kp_2*(FLAGS_puller_initial - state[3]) + kd_2*(- state[7]);
   }
@@ -170,6 +247,7 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
 //   drake::log()->info("\ndesired_whisker_state: {}\nstate[0]: {} \nstate[1]: {}\nstate[2]: {}\nstate[3]: {}\nstate[4]: {}\nstate[5]: {}\nstate[6]: {}\nstate[7]: {}\ndesired_belt_state[0]: {}\ndesired_belt_state[1]: {}\npusher_acc: {}\npuller_acc: {}", 
 //   desired_whisker_state[0],state[0],state[1],state[2],state[3],state[4],state[5],state[6],state[7],desired_belt_state[0],desired_belt_state[1],pusher_acc,puller_acc);
     drake::log()->info("\npusher acc: {}\npuller acc: {}",pusher_acc,puller_acc);
+    drake::log()->info("\npusher pos: {}\npuller pos: {}",state[2],state[3]);
 
   // f₀ = (f₀+f₁)/2 - (-f₀+f₁)/2,
   // f₁ = (f₀+f₁)/2 + (-f₀+f₁)/2.
@@ -185,8 +263,6 @@ void EndEffectorPdController::CalcGeneralizedAccelerationOutput(
     drake::systems::BasicVector<double>* output_vector) const {
 
     output_vector->SetFromVector(CalcGeneralizedAcceleration(context));
-
-
 }
 
 
@@ -238,11 +314,11 @@ void EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput(
     
     // If both pusher and puller is on, something has gone wrong.
     // AKA: conveyor belt cannot push and pull at the same time
-    DRAKE_DEMAND(!(actuation[1] && actuation[2]));
+    // DRAKE_DEMAND(!(actuation[1] && actuation[2]));
 
-    output_vector->SetAtIndex(0, FLAGS_belt_speed); 
-    output_vector->SetAtIndex(1, -FLAGS_belt_speed);
-
+    // output_vector->SetAtIndex(0, FLAGS_belt_speed); 
+    // output_vector->SetAtIndex(1, -FLAGS_belt_speed);
+    drake::log()->info("actuation input port:\n 0:{}\n 1:{}\n 2:{}",actuation[0],actuation[1],actuation[2]);
 
     //If pusher or puller is 'on', set velocity to desired velocity
     if(actuation[1]){
@@ -251,7 +327,7 @@ void EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput(
     }
     else if(actuation[2]){
         output_vector->SetAtIndex(0, 0);
-        output_vector->SetAtIndex(1, FLAGS_belt_speed); 
+        output_vector->SetAtIndex(1, -FLAGS_belt_speed); 
     }
     else{ 
         //If both are false, conveyor belt goes back to initial position

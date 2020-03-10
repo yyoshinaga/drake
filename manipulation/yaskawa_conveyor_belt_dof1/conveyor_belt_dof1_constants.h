@@ -89,6 +89,9 @@ class MultibodyForceToBeltForceSystem : public systems::VectorSystem<T> {
     Eigen::VectorBlock<VectorX<T>>* output) const {
     unused(state);
     // gripper force = abs(-finger0 + finger1).
+
+    drake::log()->info("states from constants:\n {}\n {}\n {}\n {}\n {}\n {}",state[0],state[1],state[2],state[3],state[4],state[5]);
+
     using std::abs;
     (*output)(0) = abs(input(0) - input(1));
     (*output)(1) = 0;
@@ -96,6 +99,8 @@ class MultibodyForceToBeltForceSystem : public systems::VectorSystem<T> {
     drake::log()->info("DoCalcVectorOutput in conveyor constants");
     std::cout << (*output).size() << std::endl;
     DRAKE_DEMAND(false);
+
+    //THIS FUNCTION DOES NOT RUN!!!!
   }
 };
 
