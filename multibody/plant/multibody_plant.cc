@@ -1612,7 +1612,7 @@ VectorX<T> MultibodyPlant<T>::AssembleActuationInput(
     const auto& input_port = this->get_input_port(
         instance_actuation_ports_[model_instance_index]);
     if (!input_port.HasValue(context)) {
-        throw std::logic_error(fmt::format("Actuation input port for model "
+        throw std::logic_error(fmt::format(" for model "
             "instance {} must be connected.",
             GetModelInstanceName(model_instance_index)));
     }

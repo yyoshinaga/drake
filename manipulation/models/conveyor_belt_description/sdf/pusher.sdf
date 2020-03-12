@@ -41,6 +41,7 @@
     </link> -->
 
     <link name='first_link'>
+      <gravity>0</gravity>
       <visual name='visual_1'>
       <pose frame=''>0 0 0 0 0 0</pose>
         <geometry>
@@ -72,7 +73,7 @@
 
     <link name='collision_link1'>
       <inertial>
-        <mass>100</mass>
+        <mass>1</mass>
         <inertia>
           <ixx>1</ixx>
           <ixy>0</ixy>
@@ -84,12 +85,11 @@
       </inertial>
 
       <self_collide>0</self_collide>
-      <!-- <kinematic>1</kinematic> -->
       <visual name='visual_01'>
         <pose frame=''>0 0 0.125 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.6 0.02 0.05</size>
+            <size>0.6 0.05 0.1</size> <!-- When changing height, change the controller -->
           </box>
         </geometry>
         <material>
@@ -98,12 +98,13 @@
       </visual>
 
       <collision name='surface'>
+      
         <pose frame=''>0 0 0.125 0 0 0</pose>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
         <geometry>
           <box>
-            <size>0.6 0.02 0.05</size>
+            <size>0.6 0.05 0.1</size>
           </box>
         </geometry>
         <surface>
@@ -172,11 +173,11 @@
       <child>collision_link1</child>
       <axis>
         <dynamics>
-          <friction>9</friction>
+          <friction>1</friction>
           <damping>5</damping>
           <spring_stiffness>10</spring_stiffness>
         </dynamics>
-        <xyz>1 0 0</xyz>
+        <xyz>0 0 1</xyz>
       </axis>
     </joint>
 

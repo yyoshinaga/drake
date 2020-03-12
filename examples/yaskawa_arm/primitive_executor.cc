@@ -312,7 +312,6 @@ const char kEEUrdf[] =
         drake::log()->info("acutal pusher: {}",ee_status_.actual_pusher_position);
         drake::log()->info("actual puller: {}",ee_status_.actual_puller_position);
 
-
     }
 
     void PrimitiveExecutor::HandleStatusYaskawa(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status){
@@ -399,13 +398,13 @@ const char kEEUrdf[] =
     }
     bool PrimitiveExecutor::is_at_belt(){   
         VectorX<double> atBelt(6);
-        atBelt << 1.65,0.1,0.7,0,0,1.57;        //Approximation for now
+        atBelt << 1.65,0.1,0.9,0,0,1.57;        //Approximation for now
         return is_at_desired_position(atBelt) ? 1 : 0;
     }
 
     bool PrimitiveExecutor::is_pusher_back(){
         drake::log()->info("is pusher back? : {}",ee_status_.actual_pusher_position);
-        return ee_status_.actual_pusher_position <= 0.0;
+        return ee_status_.actual_pusher_position <= 0.05;
     }
     bool PrimitiveExecutor::is_puller_back(){
         drake::log()->info("is puller back? : {}",ee_status_.actual_puller_position);
@@ -427,7 +426,7 @@ const char kEEUrdf[] =
     }
     bool PrimitiveExecutor::is_at_package_location(double x){
         VectorX<double> atPkg(6);
-        atPkg << 1.65+x,0.1,0.7,0,0,1.57;
+        atPkg << 1.65+x,0.1,0.9,0,0,1.57;
         return is_at_desired_position(atPkg) ? 1 : 0;
     }
 
@@ -435,7 +434,7 @@ const char kEEUrdf[] =
                                     bool pshBck, bool pllBck, bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc){
         drake::log()->info("Check printer starts below:");
         VectorX<double> atBelt(6);
-        atBelt << 1.65,0.1,0.7,0,0,1.57;
+        atBelt << 1.65,0.1,0.9,0,0,1.57;
         if(desPos)   
             drake::log()->info("    at desired position: {}",is_at_desired_position(atBelt));
         if(whiskUp)

@@ -8,12 +8,17 @@ namespace multibody {
 namespace conveyor_belt {
 
 DEFINE_double(belt_length, 3, "The length of the belt in meters");
-DEFINE_double(belt_radius, 1, "0.075The radius of the belt in meters");
-DEFINE_double(acc_time, 0.1, "time to get from 0 vel to max vel");
-DEFINE_double(desired_belt_velocity, 0.96, "Desired velocity of belt in 0.9652 meters/seconds which is 190ft/min");
+DEFINE_double(belt_radius, 0.075, "0.075The radius of the belt in meters");
+DEFINE_double(pusher_height,0.1, "height of the pusher");
+DEFINE_double(acc_x_time, 0.1, "time to get from 0 vel to max vel");
+DEFINE_double(acc_y_time, 0.02, "time to get from 0 vel to max vel");
 
-DEFINE_double(P, 2500.0, "Proportional gain");
-DEFINE_double(D, 500.0, "Derivative gain");
+DEFINE_double(desired_belt_velocity, 0.2, "Desired velocity of belt in 0.9652 meters/seconds which is 190ft/min");
+
+DEFINE_double(P, 1000.0, "Proportional gain");
+DEFINE_double(D, 200.0, "Derivative gain");
+DEFINE_double(P2, 1000.0, "Proportional gain");
+DEFINE_double(D2, 200.0, "Derivative gain");
 
 template<typename T>
 ConveyorController2<T>::ConveyorController2(std::vector<geometry::FrameId> _frame_ids)
@@ -35,9 +40,6 @@ ConveyorController2<T>::ConveyorController2(std::vector<geometry::FrameId> _fram
                                 &ConveyorController2::CalcAccOutput).get_index();    //idx=1
 
     this->DeclarePeriodicDiscreteUpdateEvent(0.0025, 0.0, &ConveyorController2::Update);
-
-
-
 }
 
 template<typename T>
@@ -95,9 +97,7 @@ void ConveyorController2<T>::Update(const systems::Context<T>& context,
             (*updates)[1] = init_time;
         } //Keep the same location and time
     }
-
     // drake::log()->info("The belt is at location: {} with x_pos = {}", (*updates)[0],x_pos);
-
 }
 
 template<typename T>
@@ -138,14 +138,14 @@ void ConveyorController2<T>::CalcAccOutput(const systems::Context<T>& context ,
     if(location == 0){
         drake::log()->info("location 0");
         const double to1 = init_time;
-        const double tf1 = FLAGS_acc_time+init_time;    
+        const double tf1 = FLAGS_acc_x_time+init_time;    
         const double dxo1 = 0;
         const double dxf1 = -FLAGS_desired_belt_velocity;
         const double xo1 = FLAGS_belt_length/2;
         const double xf1 =(tf1-to1)/2*(dxf1-dxo1)+xo1;
         
-        const double to2 = FLAGS_belt_length/FLAGS_desired_belt_velocity-FLAGS_acc_time+init_time;
-        const double tf2 = FLAGS_belt_length/FLAGS_desired_belt_velocity+init_time;
+        const double to2 = FLAGS_belt_length/FLAGS_desired_belt_velocity+FLAGS_acc_x_time+init_time;
+        const double tf2 = FLAGS_belt_length/FLAGS_desired_belt_velocity+init_time+FLAGS_acc_x_time*2;
         const double dxo2 = -FLAGS_desired_belt_velocity;
         const double dxf2 = 0;
         const double xf2 = -FLAGS_belt_length/2;
@@ -161,12 +161,12 @@ void ConveyorController2<T>::CalcAccOutput(const systems::Context<T>& context ,
             output->SetAtIndex(x_idx, FLAGS_P*(x_pos_des-x_pos)+FLAGS_D*(-FLAGS_desired_belt_velocity-x_vel)); //PD controller
             drake::log()->info("acceleration");
         }
-        else if(t >= tf1 && t < to2){
+        else if(t >= tf1 && t <= to2){
             x_pos_des=-FLAGS_desired_belt_velocity*(t-tf1)+xf1;
             output->SetAtIndex(x_idx, FLAGS_P*(x_pos_des-x_pos)+FLAGS_D*(-FLAGS_desired_belt_velocity-x_vel)); //PD controller
             drake::log()->info("const vel");
         }
-        else if(t >= to2){
+        else if(t > to2){
             x_pos_des=FourPolyTraj(t,xo2,xf2,to2,tf2,dxo2,dxf2);
             output->SetAtIndex(x_idx, FLAGS_P*(x_pos_des-x_pos)+FLAGS_D*(-x_vel)); //PD controller
             drake::log()->info("deceleration");
@@ -174,61 +174,69 @@ void ConveyorController2<T>::CalcAccOutput(const systems::Context<T>& context ,
         else{ DRAKE_DEMAND(false); }
         drake::log()->info("x_pos: {}\nx_pos_des: {}\nx_vel: {}\nPD: {}",x_pos,x_pos_des, x_vel,FLAGS_P*(x_pos_des-x_pos)+FLAGS_D*(-x_vel));
 
-        output->SetAtIndex(y_idx, 0);
+        output->SetAtIndex(y_idx, FLAGS_P2*(FLAGS_belt_radius/2-y_pos)+FLAGS_D2*(-y_vel));
 
     }
     //Location 1
     else if(location == 1){
         drake::log()->info("location 1");
 
-        const double to1 = init_time;
-        const double tf1 = FLAGS_acc_time+init_time;    
-        const double dyo1 = 0;
-        const double dyf1 = -FLAGS_desired_belt_velocity;
-        const double yo1 = FLAGS_belt_radius;
-        const double yf1 =(tf1-to1)/2*(dyf1-dyo1)+yo1;
+        // const double to1 = init_time;
+        // const double tf1 = FLAGS_acc_y_time+init_time;    
+        // const double dyo1 = 0;
+        // const double dyf1 = -FLAGS_desired_belt_velocity;
+        // const double yo1 = FLAGS_belt_radius/2+FLAGS_pusher_height;
+        // const double yf1 =(tf1-to1)/2*(dyf1-dyo1)+yo1;
         
-        const double to2 = (FLAGS_belt_radius*2)/FLAGS_desired_belt_velocity-FLAGS_acc_time+init_time;
-        const double tf2 = (FLAGS_belt_radius*2)/FLAGS_desired_belt_velocity+init_time;
-        const double dyo2 = -FLAGS_desired_belt_velocity;
-        const double dyf2 = 0;
-        const double yf2 = -FLAGS_belt_radius;
-        const double yo2 = (to2-tf2)/2*(dyo2-dyf2)+yf2;
+        // const double to2 = (FLAGS_belt_radius*2)/FLAGS_desired_belt_velocity+FLAGS_acc_y_time+init_time;
+        // const double tf2 = (FLAGS_belt_radius*2)/FLAGS_desired_belt_velocity+init_time+FLAGS_acc_y_time*2;
+        // const double dyo2 = -FLAGS_desired_belt_velocity;
+        // const double dyf2 = 0;
+        // const double yf2 = -FLAGS_belt_radius/2-FLAGS_pusher_height;
+        // const double yo2 = (to2-tf2)/2*(dyo2-dyf2)+yf2;
 
-        drake::log()->info("to1: {}\ntf1: {}\nto2: {}\ntf2: {}\nt: {}",to1,tf1,to2,tf2,t);
-        DRAKE_DEMAND(to1 >= 0 && tf1 >= 0 && to2 >= 0 && tf2 >= 0);
+        // drake::log()->info("to1: {}\ntf1: {}\nto2: {}\ntf2: {}\nt: {}",to1,tf1,to2,tf2,t);
+        // DRAKE_DEMAND(to1 >= 0 && tf1 >= 0 && to2 >= 0 && tf2 >= 0);
+        // drake::log()->info("\nyf1: {}\nyf2: {}",yf1,yf2);
+        // DRAKE_DEMAND(yo1 > yf1);
+        // DRAKE_DEMAND(yo2 > yf2);
 
-        //Creating the polynomial curve for y_pos
-        double y_pos_des = 0;
-        if(t < tf1){
-            y_pos_des=FourPolyTraj(t,yo1,yf1,to1,tf1,dyo1,dyf1);
-        }
-        else if(t >= tf1 && t < to2){
-            y_pos_des=FLAGS_desired_belt_velocity*(t-tf1)+yf1;
-        }
-        else if(t >= to2){
-            y_pos_des=FourPolyTraj(t,yo2,yf2,to2,tf2,dyo2,dyf2);
-        }        
-        else{ DRAKE_DEMAND(false); }
+        // //Creating the polynomial curve for y_pos
+        // double y_pos_des = 0;
+        // if(t < tf1){
+        //     y_pos_des=FourPolyTraj(t,yo1,yf1,to1,tf1,dyo1,dyf1);
+        //     drake::log()->info("accelerating");
+        // }
+        // else if(t >= tf1 && t < to2){
+        //     y_pos_des=-FLAGS_desired_belt_velocity*(t-tf1)+yf1;
+        //     drake::log()->info("const velocity");
+        // }
+        // else if(t >= to2){
+        //     y_pos_des=FourPolyTraj(t,yo2,yf2,to2,tf2,dyo2,dyf2);
+        //     drake::log()->info("decelerating");
+        // }        
+        // else{ DRAKE_DEMAND(false); }
 
 
-        drake::log()->info("y_pos: {}\ny_vel: {}\nPD: {}",y_pos, y_vel,FLAGS_P*(y_pos_des-y_pos)+FLAGS_D*(-y_vel));
-        output->SetAtIndex(x_idx, 0);
-        output->SetAtIndex(y_idx, FLAGS_P*(y_pos_des-y_pos)+FLAGS_D*(-y_vel)); //PD controller
+        // drake::log()->info("y_pos: {}\ny_vel: {}\nPD: {}",y_pos, y_vel,FLAGS_P*(y_pos_des-y_pos)+FLAGS_D*(-y_vel));
+        output->SetAtIndex(x_idx, FLAGS_P*(-FLAGS_belt_length/2-x_pos)+FLAGS_D*(-x_vel));
+        // output->SetAtIndex(y_idx, FLAGS_P*(y_pos_des-y_pos)+FLAGS_D*(-y_vel)); //PD controller
+
+        output->SetAtIndex(y_idx, FLAGS_P*(FLAGS_belt_radius/2-y_pos)+FLAGS_D*(-y_vel));
     }
     //Location 2
     else if(location == 2){
         drake::log()->info("location 2");
 
         const double to1 = init_time;
-        const double tf1 = FLAGS_acc_time+init_time;    
+        const double tf1 = FLAGS_acc_x_time+init_time;    
         const double dxo1 = 0;
         const double dxf1 = FLAGS_desired_belt_velocity;
         const double xo1 = -FLAGS_belt_length/2;
         const double xf1 =(tf1-to1)/2*(dxf1-dxo1)+xo1;
         
-        const double to2 = FLAGS_belt_length/FLAGS_desired_belt_velocity-FLAGS_acc_time+init_time;
-        const double tf2 = FLAGS_belt_length/FLAGS_desired_belt_velocity+init_time;
+        const double to2 = FLAGS_belt_length/FLAGS_desired_belt_velocity+FLAGS_acc_x_time+init_time;
+        const double tf2 = FLAGS_belt_length/FLAGS_desired_belt_velocity+init_time+FLAGS_acc_x_time*2;
         const double dxo2 = FLAGS_desired_belt_velocity;
         const double dxf2 = 0;
         const double xf2 = FLAGS_belt_length/2;
@@ -258,14 +266,14 @@ void ConveyorController2<T>::CalcAccOutput(const systems::Context<T>& context ,
         drake::log()->info("location 3");
 
         const double to1 = init_time;
-        const double tf1 = FLAGS_acc_time+init_time;    
+        const double tf1 = FLAGS_acc_y_time+init_time;    
         const double dyo1 = 0;
         const double dyf1 = FLAGS_desired_belt_velocity;
         const double yo1 = -FLAGS_belt_radius;
         const double yf1 =(tf1-to1)/2*(dyf1-dyo1)+yo1;
         
-        const double to2 = (FLAGS_belt_radius*2)/FLAGS_desired_belt_velocity-FLAGS_acc_time+init_time;
-        const double tf2 = (FLAGS_belt_radius*2)/FLAGS_desired_belt_velocity+init_time;
+        const double to2 = (FLAGS_belt_radius*2)/FLAGS_desired_belt_velocity+FLAGS_acc_y_time+init_time;
+        const double tf2 = (FLAGS_belt_radius*2)/FLAGS_desired_belt_velocity+init_time+FLAGS_acc_y_time*2;
         const double dyo2 = FLAGS_desired_belt_velocity;
         const double dyf2 = 0;
         const double yf2 = FLAGS_belt_radius;

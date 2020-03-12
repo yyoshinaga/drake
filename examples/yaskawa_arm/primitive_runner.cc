@@ -15,20 +15,20 @@ int main(int , char** ) {
 
     // p_executor.action_GoHome();
 
+
     drake::log()->info("action: goToPoint");
-    p_executor.action_GoToPoint(Eigen::Vector3d(1.65, 0.1, 0.7), Eigen::Vector3d(0.0, 0.0,1.57),10.0);
+    p_executor.action_GoToPoint(Eigen::Vector3d(1.0, -0.2, 0.7), Eigen::Vector3d(0.0, 0.0,1.57),8.0);
+    p_executor.action_GoToPoint(Eigen::Vector3d(1.65, 0.1, 0.9), Eigen::Vector3d(0.0, 0.0,1.57),3.0);
 
     drake::log()->info("action: Collect");
-    DRAKE_DEMAND(p_executor.action_Collect(1.0) ? true : false);
+    DRAKE_DEMAND(p_executor.action_Collect(2.0) ? true : false);
 
     drake::log()->info("action: goToPoint");
     p_executor.action_GoToPoint(Eigen::Vector3d(1.0, -0.1, 1.7), Eigen::Vector3d(0.0, 0.0,1.65),5.0);
-
-    drake::log()->info("action: goToPoint");
-    p_executor.action_GoToPoint(Eigen::Vector3d(0.6, 0.75, 1.7), Eigen::Vector3d(0.0, 0.4,1.65),5.0);
+    p_executor.action_GoToPoint(Eigen::Vector3d(0.6, 0.75, 1.73), Eigen::Vector3d(0.0, 0.4,1.65),5.0);
 
     drake::log()->info("action: Release");
-    DRAKE_DEMAND(p_executor.action_Release(1.0) ? true : false);
+    DRAKE_DEMAND(p_executor.action_Release(2.0) ? true : false);
 
 
     // // p_executor.action_GoToPoint(Eigen::Vector3d(.75, 0, .15), Eigen::Vector3d(0.0, 1.57, 0.0));

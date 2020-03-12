@@ -317,7 +317,6 @@ void ManipulationStation<T>::SetupManipulationClassStation(
 
     internal::AddAndWeldModelFrom(sdf_path, "conveyor_joint_lower", plant_->world_frame(),
                               "link2", X_BM, plant_);
-
   }
 
   // Add the sorting shelf Left.
@@ -468,8 +467,8 @@ void ManipulationStation<T>::SetDefaultState(
 
   // SetWsgPosition(station_context, state, eePosition);
   // SetWsgVelocity(station_context, state, Vector3<T>::Zero(0));
-  VectorX<T> conveyorPosition1(8);
-  conveyorPosition1 << 1.5,0,0,0,0,0,0,0; //x_pos,theta,alpha,beta,gamma,delta
+  VectorX<T> conveyorPosition1(2);
+  conveyorPosition1 << 1.5,0; //,0,0,0,0,0,0; //x_pos,theta,alpha,beta,gamma,delta
   SetConveyorPosition(station_context, state, conveyorPosition1, 1);
 
   drake::log()->info("SetDefaultState 8");
@@ -765,7 +764,7 @@ void ManipulationStation<T>::Finalize(
     // Approximate desired state command from a discrete derivative of the
     // position command input port. Insert # of positions only
     auto desired_state_from_position_1 = builder.template AddSystem<
-        systems::StateInterpolatorWithDiscreteDerivative>(8, plant_->time_step());
+        systems::StateInterpolatorWithDiscreteDerivative>(2, plant_->time_step());
     desired_state_from_position_1->set_name("desired_state_from_position_belt_1");
     builder.Connect(belt_controller1->get_output_port(0),
                     desired_state_from_position_1->get_input_port());
@@ -1212,7 +1211,7 @@ void ManipulationStation<T>::AddDefaultConveyor(
 
     const std::string sdf_path = FindResourceOrThrow(
         "drake/manipulation/models/conveyor_belt_description/sdf/"
-        "conveyor_simple_robot.sdf");
+        "pusher.sdf");
 
     RigidTransform<double> X_BM(RotationMatrix<double>::MakeZRotation(0),Vector3d(1.7018, 2.32042, 0.8636-0.06875));
                                   //Vector3d(1.7, 2, 0.4));//0.8));//-0.8636)); //X value is 0.82042m (2-8.3') + 1.5m (addition)
@@ -1226,7 +1225,7 @@ void ManipulationStation<T>::AddDefaultConveyor(
         plant_->GetFrameByName("base_link", model_idx), X_BM);
 
     //Frame_ids size is 9 for 7 platform robot links
-    for(int i = 0; i < 9; i++) {
+    for(int i = 0; i < 2; i++) {
       frame_ids.push_back({plant_->GetBodyFrameIdOrThrow(plant_->GetBodyIndices(model_idx)[i])});
     }
 }
