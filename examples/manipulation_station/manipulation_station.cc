@@ -752,7 +752,7 @@ void ManipulationStation<T>::Finalize(
 
   //Conveyor belt connections
   {
-    auto belt_controller1 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController<double>>(frame_ids1));
+    auto belt_controller1 = builder.AddSystem(std::make_unique<multibody::conveyor_belt::ConveyorController2<double>>(frame_ids1));
  
     //Velocity sending
     builder.Connect(belt_controller1->get_output_port(1),
