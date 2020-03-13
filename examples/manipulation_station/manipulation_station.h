@@ -525,7 +525,7 @@ class ManipulationStation : public systems::Diagram<T> {
   VectorX<double> iiwa_ki_;
   // TODO(siyuan.feng@tri.global): Need to tunes these better.
   double ee_kp_{200};
-  double ee_kd_{5};
+  double ee_kd_{100};
 
   // Represents the manipulation station to simulate. This gets set in the
   // corresponding station setup function (e.g.,

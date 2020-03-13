@@ -161,7 +161,7 @@ class EndEffectorPositionController : public systems::Diagram<double> {
   /// @see EndEffectorPdController::EndEffectorPdController()
   EndEffectorPositionController(double time_step = 0.05,
                               double kp_command = 200.0,
-                              double kd_command = 5.0,
+                              double kd_command = 100.0,
                               double kp_constraint = 2000.0,
                               double kd_constraint = 5.0);
 

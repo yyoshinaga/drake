@@ -68,20 +68,34 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
-      <visual>
+      <visual name="finger1">
         <material name="red"/>
         <geometry>
-          <box size="0.33 0.39 0.003"/> <!-- Approximation of whiskers -->
-          <!-- <mesh filename="../mesh/CBEE_v4_whisker_drake.obj" /> -->
+          <box size="0.08 0.39 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0 -0.275 0.15"/>
+        <origin rpy="1.57 0 0" xyz="-0.04125 -0.275 0"/>
       </visual>
-      <collision>
+
+      <visual name="finger2">
+        <material name="red"/>
         <geometry>
-          <box size="0.33 0.39 0.003"/> <!-- Approximation of whiskers -->
-          <!-- <mesh filename="../mesh/CBEE_v4_whisker_drake.obj" /> -->
+          <box size="0.08 0.39 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0 -0.275 0.15"/>
+        <origin rpy="1.57 0 0" xyz="0.12375 -0.275 0"/>
+      </visual>
+
+      <collision name="finger1">
+        <geometry>
+          <box size="0.08 0.39 0.003"/>
+        </geometry>
+        <origin rpy="1.57 0 0" xyz="-0.04125 -0.275 0"/>
+      </collision>
+
+      <collision name="finger2">
+        <geometry>
+          <box size="0.08 0.39 0.003"/> 
+        </geometry>
+        <origin rpy="1.57 0 0" xyz="0.12375 -0.275 0"/>
       </collision>
     </link>
 
@@ -91,20 +105,35 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
-      <visual>
+
+      <visual name="finger1">
         <material name="red"/>
         <geometry>
-          <box size="0.33 0.39 0.003"/> <!-- Approximation of whiskers -->
-          <!-- <mesh filename="../mesh/CBEE_v4_whisker_drake.obj" /> -->
+          <box size="0.08 0.39 0.003"/>
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0 0.275 0.15"/>
+        <origin rpy="1.57 0 0" xyz="-0.12375 0.275 0"/>
       </visual>
-      <collision>
+
+      <visual name="finger2">
+        <material name="red"/>
         <geometry>
-          <box size="0.33 0.39 0.003"/> <!-- Approximation of whiskers -->
-          <!-- <mesh filename="../mesh/CBEE_v4_whisker_drake.obj" /> -->
+          <box size="0.08 0.39 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0 0.275 0.15"/>
+        <origin rpy="1.57 0 0" xyz="0.04125 0.275 0"/>
+      </visual>
+
+      <collision name="finger1">
+        <geometry>
+          <box size="0.08 0.39 0.003"/>
+        </geometry>
+        <origin rpy="1.57 0 0" xyz="-0.12375 0.275 0"/>
+      </collision>
+
+      <collision name="finger2">
+        <geometry>
+          <box size="0.08 0.39 0.003"/> 
+        </geometry>
+        <origin rpy="1.57 0 0" xyz="0.04125 0.275 0"/>
       </collision>
     </link>
 
@@ -114,13 +143,13 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
-      <!-- <visual>
+       <visual>
         <material name="green"/>
         <origin xyz="0.0 0 0" rpy="0 0 0"/>
         <geometry>
           <box size="0.01 0.5 0.25"/>
         </geometry>
-      </visual> -->
+      </visual>
       <collision>
         <origin xyz="0.0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -135,13 +164,13 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
-      <!-- <visual>
+       <visual>
         <material name="blue"/>
         <origin xyz="0.3 0 -0.15" rpy="0 0 0"/>
         <geometry>
           <box size="0.95 0.4 0.01"/>
         </geometry>
-      </visual> -->
+      </visual>
       <collision>   
         <origin xyz="0.3 0 -0.15" rpy="0 0 0"/>
         <geometry>
@@ -150,11 +179,46 @@
       </collision>
     </link>
 
+    <link name='right_whisker_offset'>
+      <visual name='visual_right_offset'>
+        <origin xyz="0.4 -0.2 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.1 0.1 0.1"/>
+        </geometry>
+        <material>
+          <diffuse>0 1 1 1.0</diffuse>
+        </material>
+      </visual> 
+    </link>
+
+    <link name='left_whisker_offset'>
+       <visual name='visual_left_offset'>
+        <origin xyz="0.4 0.2 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.1 0.1 0.1"/>
+        </geometry>
+        <material>
+          <diffuse>0 1 1 1.0</diffuse>
+        </material>
+      </visual> 
+    </link>
+
     <!-- frame, equivlent of TCP (Tool Center Point) -->
     <frame link="ee_base" name="ee_tip_0" rpy="0 0 0" xyz="0.54 0 0"/>
 
     <!-- END LINKS -->
 
+     <joint name="whisker_right_to_base" type="fixed">
+      <parent link="ee_base"/>
+      <child link="right_whisker_offset"/>
+      <origin xyz="0 -0.2 0" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="whisker_left_to_base" type="fixed">
+      <parent link="ee_base"/>
+      <child link="left_whisker_offset"/>
+      <origin xyz="0 0.2 0" rpy="0 0 0"/>
+    </joint>
 
     <!-- joint whisker right -->
     <joint name="whisker_right_joint" type="revolute">
@@ -162,8 +226,8 @@
       <child link="whisker_right_link"/>
       <origin xyz="0.35 0 0" rpy="0 0 0"/>
       <axis xyz="1 0 0"/>
-
     </joint>
+
     <!-- joint whisker left -->
     <joint name="whisker_left_joint" type="revolute">
       <parent link="ee_base"/>
@@ -215,6 +279,18 @@
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
   </gazebo>   -->
+
+  <gazebo reference="whisker_right_offset">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo> 
+
+  <gazebo reference="whisker_right_offset">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo> 
 
   <!-- Link0 -->
   <gazebo reference="whisker_right_link">

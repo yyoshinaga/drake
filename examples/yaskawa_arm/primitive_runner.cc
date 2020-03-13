@@ -23,9 +23,15 @@ int main(int , char** ) {
     drake::log()->info("action: Collect");
     DRAKE_DEMAND(p_executor.action_Collect(2.0) ? true : false);
 
+    drake::log()->info("action: WhiskersDown");
+    DRAKE_DEMAND(p_executor.action_WhiskersDown());
+
     drake::log()->info("action: goToPoint");
     p_executor.action_GoToPoint(Eigen::Vector3d(1.0, -0.1, 1.7), Eigen::Vector3d(0.0, 0.0,1.65),5.0);
     p_executor.action_GoToPoint(Eigen::Vector3d(0.6, 0.75, 1.73), Eigen::Vector3d(0.0, 0.4,1.65),5.0);
+
+    drake::log()->info("action: WhiskersUp");
+    DRAKE_DEMAND(p_executor.action_WhiskersUp());
 
     drake::log()->info("action: Release");
     DRAKE_DEMAND(p_executor.action_Release(2.0) ? true : false);

@@ -8,7 +8,7 @@ namespace drake {
 namespace manipulation {
 namespace yaskawa_conveyor_belt_dof1 {
 
-DEFINE_double(angle_limit, M_PI/2, "movement limit");
+DEFINE_double(angle_limit, M_PI, "movement limit");
 DEFINE_double(pusher_limit, 0.7, "movement limit");
 DEFINE_double(puller_limit, -0.3, "movement limit");
 DEFINE_double(pusher_initial, 0.0, "initial position");
@@ -209,7 +209,6 @@ void EndEffectorPdController::CalcGeneralizedAccelerationOutput(
     output_vector->SetFromVector(CalcGeneralizedAcceleration(context));
 }
 
-
 EndEffectorGenerateAngleAndVelocity::EndEffectorGenerateAngleAndVelocity(){
   actuation_input_port_ =
       this->DeclareVectorInputPort("actuation", BasicVector<double>(3))
@@ -240,7 +239,7 @@ void EndEffectorGenerateAngleAndVelocity::CalcAngleOutput(
 
     if(actuation[0]){
         //Move whiskers to grasping angle
-        output_vector->SetAtIndex(0, M_PI/2);
+        output_vector->SetAtIndex(0, FLAGS_angle_limit);
     }
     else{
         //Return whiskers to initial positions

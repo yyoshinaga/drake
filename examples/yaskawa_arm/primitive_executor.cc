@@ -212,7 +212,7 @@ const char kEEUrdf[] =
 
         //Checks: 
         if(are_whiskers_down()){ return 1; }    //Action already completed
-        if(is_carrying()){ return 0; }          //If any of the checks fail, function returns 0.
+        if(!is_carrying()){ return 0; }         //If any of the checks fail, function returns 0.
 
         while(lcm_.handle() >= 0 && !are_whiskers_down()){  //While whiskers not up, keep running
             if(ee_update_){
@@ -386,7 +386,7 @@ const char kEEUrdf[] =
     }
     bool PrimitiveExecutor::are_whiskers_down(){
         drake::log()->info("whisker angle: {} {}",ee_status_.actual_whisker_angle, FLAGS_whiskers_down_angle);
-        return ee_status_.actual_whisker_angle <= FLAGS_whiskers_down_angle;
+        return -ee_status_.actual_whisker_angle <= FLAGS_whiskers_down_angle;
     }
     bool PrimitiveExecutor::is_carrying(){
         return has_package;
