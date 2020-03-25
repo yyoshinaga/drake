@@ -113,6 +113,12 @@ drake_lcm_cc_library(
 )
 
 drake_lcm_cc_library(
+    name = "generic_string_msg",
+    lcm_package = "drake",
+    lcm_srcs = ["lcmt_generic_string_msg.lcm"]
+)
+
+drake_lcm_cc_library(
     name = "hydroelastic_contact_surface_for_viz",
     lcm_package = "drake",
     lcm_srcs = ["lcmt_hydroelastic_contact_surface_for_viz.lcm"],
@@ -376,6 +382,7 @@ LCMTYPES_CC = [
     ":desired_centroidal_momentum_dot",
     ":desired_dof_motions",
     ":drake_signal",
+    ":generic_string_msg",
     ":hydroelastic_contact_surface_for_viz",
     ":hydroelastic_contact_surface_tri_for_viz",
     ":iiwa",
@@ -398,9 +405,9 @@ LCMTYPES_CC = [
     ":viewer",
     ":viewer2_comms",
     ":whole_body_data",
+    ":yaskawa_ee",
     ":zmp_data",
     ":zmp_com_observer_state",
-    ":yaskawa_ee",
 ]
 
 # This rule should list every LCM type that is known to Drake or its external

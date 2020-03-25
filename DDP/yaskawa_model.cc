@@ -1,21 +1,13 @@
-#include "drake/DDP_traj_gen/kuka_arm.h"
+#include "drake/DDP/yaskawa_model.h"
 
 namespace drake {
 namespace examples {
-namespace kuka_iiwa_arm {
+namespace yaskawa_arm {
 
-KukaArm::KukaArm(){}
+YaskawaModel::YaskawaModel(){}
 
-//const char* const kIiwaUrdf =
-//    "drake/manipulation/models/iiwa_description/urdf/"
-//    "iiwa14_no_collision.urdf";
-
-const char* const kIiwaUrdf =
-    "drake/manipulation/models/iiwa_description/urdf/iiwa7_no_world_joint.urdf";
-
-// const char* const kIiwaUrdf =
-//     "drake/manipulation/models/iiwa_description/urdf/"
-//     "iiwa7.urdf";
+const char* const kYaskawaUrdf =
+    "drake/manipulation/models/yaskawa_description/urdf/yaskawa_with_model_collision.urdf";
 
 // Add Schunk and Kuka_connector
 // const char* const kIiwaUrdf = "drake/manipulation/models/iiwa_description/urdf/iiwa7_no_world_joint.urdf";
@@ -25,7 +17,7 @@ const char* const kIiwaUrdf =
 // iiwa_dt = time step
 // iiwa_N = number of knots
 // iiwa_xgoal = final goal in state space (7pos, 7vel)
-KukaArm::KukaArm(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& iiwa_xgoal)
+YaskawaModel::YaskawaModel(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& iiwa_xgoal)
 {
     //#####
     globalcnt = 0;
@@ -119,14 +111,16 @@ KukaArm::KukaArm(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& iiwa_xgoal)
         robot_thread_ = std::make_unique<RigidBodyTree<double>>();
 
         parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
-            FindResourceOrThrow(kIiwaUrdf),
+            FindResourceOrThrow(kYaskawaUrdf),
         multibody::joints::kFixed, robot_thread_.get());
+
+
         
         initial_phase_flag_ = 0;
     }
 }
 
-KukaArm::KukaArm(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& iiwa_xgoal, std::unique_ptr<RigidBodyTree<double>>& totalTree_)
+YaskawaModel::YaskawaModel(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& iiwa_xgoal, std::unique_ptr<RigidBodyTree<double>>& totalTree_)
 {
     //#####
     globalcnt = 0;
@@ -222,7 +216,7 @@ KukaArm::KukaArm(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& iiwa_xgoal, 
     }
 }
 
-stateVec_t KukaArm::kuka_arm_dynamics(const stateVec_t& X, const commandVec_t& tau)
+stateVec_t YaskawaModel::yaskawa_arm_dynamics(const stateVec_t& X, const commandVec_t& tau)
 {
 
     finalTimeProfile.counter0_ += 1;
@@ -372,13 +366,13 @@ stateVec_t KukaArm::kuka_arm_dynamics(const stateVec_t& X, const commandVec_t& t
 }
 
 
-KukaArm::timeprofile KukaArm::getFinalTimeProfile()
+YaskawaModel::timeprofile YaskawaModel::getFinalTimeProfile()
 {    
     return finalTimeProfile;
 }
 
-void KukaArm::kuka_arm_dyn_cst_ilqr(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList, 
-                                CostFunctionKukaArm*& costFunction){
+void YaskawaModel::yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList, 
+                                CostFunctionYaskawa*& costFunction){
     // // for a positive-definite quadratic, no control cost (indicated by the iLQG function using nans), is equivalent to u=0
     if(debugging_print) TRACE_KUKA_ARM("initialize dimensions\n");
     unsigned int Nl = xList.size();
@@ -479,7 +473,7 @@ void KukaArm::kuka_arm_dyn_cst_ilqr(const int& nargout, const stateVecTab_t& xLi
     if(debugging_print) TRACE_KUKA_ARM("finish kuka_arm_dyn_cst\n");
 }
 
-void KukaArm::kuka_arm_dyn_cst_min_output(const int& nargout, const double& dt_p, const stateVec_t& xList_curr, const commandVec_t& uList_curr, const bool& isUNan, stateVec_t& xList_next, CostFunctionKukaArm*& costFunction){
+void YaskawaModel::yaskawa_arm_dyn_cst_min_output(const int& nargout, const double& dt_p, const stateVec_t& xList_curr, const commandVec_t& uList_curr, const bool& isUNan, stateVec_t& xList_next, CostFunctionKukaArm*& costFunction){
     if(debugging_print) TRACE_KUKA_ARM("initialize dimensions\n");
     unsigned int Nc = xList_curr.cols(); //xList_curr is 14x1 vector -> col=1
 
@@ -515,7 +509,7 @@ void KukaArm::kuka_arm_dyn_cst_min_output(const int& nargout, const double& dt_p
     if(debugging_print) TRACE_KUKA_ARM("finish kuka_arm_dyn_cst\n");
 }
 
-stateVec_t KukaArm::update(const int& nargout, const stateVec_t& X, const commandVec_t& U, stateMat_t& A, stateR_commandC_t& B){
+stateVec_t YaskawaModel::update(const int& nargout, const stateVec_t& X, const commandVec_t& U, stateMat_t& A, stateR_commandC_t& B){
     // 4th-order Runge-Kutta step
     if(debugging_print) TRACE_KUKA_ARM("update: 4th-order Runge-Kutta step\n");
 
@@ -608,7 +602,7 @@ stateVec_t KukaArm::update(const int& nargout, const stateVec_t& X, const comman
     return X_new;
 }
 
-void KukaArm::grad(const stateVec_t& X, const commandVec_t& U, stateMat_t& A, stateR_commandC_t& B){
+void YaskawaModel::grad(const stateVec_t& X, const commandVec_t& U, stateMat_t& A, stateR_commandC_t& B){
     unsigned int n = X.size();
     unsigned int m = U.size();
 
@@ -638,7 +632,7 @@ void KukaArm::grad(const stateVec_t& X, const commandVec_t& U, stateMat_t& A, st
 }
 
 // parameters are called by reference. Name doesn't matter
-void KukaArm::hessian(const stateVec_t& X, const commandVec_t& U, stateTens_t& fxx_p, stateR_stateC_commandD_t& fxu_p, stateR_commandC_commandD_t& fuu_p){
+void YaskawaModel::hessian(const stateVec_t& X, const commandVec_t& U, stateTens_t& fxx_p, stateR_stateC_commandD_t& fxu_p, stateR_commandC_commandD_t& fuu_p){
     unsigned int n = X.size();
     unsigned int m = U.size();
 
@@ -682,38 +676,38 @@ void KukaArm::hessian(const stateVec_t& X, const commandVec_t& U, stateTens_t& f
     }
 }
 
-unsigned int KukaArm::getStateNb()
+unsigned int YaskawaModel::getStateNb()
 {
     return stateNb;
 }
 
-unsigned int KukaArm::getCommandNb()
+unsigned int YaskawaModel::getCommandNb()
 {
     return commandNb;
 }
 
-commandVec_t& KukaArm::getLowerCommandBounds()
+commandVec_t& YaskawaModel::getLowerCommandBounds()
 {
     return lowerCommandBounds;
 }
 
-commandVec_t& KukaArm::getUpperCommandBounds()
+commandVec_t& YaskawaModel::getUpperCommandBounds()
 {
     return upperCommandBounds;
 }
 
-stateMatTab_t& KukaArm::getfxList()
+stateMatTab_t& YaskawaModel::getfxList()
 {
     return fxList;
 }
 
-stateR_commandC_tab_t& KukaArm::getfuList()
+stateR_commandC_tab_t& YaskawaModel::getfuList()
 {
     return fuList;
 }
 
 
-void KukaArm::kuka_arm_dyn_cst_udp(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList,
+void YaskawaModel::yaskawa_arm_dyn_cst_udp(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList,
                                 CostFunctionKukaArm*& costFunction){
     if(debugging_print) TRACE_KUKA_ARM("initialize dimensions\n");
     unsigned int Nl = xList.size();
@@ -773,6 +767,6 @@ void KukaArm::kuka_arm_dyn_cst_udp(const int& nargout, const stateVecTab_t& xLis
     if(debugging_print) TRACE_KUKA_ARM("finish kuka_arm_dyn_cst\n");
 }
 
-}  // namespace kuka_iiwa_arm
+}  // namespace yaskawa_arm
 }  // namespace examples
 }  // namespace drake

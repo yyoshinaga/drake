@@ -21,14 +21,14 @@ drake_cc_library(
 
 drake_cc_library(
     name = "yaskawa_model",
-    srcs = ["yaskawa_model.cpp",],
+    srcs = ["yaskawa_model.cc",],
     hdrs = ["yaskawa_model.h",
             "config.h",
             "yaskawa_cost_function.h",
             ],
     visibility = ["//visibility:public"],
     data = [
-        "//examples/yaskawa_arm::models",
+        "//examples/yaskawa_arm:models",
         "//manipulation/models/yaskawa_description:models",
         "//manipulation/models/yaskawa_end_effector_description:models",
     ],
@@ -44,8 +44,8 @@ drake_cc_library(
 )
 
 drake_cc_library(
-    name = "ilqrsolver",
-    srcs = ["iLQR_solver.cpp",],
+    name = "iLQR_solver",
+    srcs = ["iLQR_solver.cc",],
     hdrs = ["iLQR_solver.h",
             "config.h",
             "yaskawa_model.h",
@@ -63,8 +63,8 @@ drake_cc_library(
 )
 
 drake_cc_binary(
-    name = "runddp",
-    srcs = ["runddp.cc",
+    name = "run_ddp",
+    srcs = ["run_ddp.cc",
             "config.h",
             "spline.h",],
     data = [

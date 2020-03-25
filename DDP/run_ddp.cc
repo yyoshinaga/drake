@@ -180,12 +180,12 @@ class RobotPlanRunner {
     #endif
     #if useUDPSolver
         double scale = 1e-4;//[To be optimized]
-        KukaArm KukaArmModel(dt, N, xgoal);
-        KukaArm::timeprofile finalTimeProfile;
+        YaskawaModel yaskawaArm(dt, N, xgoal);
+        YaskawaModel::timeprofile finalTimeProfile;
         UDPSolver::traj lastTraj;
-        CostFunctionKukaArm costKukaArm;
-        UDPSolver testSolverKukaArm(KukaArmModel,costKukaArm,ENABLE_FULLDDP,ENABLE_QPBOX);
-        testSolverKukaArm.firstInitSolver(xinit, xgoal, N, dt, scale, iterMax, tolFun, tolGrad);    
+        CostFunctionYaskawa yaskawaCost;
+        UDPSolver testSolverYaskawa(yaskawaArm,yaskawaCost,ENABLE_FULLDDP,ENABLE_QPBOX);
+        testSolverYaskawa.firstInitSolver(xinit, xgoal, N, dt, scale, iterMax, tolFun, tolGrad);    
     #endif
 
     // run one or multiple times and then average
@@ -267,6 +267,10 @@ class RobotPlanRunner {
     for(unsigned int i=0;i<=N;i++){
       cout << "lastTraj.xList[" << i << "]:" << lastTraj.xList[i].transpose() << endl;
     }
+
+
+//This is my comment
+/*
     // saving data file
     for(unsigned int i=0;i<N;i++){
       saveVector(joint_state_traj[i], "joint_trajectory");
@@ -277,7 +281,7 @@ class RobotPlanRunner {
     for(unsigned int i=0;i<=N*InterpolationScale;i++){
       saveVector(joint_state_traj_interp[i], "joint_trajectory_interpolated");
     }
-
+*/
     cout << "-------- DDP Trajectory Generation Finished! --------" << endl;
     // traj_knot_number_ = 0;
 
@@ -467,10 +471,9 @@ class RobotPlanRunner {
 //      cout << "lastTraj.uList[" << i << "]:" << lastTraj.uList[i].transpose() << endl;
 //    }
 //
-   for(unsigned int i=0;i<=N;i++)
-   {
-     cout << "lastTraj.xList[" << i << "]:" << lastTraj.xList[i].transpose() << endl;
-   }
+    for(unsigned int i=0;i<=N;i++){
+      cout << "lastTraj.xList[" << i << "]:" << lastTraj.xList[i].transpose() << endl;
+    }
   }
 
   void saveVector(const Eigen::MatrixXd & _vec, const char * _name){
