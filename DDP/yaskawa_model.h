@@ -4,20 +4,16 @@
 #define YASKAWAARM_H
 
 #include "drake/DDP/config.h"
-#include "drake/DDP/cost_function_yaskawa.h"
+#include "drake/DDP/yaskawa_cost_function.h"
 
 // #include "drake/common/drake_path.h"
 // #include "drake/common/drake_assert.h"
 #include "drake/common/find_resource.h"
 // #include "drake/common/trajectories/piecewise_polynomial.h"
-// #include "drake/examples/kuka_iiwa_arm/iiwa_common.h"
+// #include "drake/examples/kuka_yaskawa_arm/yaskawa_common.h"
 // #include "drake/multibody/joints/floating_base_types.h"
-#include "drake/multibody/parsers/urdf_parser.h"
-#include "drake/multibody/rigid_body_tree.h"
-
-// #include "drake/manipulation/util/world_sim_tree_builder.h"
-// #include "drake/manipulation/planner/constraint_relaxing_ik.h"
-// #include "drake/multibody/rigid_body_plant/rigid_body_plant.h"
+#include "drake/multibody/parsing/parser.h"
+#include "drake/multibody/plant/multibody_plant.h"
 
 #include <cstdio>
 #include <iostream>
@@ -41,9 +37,10 @@
 
 using namespace Eigen;
 using namespace std;
+using multibody::MultibodyPlant;
 
 // using drake::manipulation::planner::ConstraintRelaxingIk;
-// using drae::manipulation::kuka_iiwa::kIiwaArmNumJoints;
+// using drae::manipulation::kuka_yaskawa::kyaskawaArmNumJoints;
 // using drake::manipulation::util::WorldSimTreeBuilder;
 // using drake::manipulation::util::ModelInstanceInfo;
 // using drake::systems::RigidBodyPlant;
@@ -55,9 +52,8 @@ namespace yaskawa_arm {
 class YaskawaModel
 {
 public:
-    YaskawaModel();
-    YaskawaModel(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& iiwa_xgoal);
-    YaskawaModel(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& iiwa_xgoal, std::unique_ptr<RigidBodyTree<double>>& totalTree_);
+    YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal);
+    YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal, std::unique_ptr<MultibodyPlant<double>>& plant_);
     ~YaskawaModel(){};
 private:
 protected:
@@ -136,10 +132,10 @@ protected:
 public:
     stateVec_t yaskawa_arm_dynamics(const stateVec_t& X, const commandVec_t& tau);
 
-    void yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList, CostFunctionKukaArm*& costFunction);
-    void yaskawa_arm_dyn_cst_min_output(const int& nargout, const double& dt, const stateVec_t& xList_curr, const commandVec_t& uList_curr,  const bool& isUNan, stateVec_t& xList_next, CostFunctionKukaArm*& costFunction);
-    void yaskawa_arm_dyn_cst_udp(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList, CostFunctionKukaArm*& costFunction);
-    // void kuka_arm_dyn_cst_v3(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList, stateTensTab_t& fxxList, stateTensTab_t& fxuList, stateR_commandC_Tens_t& fuuList, CostFunctionKukaArm*& costFunction);
+    void yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList, CostFunctionYaskawa*& costFunction);
+    void yaskawa_arm_dyn_cst_min_output(const int& nargout, const double& dt, const stateVec_t& xList_curr, const commandVec_t& uList_curr,  const bool& isUNan, stateVec_t& xList_next, CostFunctionYaskawa*& costFunction);
+    void yaskawa_arm_dyn_cst_udp(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList, CostFunctionYaskawa*& costFunction);
+    // void kuka_arm_dyn_cst_v3(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList, stateTensTab_t& fxxList, stateTensTab_t& fxuList, stateR_commandC_Tens_t& fuuList, CostFunctionYaskawa*& costFunction);
     stateVec_t update(const int& nargout, const stateVec_t& X, const commandVec_t& U, stateMat_t& A, stateR_commandC_t& B);
     void grad(const stateVec_t& X, const commandVec_t& U, stateMat_t& A, stateR_commandC_t& B);
     void hessian(const stateVec_t& X, const commandVec_t& U, stateTens_t& fxx_p, stateR_stateC_commandD_t& fxu_p, stateR_commandC_commandD_t& fuu_p);    

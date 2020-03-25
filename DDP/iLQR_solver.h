@@ -35,7 +35,7 @@ using namespace Eigen;
 
 namespace drake {
 namespace examples {
-namespace kuka_iiwa_arm {
+namespace yaskawa_arm {
 // namespace {
 
 class ILQRSolver
@@ -98,14 +98,14 @@ public:
     };
 
 public:
-    ILQRSolver(KukaArm& iiwaDynamicModel, CostFunctionKukaArm& iiwaCostFunction, bool fullDDP=0,bool QPBox=0);
+    ILQRSolver(YaskawaModel& yaskawaDynamicModel, CostFunctionYaskawa& yaskawaCostFunction, bool fullDDP=0,bool QPBox=0);
 private:
 protected:
     // attributes //
 public:
 private:
-    KukaArm* dynamicModel;
-    CostFunctionKukaArm* costFunction;
+    YaskawaModel* dynamicModel;
+    CostFunctionYaskawa* costFunction;
     unsigned int stateNb;
     unsigned int commandNb;
     stateVec_t xInit; //matrix of <statesize, 1> = essentially a vector
@@ -170,8 +170,8 @@ private:
 protected:
     // methods
 public:
-    void firstInitSolver(stateVec_t& iiwaxInit, stateVec_t& iiwaxDes, unsigned int& iiwaN,
-                    double& iiwadt, unsigned int& iiwamax_iter, double& iiwatolFun, double& iiwatolGrad);
+    void firstInitSolver(stateVec_t& yaskawaxInit, stateVec_t& yaskawaxDes, unsigned int& yaskawaN,
+                    double& yaskawadt, unsigned int& yaskawamax_iter, double& yaskawatolFun, double& yaskawatolGrad);
     void solveTrajectory();
     void initializeTraj();
     void standardizeParameters(tOptSet *o);
@@ -183,7 +183,7 @@ protected:
 };
 
 // }  // namespace
-}  // namespace kuka_iiwa_arm
+}  // namespace yaskawa_arm
 }  // namespace examples
 }  // namespace drake
 

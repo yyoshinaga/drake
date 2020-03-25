@@ -22,15 +22,13 @@
 #include "drake/common/find_resource.h"
 #include "drake/common/trajectories/piecewise_polynomial.h"
 #include "drake/examples/yaskawa_arm/yaskawa_common.h"
-#include "drake/lcmt_yaskawa_command.hpp"
-#include "drake/lcmt_yaskawa_status.hpp"
+#include "drake/lcmt_iiwa_command.hpp"
+#include "drake/lcmt_iiwa_status.hpp"
 #include "drake/multibody/joints/floating_base_types.h"
-#include "drake/multibody/parsers/urdf_parser.h"
 #include "drake/multibody/rigid_body_tree.h"
-#include "drake/manipulation/util/world_sim_tree_builder.h"
 #include "drake/manipulation/planner/constraint_relaxing_ik.h"
-#include "drake/multibody/rigid_body_plant/rigid_body_plant.h"
-
+#include "drake/multibody/parsing/parser.h"
+#include "drake/multibody/plant/multibody_plant.h"
 #include "drake/lcmt_generic_string_msg.hpp"
 
 using Eigen::MatrixXd;
@@ -55,7 +53,7 @@ using Eigen::Vector3d;
 #include "drake/DDP/iLQR_solver.h"
 // #include "drake/DDP_traj_gen/udpsolver.h"
 #include "drake/DDP/yaskawa_model.h"
-#define UDP_TRAJ_DIR "~/home/drake/DDP/trajectory/"
+#define UDP_TRAJ_DIR "~/drake/DDP/trajectory/"
 
 using namespace std;
 using namespace Eigen;
@@ -66,6 +64,7 @@ using namespace Eigen;
 
 static std::list< const char*> gs_fileName;
 static std::list< std::string > gs_fileName_string;
+namespace real_lcm = lcm; //Need this to differentiate from drake LCM
 
 namespace drake {
 namespace examples {
@@ -82,9 +81,6 @@ typedef PPType::PolynomialMatrix PPMatrix;
 
 using manipulation::planner::ConstraintRelaxingIk;
 using manipulation::yaskawa::kYaskawaArmNumJoints;
-using manipulation::util::WorldSimTreeBuilder;
-using manipulation::util::ModelInstanceInfo;
-using systems::RigidBodyPlant;
 
 class RobotPlanRunner {
   public:
@@ -101,8 +97,8 @@ class RobotPlanRunner {
         ILQRSolver::traj lastTraj;
         //=============================================
         // Build wholebody and pass over to yaskawa
-        const char* const kYaskawaUrdf = "drake/manipulation/models/yaskawa_description/urdf/yaskawa_no_collision.urdf";
-        const char* const kEndEffectorUrdf = "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector3.urdf";
+        const char* const yaskawa_urdf_ = "drake/manipulation/models/yaskawa_description/urdf/yaskawa_no_collision.urdf";
+        const char* const ee_urdf_ = "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector3.urdf";
  
         // std::string urdf_;
         // RigidBodyTree<double> yaskawaTree_;
@@ -138,10 +134,8 @@ class RobotPlanRunner {
         // totalTree_ = tree_builder->Build();
         // Build wholebody and pass over to kukaArm
         //=============================================
-        yaskawa_urdf_ =
-            (!FLAGS_urdf.empty() ? FLAGS_urdf : FindResourceOrThrow(kYaskawaUrdf));
-        ee_urdf_ =
-            (!FLAGS_urdf.empty() ? FLAGS_urdf : FindResourceOrThrow(kEndEffectorUrdf));
+
+        multibody::MultibodyPlant<double> plant_(0.0);
 
         const math::RigidTransform<double> X_WI = math::RigidTransform<double>::Identity();
         const math::RigidTransform<double> X_6G(math::RollPitchYaw<double>(0, 0, 0),
@@ -152,9 +146,9 @@ class RobotPlanRunner {
 
         drake::multibody::Parser parser(&plant_);
 
-        yaskawa_model_idx =
+        drake::multibody::ModelInstanceIndex yaskawa_model_idx =
             parser.AddModelFromFile(yaskawa_urdf_, "yaskawa");
-        ee_model_idx =
+        drake::multibody::ModelInstanceIndex ee_model_idx =
             parser.AddModelFromFile(ee_urdf_, "gripper");   
 
         // Add EE to model
@@ -170,7 +164,7 @@ class RobotPlanRunner {
 
         //============================================
         #if WHOLE_BODY
-          YaskawaModel yaskawaArm(dt, N, xgoal, totalTree_);
+          YaskawaModel yaskawaArm(dt, N, xgoal, plant_);
         #else
           YaskawaModel yaskawaArm(dt, N, xgoal);
         #endif
@@ -196,7 +190,7 @@ class RobotPlanRunner {
 
     lastTraj = testSolverYaskawa.getLastSolvedTrajectory();
     #if useUDPSolver
-      finalTimeProfile = KukaArmModel.getFinalTimeProfile();
+      finalTimeProfile = YaskawaModel.getFinalTimeProfile();
     #endif
     joint_state_traj.resize(N+1);
     joint_state_traj_interp.resize(N*InterpolationScale+1);
@@ -477,7 +471,7 @@ class RobotPlanRunner {
   }
 
   void saveVector(const Eigen::MatrixXd & _vec, const char * _name){
-      std::string _file_name = "/home/drake/DDP/trajectory/"; //UDP_TRAJ_DIR;
+      std::string _file_name = "~/drake/DDP/trajectory/"; //UDP_TRAJ_DIR;
       _file_name += _name;
       _file_name += ".csv";
       clean_file(_name, _file_name);
@@ -513,7 +507,8 @@ class RobotPlanRunner {
   }
 
  private:
-  lcm::LCM lcm_;
+  real_lcm::LCM lcm_;
+
   lcmt_ddp_traj ddp_traj_;
 
   //UDP parameters

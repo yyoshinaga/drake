@@ -36,7 +36,7 @@
 #define NumberofKnotPt TimeHorizon/TimeStep
 #define InterpolationScale 10 //0.01/1e-3
 const int32_t kNumJoints = 7;
-#define UDP_TRAJ_DIR "/home/drake/DDP/trajectory/"
+#define UDP_TRAJ_DIR "~/drake/DDP/trajectory/"
 const char* const kLcmQueryResultsChannel = "TREE_SEARCH_QUERY_RESULTS";
 
 namespace drake {

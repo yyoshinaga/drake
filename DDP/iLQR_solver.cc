@@ -1,4 +1,4 @@
-#include "drake/DDP_traj_gen/ilqrsolver.h"
+#include "drake/DDP/iLQR_solver.h"
 
 /* Debug */
 #include <iostream>
@@ -10,15 +10,15 @@ using Eigen::VectorXd;
 
 namespace drake {
 namespace examples {
-namespace kuka_iiwa_arm {
+namespace yaskawa_arm {
 
-ILQRSolver::ILQRSolver(KukaArm& iiwaDynamicModel, CostFunctionKukaArm& iiwaCostFunction, bool fullDDP, bool QPBox)
+ILQRSolver::ILQRSolver(YaskawaModel& yaskawaDynamicModel, CostFunctionYaskawa& yaskawaCostFunction, bool fullDDP, bool QPBox)
 {
     //TRACE("initialize dynamic model and cost function\n");
-    dynamicModel = &iiwaDynamicModel;
-    costFunction = &iiwaCostFunction;
-    stateNb = iiwaDynamicModel.getStateNb();
-    commandNb = iiwaDynamicModel.getCommandNb();
+    dynamicModel = &yaskawaDynamicModel;
+    costFunction = &yaskawaCostFunction;
+    stateNb = yaskawaDynamicModel.getStateNb();
+    commandNb = yaskawaDynamicModel.getCommandNb();
     enableQPBox = QPBox;
     enableFullDDP = fullDDP;
 
@@ -31,39 +31,39 @@ ILQRSolver::ILQRSolver(KukaArm& iiwaDynamicModel, CostFunctionKukaArm& iiwaCostF
     // if(QPBox)
     // {
     //     qp = new QProblemB(commandNb);
-    //     Options iiwaOptions;
-    //     iiwaOptions.printLevel = PL_LOW;
-    //     iiwaOptions.enableRegularisation = BT_TRUE;
-    //     iiwaOptions.initialStatusBounds = ST_INACTIVE;
-    //     iiwaOptions.numRefinementSteps = 1;
-    //     iiwaOptions.enableCholeskyRefactorisation = 1;
-    //     qp->setOptions(iiwaOptions);
+    //     Options yaskawaOptions;
+    //     yaskawaOptions.printLevel = PL_LOW;
+    //     yaskawaOptions.enableRegularisation = BT_TRUE;
+    //     yaskawaOptions.initialStatusBounds = ST_INACTIVE;
+    //     yaskawaOptions.numRefinementSteps = 1;
+    //     yaskawaOptions.enableCholeskyRefactorisation = 1;
+    //     qp->setOptions(yaskawaOptions);
 
     //     xOpt = new real_t[commandNb];
-    //     lowerCommandBounds = iiwaDynamicModel.getLowerCommandBounds();
-    //     upperCommandBounds = iiwaDynamicModel.getUpperCommandBounds();
+    //     lowerCommandBounds = yaskawaDynamicModel.getLowerCommandBounds();
+    //     upperCommandBounds = yaskawaDynamicModel.getUpperCommandBounds();
     // }
 
     //tOptSet Op = INIT_OPTSET;
 }
 
-void ILQRSolver::firstInitSolver(stateVec_t& iiwaxInit, stateVec_t& iiwaxgoal, unsigned int& iiwaN,
-                       double& iiwadt, unsigned int& iiwamax_iter, double& iiwatolFun, double& iiwatolGrad)
+void ILQRSolver::firstInitSolver(stateVec_t& yaskawaxInit, stateVec_t& yaskawaxgoal, unsigned int& yaskawaN,
+                       double& yaskawadt, unsigned int& yaskawamax_iter, double& yaskawatolFun, double& yaskawatolGrad)
 {
     // TODO: double check opt params
-    xInit = iiwaxInit; // removed iiwaxgoal. Double check whether this makes sense.
-    xgoal = iiwaxgoal;
-    N = iiwaN;
-    dt = iiwadt;
+    xInit = yaskawaxInit; // removed yaskawaxgoal. Double check whether this makes sense.
+    xgoal = yaskawaxgoal;
+    N = yaskawaN;
+    dt = yaskawadt;
     
     //TRACE("initialize option parameters\n");
     //Op = INIT_OPTSET;
     standardizeParameters(&Op);
-    Op.xInit = iiwaxInit;
+    Op.xInit = yaskawaxInit;
     Op.n_hor = N;
-    Op.tolFun = iiwatolFun;
-    Op.tolGrad = iiwatolGrad;
-    Op.max_iter = iiwamax_iter;
+    Op.tolFun = yaskawatolFun;
+    Op.tolGrad = yaskawatolGrad;
+    Op.max_iter = yaskawamax_iter;
     Op.time_backward.resize(Op.max_iter);
     Op.time_backward.setZero();
     Op.time_forward.resize(Op.max_iter);
@@ -157,8 +157,8 @@ void ILQRSolver::solveTrajectory()
             gettimeofday(&tbegin_time_deriv,NULL);
             // FList is empty here on the first interation
             // initial x, u, cost is passed in
-            dynamicModel->kuka_arm_dyn_cst_ilqr(nargout, xList, uListFull, FList, costFunction);
-            //dynamicModel->kuka_arm_dyn_cst(nargout, dt, xList, uListFull, xgoal, FList, costFunction->getcx(), costFunction->getcu(), costFunction->getcxx(), costFunction->getcux(), costFunction->getcuu(), costFunction->getc());
+            dynamicModel->yaskawa_arm_dyn_cst_ilqr(nargout, xList, uListFull, FList, costFunction);
+            //dynamicModel->yaskawa_arm_dyn_cst(nargout, dt, xList, uListFull, xgoal, FList, costFunction->getcx(), costFunction->getcu(), costFunction->getcxx(), costFunction->getcux(), costFunction->getcuu(), costFunction->getc());
             gettimeofday(&tend_time_deriv,NULL);
             Op.time_derivative(iter) = (static_cast<double>(1000*(tend_time_deriv.tv_sec-tbegin_time_deriv.tv_sec)+((tend_time_deriv.tv_usec-tbegin_time_deriv.tv_usec)/1000)))/1000.0;
 
@@ -519,22 +519,22 @@ void ILQRSolver::doForwardPass()
         for(unsigned int i=0;i<N;i++) {
             updateduList[i] = uList[i];
             // running cost, state, input
-            dynamicModel->kuka_arm_dyn_cst_min_output(nargout, dt, updatedxList[i], updateduList[i], isUNan, updatedxList[i+1], costFunction);
+            dynamicModel->yaskawa_arm_dyn_cst_min_output(nargout, dt, updatedxList[i], updateduList[i], isUNan, updatedxList[i+1], costFunction);
             costList[i] = costFunction->getc();
         }
         // getting final cost, state, input=NaN
         isUNan = 1;
-        dynamicModel->kuka_arm_dyn_cst_min_output(nargout, dt, updatedxList[N], u_NAN_loc, isUNan, x_unused, costFunction);
+        dynamicModel->yaskawa_arm_dyn_cst_min_output(nargout, dt, updatedxList[N], u_NAN_loc, isUNan, x_unused, costFunction);
         costList[N] = costFunction->getc();
     }
     else {
         for(unsigned int i=0;i<N;i++) {
             updateduList[i] = uList[i] + alpha*kList[i] + KList[i]*(updatedxList[i]-xList[i]);
-            dynamicModel->kuka_arm_dyn_cst_min_output(nargout, dt, updatedxList[i], updateduList[i], isUNan, updatedxList[i+1], costFunction);
+            dynamicModel->yaskawa_arm_dyn_cst_min_output(nargout, dt, updatedxList[i], updateduList[i], isUNan, updatedxList[i+1], costFunction);
             costListNew[i] = costFunction->getc();
         }
         isUNan = 1;
-        dynamicModel->kuka_arm_dyn_cst_min_output(nargout, dt, updatedxList[N], u_NAN_loc, isUNan, x_unused, costFunction);
+        dynamicModel->yaskawa_arm_dyn_cst_min_output(nargout, dt, updatedxList[N], u_NAN_loc, isUNan, x_unused, costFunction);
         costListNew[N] = costFunction->getc();
     }
 }
@@ -570,6 +570,6 @@ bool ILQRSolver::isPositiveDefinite(const commandMat_t & Quu_p)
     return true;
 }
 
-}  // namespace kuka_iiwa_arm
+}  // namespace yaskawa_arm
 }  // namespace examples
 }  // namespace drake

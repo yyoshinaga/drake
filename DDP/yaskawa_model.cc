@@ -4,29 +4,27 @@ namespace drake {
 namespace examples {
 namespace yaskawa_arm {
 
-YaskawaModel::YaskawaModel(){}
-
 const char* const kYaskawaUrdf =
     "drake/manipulation/models/yaskawa_description/urdf/yaskawa_with_model_collision.urdf";
 
 // Add Schunk and Kuka_connector
-// const char* const kIiwaUrdf = "drake/manipulation/models/iiwa_description/urdf/iiwa7_no_world_joint.urdf";
+// const char* const kyaskawaUrdf = "drake/manipulation/models/yaskawa_description/urdf/yaskawa7_no_world_joint.urdf";
 // const char* schunkPath = "drake/manipulation/models/wsg_50_description/urdf/wsg_50_mesh_collision_no_world_joint.urdf";
 // const char* connectorPath = "drake/manipulation/models/kuka_connector_description/urdf/KukaConnector_no_world_joint.urdf";
 
-// iiwa_dt = time step
-// iiwa_N = number of knots
-// iiwa_xgoal = final goal in state space (7pos, 7vel)
-YaskawaModel::YaskawaModel(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& iiwa_xgoal)
+// yaskawa_dt = time step
+// yaskawa_N = number of knots
+// yaskawa_xgoal = final goal in state space (7pos, 7vel)
+YaskawaModel::YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal)
 {
     //#####
     globalcnt = 0;
     //#####
     stateNb = 14;
     commandNb = 7;
-    dt = iiwa_dt;
-    N = iiwa_N;
-    xgoal = iiwa_xgoal;
+    dt = yaskawa_dt;
+    N = yaskawa_N;
+    xgoal = yaskawa_xgoal;
     fxList.resize(N);
     fuList.resize(N);
 
@@ -108,28 +106,47 @@ YaskawaModel::YaskawaModel(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& ii
 
     if(initial_phase_flag_ == 1){
         // Ye's original method
-        robot_thread_ = std::make_unique<RigidBodyTree<double>>();
+        multibody::MultibodyPlant<double> plant_(0.0);
 
-        parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
-            FindResourceOrThrow(kYaskawaUrdf),
-        multibody::joints::kFixed, robot_thread_.get());
+        const math::RigidTransform<double> X_WI = math::RigidTransform<double>::Identity();
+        const math::RigidTransform<double> X_6G(math::RollPitchYaw<double>(0, 0, 0),
+                                            Eigen::Vector3d(0, 0, 0.114));
 
+        DRAKE_THROW_UNLESS(!plant_.HasModelInstanceNamed("yaskawa"));
+        DRAKE_THROW_UNLESS(!plant_.HasModelInstanceNamed("gripper"));
 
+        drake::multibody::Parser parser(&plant_);
+
+        drake::multibody::ModelInstanceIndex yaskawa_model_idx =
+            parser.AddModelFromFile(yaskawa_urdf_, "yaskawa");
+        drake::multibody::ModelInstanceIndex ee_model_idx =
+            parser.AddModelFromFile(ee_urdf_, "gripper");   
+
+        // Add EE to model
+        const drake::multibody::Frame<double>& ee_frame =
+            plant_.GetFrameByName("ee_mount", yaskawa_model_idx);
+
+        //Weld models
+        plant_.WeldFrames(plant_.world_frame(), plant_.GetFrameByName("arm_base", yaskawa_model_idx), X_WI);
+        plant_.WeldFrames(ee_frame, plant_.GetFrameByName("ee_base", ee_model_idx), X_6G);
+
+        plant_.Finalize();
+        drake::log()->info("Plant finalized");
         
         initial_phase_flag_ = 0;
     }
 }
 
-YaskawaModel::YaskawaModel(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& iiwa_xgoal, std::unique_ptr<RigidBodyTree<double>>& totalTree_)
+YaskawaModel::YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal, std::unique_ptr<MultibodyPlant<double>>& plant_)
 {
     //#####
     globalcnt = 0;
     //#####
     stateNb = 14;
     commandNb = 7;
-    dt = iiwa_dt;
-    N = iiwa_N;
-    xgoal = iiwa_xgoal;
+    dt = yaskawa_dt;
+    N = yaskawa_N;
+    xgoal = yaskawa_xgoal;
     fxList.resize(N);
     fuList.resize(N);
 
@@ -210,7 +227,7 @@ YaskawaModel::YaskawaModel(double& iiwa_dt, unsigned int& iiwa_N, stateVec_t& ii
     finalTimeProfile.time_period4 = 0;
 
     if(initial_phase_flag_ == 1){
-        robot_thread_ = std::move(totalTree_);        
+        robot_thread_ = std::move(plant_);        
 
         initial_phase_flag_ = 0;
     }
@@ -374,14 +391,14 @@ YaskawaModel::timeprofile YaskawaModel::getFinalTimeProfile()
 void YaskawaModel::yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList, 
                                 CostFunctionYaskawa*& costFunction){
     // // for a positive-definite quadratic, no control cost (indicated by the iLQG function using nans), is equivalent to u=0
-    if(debugging_print) TRACE_KUKA_ARM("initialize dimensions\n");
+    if(debugging_print) TRACE_YASKAWA_ARM("initialize dimensions\n");
     unsigned int Nl = xList.size();
     
     costFunction->getc() = 0;
     AA.setZero();
     BB.setZero();
 
-    if(debugging_print) TRACE_KUKA_ARM("compute cost function\n");
+    if(debugging_print) TRACE_YASKAWA_ARM("compute cost function\n");
 
     scalar_t c_mat_to_scalar;
 
@@ -389,16 +406,16 @@ void YaskawaModel::yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTa
         const int nargout_update1 = 3;        
         for(unsigned int k=0;k<Nl;k++){
             if(k == Nl-1){//isNanVec(uList[k])
-                if(debugging_print) TRACE_KUKA_ARM("before the update1\n");
+                if(debugging_print) TRACE_YASKAWA_ARM("before the update1\n");
                 c_mat_to_scalar = 0.5*(xList[k].transpose() - xgoal.transpose()) * costFunction->getQf() * (xList[k] - xgoal);
                 costFunction->getc() += c_mat_to_scalar(0,0);
-                if(debugging_print) TRACE_KUKA_ARM("after the update1\n");
+                if(debugging_print) TRACE_YASKAWA_ARM("after the update1\n");
             }else{
                 // if u is not NaN (not final), add state and control cost
-                if(debugging_print) TRACE_KUKA_ARM("before the update2\n");
+                if(debugging_print) TRACE_YASKAWA_ARM("before the update2\n");
                 FList[k] = update(nargout_update1, xList[k], uList[k], AA, BB);
                 c_mat_to_scalar = 0.5*(xList[k].transpose() - xgoal.transpose())*costFunction->getQ()*(xList[k] - xgoal);
-                if(debugging_print) TRACE_KUKA_ARM("after the update2\n");
+                if(debugging_print) TRACE_YASKAWA_ARM("after the update2\n");
                 c_mat_to_scalar += 0.5*uList[k].transpose()*costFunction->getR()*uList[k];
                 costFunction->getc() += c_mat_to_scalar(0,0);
             }
@@ -408,21 +425,21 @@ void YaskawaModel::yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTa
         const int nargout_update2 = 3;
         for(unsigned int k=0;k<Nl;k++) {
             if(k == Nl-1) {//isNanVec(uList[k])
-                // if(debugging_print) TRACE_KUKA_ARM("before the update3\n");
+                // if(debugging_print) TRACE_YASKAWA_ARM("before the update3\n");
                 c_mat_to_scalar = 0.5*(xList[k].transpose() - xgoal.transpose())*costFunction->getQf()*(xList[k] - xgoal);
                 costFunction->getc() += c_mat_to_scalar(0,0);
-                // if(debugging_print) TRACE_KUKA_ARM("after the update3\n");
+                // if(debugging_print) TRACE_YASKAWA_ARM("after the update3\n");
             }
             else {
-                // if(debugging_print) TRACE_KUKA_ARM("before the update4\n");
+                // if(debugging_print) TRACE_YASKAWA_ARM("before the update4\n");
                 FList[k] = update(nargout_update2, xList[k], uList[k], AA, BB);//assume three outputs, code needs to be optimized
-                // if(debugging_print) TRACE_KUKA_ARM("before the update4-1\n");
+                // if(debugging_print) TRACE_YASKAWA_ARM("before the update4-1\n");
                 c_mat_to_scalar = 0.5*(xList[k].transpose() - xgoal.transpose())*costFunction->getQ()*(xList[k] - xgoal);
-                // if(debugging_print) TRACE_KUKA_ARM("after the update4\n");
+                // if(debugging_print) TRACE_YASKAWA_ARM("after the update4\n");
 
                 c_mat_to_scalar += 0.5*uList[k].transpose()*costFunction->getR()*uList[k];
                 costFunction->getc() += c_mat_to_scalar(0,0); // TODO: to be checked
-                // if(debugging_print) TRACE_KUKA_ARM("after the update5\n");
+                // if(debugging_print) TRACE_YASKAWA_ARM("after the update5\n");
                 
                 A_temp[k] = AA;
                 B_temp[k] = BB;
@@ -431,7 +448,7 @@ void YaskawaModel::yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTa
 
         stateVec_t cx_temp;
         
-        if(debugging_print) TRACE_KUKA_ARM("compute dynamics and cost derivative\n");
+        if(debugging_print) TRACE_YASKAWA_ARM("compute dynamics and cost derivative\n");
 
         for(unsigned int k=0;k<Nl-1;k++){
             fxList[k] = A_temp[k];
@@ -446,7 +463,7 @@ void YaskawaModel::yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTa
             costFunction->getcux()[k].setZero();
             costFunction->getcuu()[k] = costFunction->getR();            
         }
-        if(debugging_print) TRACE_KUKA_ARM("update the final value of cost derivative \n");
+        if(debugging_print) TRACE_YASKAWA_ARM("update the final value of cost derivative \n");
 
         costFunction->getcx()[Nl-1] = costFunction->getQf()*(xList[Nl-1]-xgoal);
         costFunction->getcu()[Nl-1] = costFunction->getR()*uList[Nl-1];
@@ -461,7 +478,7 @@ void YaskawaModel::yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTa
         //     cout << xList[a] << endl;
         // }
 
-        if(debugging_print) TRACE_KUKA_ARM("set unused matrices to zero \n");
+        if(debugging_print) TRACE_YASKAWA_ARM("set unused matrices to zero \n");
 
         // the following useless matrices are set to Zero.
         //fxx, fxu, fuu are not defined since never used
@@ -470,18 +487,19 @@ void YaskawaModel::yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTa
         }
         costFunction->getc() = 0;
     }
-    if(debugging_print) TRACE_KUKA_ARM("finish kuka_arm_dyn_cst\n");
+    if(debugging_print) TRACE_YASKAWA_ARM("finish kuka_arm_dyn_cst\n");
 }
 
-void YaskawaModel::yaskawa_arm_dyn_cst_min_output(const int& nargout, const double& dt_p, const stateVec_t& xList_curr, const commandVec_t& uList_curr, const bool& isUNan, stateVec_t& xList_next, CostFunctionKukaArm*& costFunction){
-    if(debugging_print) TRACE_KUKA_ARM("initialize dimensions\n");
+//****** ALERT ***** dt_p was not used in the function so the parameters has been changed to accompany that*****
+void YaskawaModel::yaskawa_arm_dyn_cst_min_output(const int& nargout, const double& , const stateVec_t& xList_curr, const commandVec_t& uList_curr, const bool& isUNan, stateVec_t& xList_next, CostFunctionYaskawa*& costFunction){
+    if(debugging_print) TRACE_YASKAWA_ARM("initialize dimensions\n");
     unsigned int Nc = xList_curr.cols(); //xList_curr is 14x1 vector -> col=1
 
     costFunction->getc() = 0; // temporary cost container? initializes every timestep
     AA.setZero(); 
     BB.setZero();
 
-    if(debugging_print) TRACE_KUKA_ARM("compute cost function\n");
+    if(debugging_print) TRACE_YASKAWA_ARM("compute cost function\n");
 
     scalar_t c_mat_to_scalar;
     xList_next.setZero(); // zeroing previous trajectory timestep by timestep
@@ -492,34 +510,34 @@ void YaskawaModel::yaskawa_arm_dyn_cst_min_output(const int& nargout, const doub
             // cout << "R: " <<  costFunction->getR() << endl;
             // cout << "Q: " <<  costFunction->getQ() << endl;
             // cout << "QF: " <<  costFunction->getQf() << endl;
-            // if(debugging_print) TRACE_KUKA_ARM("before the update1\n");
+            // if(debugging_print) TRACE_YASKAWA_ARM("before the update1\n");
             c_mat_to_scalar = 0.5*(xList_curr.transpose() - xgoal.transpose()) * costFunction->getQf() * (xList_curr - xgoal);
             costFunction->getc() += c_mat_to_scalar(0,0);
-            // if(debugging_print) TRACE_KUKA_ARM("after the update1\n");
+            // if(debugging_print) TRACE_YASKAWA_ARM("after the update1\n");
         }
         else {
-            // if(debugging_print) TRACE_KUKA_ARM("before the update2\n");
+            // if(debugging_print) TRACE_YASKAWA_ARM("before the update2\n");
             xList_next = update(nargout_update1, xList_curr, uList_curr, AA, BB);
             c_mat_to_scalar = 0.5*(xList_curr.transpose() - xgoal.transpose())*costFunction->getQ()*(xList_curr - xgoal);
-            // if(debugging_print) TRACE_KUKA_ARM("after the update2\n");
+            // if(debugging_print) TRACE_YASKAWA_ARM("after the update2\n");
             c_mat_to_scalar += 0.5*uList_curr.transpose()*costFunction->getR()*uList_curr;
             costFunction->getc() += c_mat_to_scalar(0,0);
         }
     }
-    if(debugging_print) TRACE_KUKA_ARM("finish kuka_arm_dyn_cst\n");
+    if(debugging_print) TRACE_YASKAWA_ARM("finish kuka_arm_dyn_cst\n");
 }
 
 stateVec_t YaskawaModel::update(const int& nargout, const stateVec_t& X, const commandVec_t& U, stateMat_t& A, stateR_commandC_t& B){
     // 4th-order Runge-Kutta step
-    if(debugging_print) TRACE_KUKA_ARM("update: 4th-order Runge-Kutta step\n");
+    if(debugging_print) TRACE_YASKAWA_ARM("update: 4th-order Runge-Kutta step\n");
 
     gettimeofday(&tbegin_period4,NULL);
 
     // output of kuka arm dynamics is xdot = f(x,u)
-    Xdot1 = kuka_arm_dynamics(X, U);
-     Xdot2 = kuka_arm_dynamics(X + 0.5*dt*Xdot1, U);
-     Xdot3 = kuka_arm_dynamics(X + 0.5*dt*Xdot2, U);
-     Xdot4 = kuka_arm_dynamics(X + dt*Xdot3, U);
+    Xdot1 = yaskawa_arm_dynamics(X, U);
+     Xdot2 = yaskawa_arm_dynamics(X + 0.5*dt*Xdot1, U);
+     Xdot3 = yaskawa_arm_dynamics(X + 0.5*dt*Xdot2, U);
+     Xdot4 = yaskawa_arm_dynamics(X + dt*Xdot3, U);
     stateVec_t X_new;
     X_new = X + (dt/6)*(Xdot1 + 2*Xdot2 + 2*Xdot3 + Xdot4);
     // Simple Euler Integration (for debug)
@@ -534,7 +552,7 @@ stateVec_t YaskawaModel::update(const int& nargout, const stateVec_t& X, const c
         // cout << "X_NEW: " << endl << X_new << endl;
     }
 
-    if(debugging_print) TRACE_KUKA_ARM("update: X_new\n");
+    if(debugging_print) TRACE_YASKAWA_ARM("update: X_new\n");
 
     //######3
     // int as = 0;
@@ -555,46 +573,46 @@ stateVec_t YaskawaModel::update(const int& nargout, const stateVec_t& X, const c
 
         // State perturbation?
         for(unsigned int i=0;i<n;i++){
-            Xp1 = kuka_arm_dynamics(X+Dx.col(i),U);
-            Xm1 = kuka_arm_dynamics(X-Dx.col(i),U);
+            Xp1 = yaskawa_arm_dynamics(X+Dx.col(i),U);
+            Xm1 = yaskawa_arm_dynamics(X-Dx.col(i),U);
             A1.col(i) = (Xp1 - Xm1)/(2*delta);
 
-            Xp2 = kuka_arm_dynamics(X+0.5*dt*Xdot1+Dx.col(i),U);
-            Xm2 = kuka_arm_dynamics(X+0.5*dt*Xdot1-Dx.col(i),U);
+            Xp2 = yaskawa_arm_dynamics(X+0.5*dt*Xdot1+Dx.col(i),U);
+            Xm2 = yaskawa_arm_dynamics(X+0.5*dt*Xdot1-Dx.col(i),U);
             A2.col(i) = (Xp2 - Xm2)/(2*delta);
 
-            Xp3 = kuka_arm_dynamics(X+0.5*dt*Xdot2+Dx.col(i),U);
-            Xm3 = kuka_arm_dynamics(X+0.5*dt*Xdot2-Dx.col(i),U);
+            Xp3 = yaskawa_arm_dynamics(X+0.5*dt*Xdot2+Dx.col(i),U);
+            Xm3 = yaskawa_arm_dynamics(X+0.5*dt*Xdot2-Dx.col(i),U);
             A3.col(i) = (Xp3 - Xm3)/(2*delta);
 
-            Xp4 = kuka_arm_dynamics(X+0.5*dt*Xdot3+Dx.col(i),U);
-            Xm4 = kuka_arm_dynamics(X+0.5*dt*Xdot3-Dx.col(i),U);
+            Xp4 = yaskawa_arm_dynamics(X+0.5*dt*Xdot3+Dx.col(i),U);
+            Xm4 = yaskawa_arm_dynamics(X+0.5*dt*Xdot3-Dx.col(i),U);
             A4.col(i) = (Xp4 - Xm4)/(2*delta);
         }
 
         // Control perturbation?
         for(unsigned int i=0;i<m;i++){
-            Xp1 = kuka_arm_dynamics(X,U+Du.col(i));
-            Xm1 = kuka_arm_dynamics(X,U-Du.col(i));
+            Xp1 = yaskawa_arm_dynamics(X,U+Du.col(i));
+            Xm1 = yaskawa_arm_dynamics(X,U-Du.col(i));
             B1.col(i) = (Xp1 - Xm1)/(2*delta);
 
-            Xp2 = kuka_arm_dynamics(X+0.5*dt*Xdot1,U+Du.col(i));
-            Xm2 = kuka_arm_dynamics(X+0.5*dt*Xdot1,U-Du.col(i));
+            Xp2 = yaskawa_arm_dynamics(X+0.5*dt*Xdot1,U+Du.col(i));
+            Xm2 = yaskawa_arm_dynamics(X+0.5*dt*Xdot1,U-Du.col(i));
             B2.col(i) = (Xp2 - Xm2)/(2*delta);
 
-            Xp3 = kuka_arm_dynamics(X+0.5*dt*Xdot2,U+Du.col(i));
-            Xm3 = kuka_arm_dynamics(X+0.5*dt*Xdot2,U-Du.col(i));
+            Xp3 = yaskawa_arm_dynamics(X+0.5*dt*Xdot2,U+Du.col(i));
+            Xm3 = yaskawa_arm_dynamics(X+0.5*dt*Xdot2,U-Du.col(i));
             B3.col(i) = (Xp3 - Xm3)/(2*delta);
 
-            Xp4 = kuka_arm_dynamics(X+0.5*dt*Xdot3,U+Du.col(i));
-            Xm4 = kuka_arm_dynamics(X+0.5*dt*Xdot3,U-Du.col(i));
+            Xp4 = yaskawa_arm_dynamics(X+0.5*dt*Xdot3,U+Du.col(i));
+            Xm4 = yaskawa_arm_dynamics(X+0.5*dt*Xdot3,U-Du.col(i));
             B4.col(i) = (Xp4 - Xm4)/(2*delta);
         }
 
         A = (IdentityMat + A4 * dt/6)*(IdentityMat + A3 * dt/3)*(IdentityMat + A2 * dt/3)*(IdentityMat + A1 * dt/6);
         B = B4 * dt/6 + (IdentityMat + A4 * dt/6) * B3 * dt/3 + (IdentityMat + A4 * dt/6)*(IdentityMat + A3 * dt/3)* B2 * dt/3 + (IdentityMat + (dt/6)*A4)*(IdentityMat + (dt/3)*A3)*(IdentityMat + (dt/3)*A2)*(dt/6)*B1;
     }
-    if(debugging_print) TRACE_KUKA_ARM("update: X_new\n");
+    if(debugging_print) TRACE_YASKAWA_ARM("update: X_new\n");
 
     gettimeofday(&tend_period4,NULL);
     finalTimeProfile.time_period4 += (static_cast<double>(1000.0*(tend_period4.tv_sec-tbegin_period4.tv_sec)+((tend_period4.tv_usec-tbegin_period4.tv_usec)/1000.0)))/1000.0;
@@ -708,14 +726,14 @@ stateR_commandC_tab_t& YaskawaModel::getfuList()
 
 
 void YaskawaModel::yaskawa_arm_dyn_cst_udp(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList,
-                                CostFunctionKukaArm*& costFunction){
-    if(debugging_print) TRACE_KUKA_ARM("initialize dimensions\n");
+                                CostFunctionYaskawa*& costFunction){
+    if(debugging_print) TRACE_YASKAWA_ARM("initialize dimensions\n");
     unsigned int Nl = xList.size();
     
     costFunction->getc() = 0;
     AA.setZero();
     BB.setZero();
-    if(debugging_print) TRACE_KUKA_ARM("compute cost function\n");
+    if(debugging_print) TRACE_YASKAWA_ARM("compute cost function\n");
 
     scalar_t c_mat_to_scalar;
     c_mat_to_scalar.setZero();
@@ -724,22 +742,22 @@ void YaskawaModel::yaskawa_arm_dyn_cst_udp(const int& nargout, const stateVecTab
         const int nargout_update1 = 3;        
         for(unsigned int k=0;k<Nl;k++){
             if (k == Nl-1){
-                if(debugging_print) TRACE_KUKA_ARM("before the update1\n");
+                if(debugging_print) TRACE_YASKAWA_ARM("before the update1\n");
                 c_mat_to_scalar = 0.5*(xList[k].transpose() - xgoal.transpose()) * costFunction->getQf() * (xList[k] - xgoal);
                 costFunction->getc() += c_mat_to_scalar(0,0);
-                if(debugging_print) TRACE_KUKA_ARM("after the update1\n");
+                if(debugging_print) TRACE_YASKAWA_ARM("after the update1\n");
             }else{
-                if(debugging_print) TRACE_KUKA_ARM("before the update2\n");
+                if(debugging_print) TRACE_YASKAWA_ARM("before the update2\n");
                 FList[k] = update(nargout_update1, xList[k], uList[k], AA, BB);
                 c_mat_to_scalar = 0.5*(xList[k].transpose() - xgoal.transpose())*costFunction->getQ()*(xList[k] - xgoal);
-                if(debugging_print) TRACE_KUKA_ARM("after the update2\n");
+                if(debugging_print) TRACE_YASKAWA_ARM("after the update2\n");
                 c_mat_to_scalar += 0.5*uList[k].transpose()*costFunction->getR()*uList[k];
                 costFunction->getc() += c_mat_to_scalar(0,0);
             }
         }
     }else{
         stateVec_t cx_temp;
-        if(debugging_print) TRACE_KUKA_ARM("compute cost derivative\n");
+        if(debugging_print) TRACE_YASKAWA_ARM("compute cost derivative\n");
         for(unsigned int k=0;k<Nl-1;k++){
             // cx_temp << xList[k](0,0)-xgoal(0), xList[k](1,0)-xgoal(1), xList[k](2,0)-xgoal(2), xList[k](3,0)-xgoal(3);
             cx_temp << xList[k] - xgoal;
@@ -750,13 +768,13 @@ void YaskawaModel::yaskawa_arm_dyn_cst_udp(const int& nargout, const stateVecTab
             costFunction->getcux()[k].setZero();
             costFunction->getcuu()[k] = costFunction->getR();            
         }
-        if(debugging_print) TRACE_KUKA_ARM("update the final value of cost derivative \n");
+        if(debugging_print) TRACE_YASKAWA_ARM("update the final value of cost derivative \n");
         costFunction->getcx()[Nl-1] = costFunction->getQf()*(xList[Nl-1]-xgoal);
         costFunction->getcu()[Nl-1] = costFunction->getR()*uList[Nl-1];
         costFunction->getcxx()[Nl-1] = costFunction->getQf();
         costFunction->getcux()[Nl-1].setZero();
         costFunction->getcuu()[Nl-1] = costFunction->getR();
-        if(debugging_print) TRACE_KUKA_ARM("set unused matrices to zero \n");
+        if(debugging_print) TRACE_YASKAWA_ARM("set unused matrices to zero \n");
 
         // the following useless matrices and scalars are set to Zero.
         for(unsigned int k=0;k<Nl;k++){
@@ -764,7 +782,7 @@ void YaskawaModel::yaskawa_arm_dyn_cst_udp(const int& nargout, const stateVecTab
         }
         costFunction->getc() = 0;
     }
-    if(debugging_print) TRACE_KUKA_ARM("finish kuka_arm_dyn_cst\n");
+    if(debugging_print) TRACE_YASKAWA_ARM("finish kuka_arm_dyn_cst\n");
 }
 
 }  // namespace yaskawa_arm

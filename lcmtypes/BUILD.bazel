@@ -92,6 +92,12 @@ drake_lcm_cc_library(
 )
 
 drake_lcm_cc_library(
+    name = "ddp_traj",
+    lcm_package = "drake",
+    lcm_srcs = ["lcmt_ddp_traj.lcm"]
+)
+
+drake_lcm_cc_library(
     name = "desired_body_motion",
     lcm_package = "drake",
     lcm_srcs = ["lcmt_desired_body_motion.lcm"],
@@ -378,6 +384,7 @@ LCMTYPES_CC = [
     ":contact_information",
     ":contact_results_for_viz",
     ":conveyor",
+    ":ddp_traj",
     ":desired_body_motion",
     ":desired_centroidal_momentum_dot",
     ":desired_dof_motions",
