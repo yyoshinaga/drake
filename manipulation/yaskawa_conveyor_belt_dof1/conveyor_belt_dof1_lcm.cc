@@ -101,8 +101,7 @@ void EndEffectorStatusSender::OutputStatus(const Context<double>& context,
   // two fingers rather than the position/speed of a single finger
   // (so effectively doubled).
 
-
-  drake::log()->info("aaaaaaaa! output states: {} {} ",state[1],state[2]);
+  //drake::log()->info("output states: {} {} ",state[1],state[2]);
 
   status.actual_whisker_angle = state[0];
   status.actual_pusher_position = state[1];

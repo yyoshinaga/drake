@@ -103,9 +103,10 @@ void EndEffectorPdController::Update(const systems::Context<double>& context,
         //Pushing to shelf
         (*updates)[0] = 3;
     }
-    else{
-        drake::log()->info("remain belt state cycle:\n {}\n {}\n {}",pusher_state,puller_state,ee_state);
-    }
+    // else{
+    //   //Temporarily comment out
+    //   //drake::log()->info("remain belt state cycle:\n {}\n {}\n {}",pusher_state,puller_state,ee_state);
+    // }
 }
 
 //This is where you calculate accelerations for ee input
@@ -146,9 +147,9 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
   const double buffer = 0.01;    
 //   const double ee_state = context.get_discrete_state()[0];
 
-  drake::log()->info("desired belt state:\n {}\n {}",desired_belt_state[0],desired_belt_state[1]);
+  //drake::log()->info("desired belt state:\n {}\n {}",desired_belt_state[0],desired_belt_state[1]);
 
-    drake::log()->info("\nstate[2]: {}\nstate[3]: {}",state[2],state[3]);
+  //drake::log()->info("\nstate[2]: {}\nstate[3]: {}",state[2],state[3]);
 
   DRAKE_DEMAND(FLAGS_pusher_limit+buffer > state[2] && FLAGS_pusher_initial-buffer < state[2]);
   DRAKE_DEMAND(FLAGS_puller_limit-buffer < state[3] && FLAGS_puller_initial+buffer > state[3]);
@@ -156,29 +157,29 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
 
   // If pusher is on,
   if(desired_belt_state[0]){
-    drake::log()->info("pusher on\npos at: {}",state[2]);
+    //drake::log()->info("pusher on\npos at: {}",state[2]);
     pusher_acc = kp_2*(FLAGS_pusher_limit - state[2]) + kd_2*(- state[6]);
-    drake::log()->info("pusher is pushing");
+    //drake::log()->info("pusher is pushing");
   }
   // If pusher is off
   else{
     // If pusher is at its initial position
-    drake::log()->info("pusher on\npos at: {}",state[2]);
+    //drake::log()->info("pusher on\npos at: {}",state[2]);
     pusher_acc = kp_2*(FLAGS_pusher_initial - state[2]) + kd_2*( - state[6]);
-    drake::log()->info("pusher is already at initial position");
+    //drake::log()->info("pusher is already at initial position");
   }
 
   // If puller is on, 
   if(desired_belt_state[1]){
-    drake::log()->info("puller on\npos at: {}",state[3]);
+    //drake::log()->info("puller on\npos at: {}",state[3]);
     puller_acc = kp_2*(FLAGS_puller_limit - state[3]) + kd_2*( - state[7]);
-    drake::log()->info("puller already past its limit {}",state[3]);
+    //drake::log()->info("puller already past its limit {}",state[3]);
   }
   // If puller is off
   else{
-    drake::log()->info("puller on\npos at: {}",state[3]);
+    //drake::log()->info("puller on\npos at: {}",state[3]);
     puller_acc = kp_2*(FLAGS_puller_initial - state[3]) + kd_2*(- state[7]);
-    drake::log()->info("puller is already at initial position");
+    //drake::log()->info("puller is already at initial position");
   }
 
 //   // If pusher and puller are both off, go to maintain current state
@@ -190,8 +191,10 @@ Vector4d EndEffectorPdController::CalcGeneralizedAcceleration(
 
 //   drake::log()->info("\ndesired_whisker_state: {}\nstate[0]: {} \nstate[1]: {}\nstate[2]: {}\nstate[3]: {}\nstate[4]: {}\nstate[5]: {}\nstate[6]: {}\nstate[7]: {}\ndesired_belt_state[0]: {}\ndesired_belt_state[1]: {}\npusher_acc: {}\npuller_acc: {}", 
 //   desired_whisker_state[0],state[0],state[1],state[2],state[3],state[4],state[5],state[6],state[7],desired_belt_state[0],desired_belt_state[1],pusher_acc,puller_acc);
-    drake::log()->info("\npusher acc: {}\npuller acc: {}",pusher_acc,puller_acc);
-    drake::log()->info("\npusher pos: {}\npuller pos: {}",state[2],state[3]);
+    
+    //Uncomment below to display values
+    // drake::log()->info("\npusher acc: {}\npuller acc: {}",pusher_acc,puller_acc);
+    // drake::log()->info("\npusher pos: {}\npuller pos: {}",state[2],state[3]);
 
   // f₀ = (f₀+f₁)/2 - (-f₀+f₁)/2,
   // f₁ = (f₀+f₁)/2 + (-f₀+f₁)/2.
@@ -261,7 +264,7 @@ void EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput(
 
     // output_vector->SetAtIndex(0, FLAGS_belt_speed); 
     // output_vector->SetAtIndex(1, -FLAGS_belt_speed);
-    drake::log()->info("actuation input port:\n 0:{}\n 1:{}\n 2:{}",actuation[0],actuation[1],actuation[2]);
+    //drake::log()->info("actuation input port:\n 0:{}\n 1:{}\n 2:{}",actuation[0],actuation[1],actuation[2]);
 
     //If pusher or puller is 'on', set velocity to desired velocity
     if(actuation[1]){

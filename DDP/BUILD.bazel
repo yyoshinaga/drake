@@ -1,0 +1,94 @@
+load(
+    "@drake//tools/skylark:drake_cc.bzl",
+    "drake_cc_binary",
+    "drake_cc_library",
+)
+
+package(
+    default_visibility = [":__subpackages__"],
+)
+
+drake_cc_library(
+    name = "yaskawa_cost_function",
+    srcs = ["yaskawa_cost_function.cc",],
+    hdrs = ["yaskawa_cost_function.h",
+            "config.h",],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@eigen",
+    ]
+)
+
+drake_cc_library(
+    name = "yaskawa_model",
+    srcs = ["yaskawa_model.cpp",],
+    hdrs = ["yaskawa_model.h",
+            "config.h",
+            "yaskawa_cost_function.h",
+            ],
+    visibility = ["//visibility:public"],
+    data = [
+        "//examples/yaskawa_arm::models",
+        "//manipulation/models/yaskawa_description:models",
+        "//manipulation/models/yaskawa_end_effector_description:models",
+    ],
+    deps = [
+        "@eigen",
+        "//examples/yaskawa_arm:yaskawa_common",
+        "//examples/yaskawa_arm:yaskawa_lcm",
+        "//attic/multibody:rigid_body_tree",
+        "//attic/multibody/parsers",
+        "//common:find_resource",
+        "//common/trajectories:piecewise_polynomial",
+    ],
+)
+
+drake_cc_library(
+    name = "ilqrsolver",
+    srcs = ["iLQR_solver.cpp",],
+    hdrs = ["iLQR_solver.h",
+            "config.h",
+            "yaskawa_model.h",
+            "yaskawa_cost_function.h",],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@eigen",
+        "//common:find_resource",
+        "//attic/multibody:rigid_body_tree",
+        "//attic/multibody/parsers",
+
+        "//multibody/parsing",
+        "//multibody/plant",
+    ]
+)
+
+drake_cc_binary(
+    name = "runddp",
+    srcs = ["runddp.cc",
+            "config.h",
+            "spline.h",],
+    data = [
+        "//examples/yaskawa_arm:models",
+        "//manipulation/models/yaskawa_description:models",
+        "//manipulation/models/yaskawa_end_effector_description:models",
+    ],
+    deps = [
+        "//examples/yaskawa_arm:yaskawa_common",
+        "//examples/yaskawa_arm:yaskawa_lcm",
+        "@lcmtypes_bot2_core",
+        "@lcmtypes_robotlocomotion",
+        "//lcmtypes:generic_string_msg",
+
+        "//DDP:yaskawa_cost_function",
+        "//DDP:iLQR_solver",
+        "//DDP:yaskawa_model",
+
+        # Was included in Ziyi's code. Perhaps get rid of it
+        # "//attic/manipulation/util:world_sim_tree_builder",
+        # "//attic/multibody/rigid_body_plant:rigid_body_plant",
+
+        "//multibody/parsing",
+        "//multibody/plant",
+        "//attic/manipulation/planner:constraint_relaxing_ik",
+    ],
+)
