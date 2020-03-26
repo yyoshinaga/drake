@@ -49,7 +49,7 @@ using Eigen::Vector3d;
 #include <list>
 
 #include "drake/DDP/config.h"
-#include "drake/DDP/spline.h"
+// #include "drake/DDP/spline.h"  //I don't think this file is being used
 #include "drake/DDP/iLQR_solver.h"
 // #include "drake/DDP_traj_gen/udpsolver.h"
 #include "drake/DDP/yaskawa_model.h"
@@ -135,16 +135,16 @@ class RobotPlanRunner {
         // Build wholebody and pass over to kukaArm
         //=============================================
 
-        multibody::MultibodyPlant<double> plant_(0.0);
+        auto plant_ = std::make_unique<multibody::MultibodyPlant<double>>(0.0);
 
         const math::RigidTransform<double> X_WI = math::RigidTransform<double>::Identity();
         const math::RigidTransform<double> X_6G(math::RollPitchYaw<double>(0, 0, 0),
                                             Eigen::Vector3d(0, 0, 0.114));
 
-        DRAKE_THROW_UNLESS(!plant_.HasModelInstanceNamed("yaskawa"));
-        DRAKE_THROW_UNLESS(!plant_.HasModelInstanceNamed("gripper"));
+        DRAKE_THROW_UNLESS(!plant_->HasModelInstanceNamed("yaskawa"));
+        DRAKE_THROW_UNLESS(!plant_->HasModelInstanceNamed("gripper"));
 
-        drake::multibody::Parser parser(&plant_);
+        drake::multibody::Parser parser(plant_.get());
 
         drake::multibody::ModelInstanceIndex yaskawa_model_idx =
             parser.AddModelFromFile(yaskawa_urdf_, "yaskawa");
@@ -153,13 +153,13 @@ class RobotPlanRunner {
 
         // Add EE to model
         const drake::multibody::Frame<double>& ee_frame =
-            plant_.GetFrameByName("ee_mount", yaskawa_model_idx);
+            plant_->GetFrameByName("ee_mount", yaskawa_model_idx);
 
         //Weld models
-        plant_.WeldFrames(plant_.world_frame(), plant_.GetFrameByName("arm_base", yaskawa_model_idx), X_WI);
-        plant_.WeldFrames(ee_frame, plant_.GetFrameByName("ee_base", ee_model_idx), X_6G);
+        plant_->WeldFrames(plant_->world_frame(), plant_->GetFrameByName("arm_base", yaskawa_model_idx), X_WI);
+        plant_->WeldFrames(ee_frame, plant_->GetFrameByName("ee_base", ee_model_idx), X_6G);
 
-        plant_.Finalize();
+        plant_->Finalize();
         drake::log()->info("Plant finalized");
 
         //============================================

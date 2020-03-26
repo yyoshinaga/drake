@@ -37,7 +37,7 @@
 
 using namespace Eigen;
 using namespace std;
-using multibody::MultibodyPlant;
+namespace real_lcm = lcm;
 
 // using drake::manipulation::planner::ConstraintRelaxingIk;
 // using drae::manipulation::kuka_yaskawa::kyaskawaArmNumJoints;
@@ -48,6 +48,7 @@ using multibody::MultibodyPlant;
 namespace drake {
 namespace examples {
 namespace yaskawa_arm {
+using multibody::MultibodyPlant;
 
 class YaskawaModel
 {
@@ -56,6 +57,9 @@ public:
     YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal, std::unique_ptr<MultibodyPlant<double>>& plant_);
     ~YaskawaModel(){};
 private:
+    real_lcm::LCM lcm_;
+    lcmt_iiwa_status iiwa_status_;
+
 protected:
     // attributes
     unsigned int stateNb;
@@ -122,7 +126,8 @@ private:
     stateR_commandC_tab_t B_temp;
     
     // std::unique_ptr<RigidBodyTree<double>> totalTree_{nullptr};
-    std::unique_ptr<RigidBodyTree<double>> robot_thread_{nullptr};
+    std::unique_ptr<MultibodyPlant<double>> robot_thread_{nullptr};
+    std::unique_ptr<systems::Context<double>> context_;
 
     Eigen::VectorXd q;
     Eigen::VectorXd qd;
@@ -131,6 +136,9 @@ protected:
     // methods
 public:
     stateVec_t yaskawa_arm_dynamics(const stateVec_t& X, const commandVec_t& tau);
+
+    //Subscriber function
+    void HandleStatusYaskawa(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status);
 
     void yaskawa_arm_dyn_cst_ilqr(const int& nargout, const stateVecTab_t& xList, const commandVecTab_t& uList, stateVecTab_t& FList, CostFunctionYaskawa*& costFunction);
     void yaskawa_arm_dyn_cst_min_output(const int& nargout, const double& dt, const stateVec_t& xList_curr, const commandVec_t& uList_curr,  const bool& isUNan, stateVec_t& xList_next, CostFunctionYaskawa*& costFunction);
