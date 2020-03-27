@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "lcm/lcm-cpp.hpp"
+#include "drake/lcmt_iiwa_status.hpp"
 #include "robotlocomotion/robot_plan_t.hpp"
 #include "drake/lcmt_ddp_traj.hpp"
 
@@ -97,8 +98,8 @@ class RobotPlanRunner {
         ILQRSolver::traj lastTraj;
         //=============================================
         // Build wholebody and pass over to yaskawa
-        const char* const yaskawa_urdf_ = "drake/manipulation/models/yaskawa_description/urdf/yaskawa_no_collision.urdf";
-        const char* const ee_urdf_ = "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector3.urdf";
+        const char* const kYaskawaUrdf = "drake/manipulation/models/yaskawa_description/urdf/yaskawa_no_collision.urdf";
+        const char* const kEEUrdf = "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector_3.urdf";
  
         // std::string urdf_;
         // RigidBodyTree<double> yaskawaTree_;
@@ -144,7 +145,14 @@ class RobotPlanRunner {
         DRAKE_THROW_UNLESS(!plant_->HasModelInstanceNamed("yaskawa"));
         DRAKE_THROW_UNLESS(!plant_->HasModelInstanceNamed("gripper"));
 
+        std::string urdf_ = "";
         drake::multibody::Parser parser(plant_.get());
+
+
+        const std::string yaskawa_urdf_ =
+            (!urdf_.empty() ? urdf_ : FindResourceOrThrow(kYaskawaUrdf));
+        const std::string ee_urdf_ =
+            (!urdf_.empty() ? urdf_ : FindResourceOrThrow(kEEUrdf));
 
         drake::multibody::ModelInstanceIndex yaskawa_model_idx =
             parser.AddModelFromFile(yaskawa_urdf_, "yaskawa");

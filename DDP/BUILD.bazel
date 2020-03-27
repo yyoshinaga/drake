@@ -41,6 +41,12 @@ drake_cc_library(
         "//attic/multibody/parsers",
         "//common:find_resource",
         "//common/trajectories:piecewise_polynomial",
+        "//lcmtypes:iiwa",
+        "//lcm",
+        "//systems/lcm",
+        "//manipulation/kuka_iiwa:iiwa_status_receiver",
+        "@gflags",
+
     ],
 )
 
@@ -55,11 +61,14 @@ drake_cc_library(
     deps = [
         "@eigen",
         "//common:find_resource",
-        "//attic/multibody:rigid_body_tree",
-        "//attic/multibody/parsers",
-
+        # "//attic/multibody:rigid_body_tree",
+        # "//attic/multibody/parsers",
         "//multibody/parsing",
         "//multibody/plant",
+                "//lcm",
+        "//systems/lcm",
+        "//lcmtypes:iiwa",
+
     ]
 )
 
@@ -79,6 +88,7 @@ drake_cc_binary(
         "@lcmtypes_bot2_core",
         "@lcmtypes_robotlocomotion",
         "//lcmtypes:generic_string_msg",
+        "//lcmtypes:iiwa",
 
         "//DDP:yaskawa_cost_function",
         "//DDP:iLQR_solver",

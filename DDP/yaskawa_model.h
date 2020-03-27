@@ -14,11 +14,13 @@
 // #include "drake/multibody/joints/floating_base_types.h"
 #include "drake/multibody/parsing/parser.h"
 #include "drake/multibody/plant/multibody_plant.h"
-
+#include "drake/lcmt_iiwa_status.hpp"
+#include "lcm/lcm-cpp.hpp"
 #include <cstdio>
 #include <iostream>
 #include <Eigen/Dense>
 #include <math.h>
+#include <gflags/gflags.h>
 
 // #include <mutex>
 // std::mutex mtx;
@@ -59,6 +61,9 @@ public:
 private:
     real_lcm::LCM lcm_;
     lcmt_iiwa_status iiwa_status_;
+    drake::multibody::ModelInstanceIndex yaskawa_model_idx;
+    drake::multibody::ModelInstanceIndex ee_model_idx;
+    int status_count_{0};
 
 protected:
     // attributes
