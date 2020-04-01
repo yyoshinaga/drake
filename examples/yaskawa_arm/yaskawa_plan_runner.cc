@@ -111,7 +111,7 @@ class RobotPlanRunner {
  private:
   void HandleStatus(const lcm::ReceiveBuffer*, const std::string&,
                     const lcmt_iiwa_status* status) {
-                      drake::log()->info("handler being called in plan runner");
+                      // drake::log()->info("handler being called in plan runner");
     iiwa_status_ = *status;
   }
 

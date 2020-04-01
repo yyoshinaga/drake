@@ -72,6 +72,39 @@ drake_cc_library(
     ]
 )
 
+
+drake_cc_library(
+    name = "run_ddp_library",
+    srcs = ["run_ddp_library.cc",
+            "config.h",
+            "spline.h",],
+    data = [
+        "//examples/yaskawa_arm:models",
+        "//manipulation/models/yaskawa_description:models",
+        "//manipulation/models/yaskawa_end_effector_description:models",
+    ],
+    hdrs = ["run_ddp_library.h",],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//examples/yaskawa_arm:yaskawa_common",
+        "//examples/yaskawa_arm:yaskawa_lcm",
+        "@lcmtypes_bot2_core",
+        "@lcmtypes_robotlocomotion",
+        "//lcmtypes:generic_string_msg",
+        "//lcmtypes:iiwa",
+
+        "//DDP:yaskawa_cost_function",
+        "//DDP:iLQR_solver",
+        "//DDP:yaskawa_model",
+
+        "//multibody/parsing",
+        "//multibody/plant",
+        "//attic/manipulation/planner:constraint_relaxing_ik",
+    ],
+
+)
+
+
 drake_cc_binary(
     name = "run_ddp",
     srcs = ["run_ddp.cc",

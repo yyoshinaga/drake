@@ -1,10 +1,8 @@
 #include "drake/examples/yaskawa_arm/primitive_executor.h"
 
 DEFINE_string(urdf, "", "Name of urdf to load");
-DEFINE_string(lcm_status_channel, "IIWA_STATUS",
-              "Channel on which to listen for lcmt_iiwa_status messages.");
-DEFINE_string(lcm_plan_channel, "COMMITTED_ROBOT_PLAN",
-              "Channel on which to send robot_plan_t messages.");
+DEFINE_string(lcm_status_channel, "IIWA_STATUS","Channel on which to listen for lcmt_iiwa_status messages.");
+DEFINE_string(lcm_plan_channel, "COMMITTED_ROBOT_PLAN","Channel on which to send robot_plan_t messages.");
 DEFINE_string(ee_name, "ee_mount", "Name of the end effector link");
 
 // Gripper channels
@@ -16,6 +14,9 @@ DEFINE_string(lcm_package_state_channel, "PACKAGE_STATE", "Channel on which to l
 
 DEFINE_double(whiskers_up_angle, -0.1, "The angle at which the whiskers are in the open position");
 DEFINE_double(whiskers_down_angle, -1.4, "The angle at which the whiskers are in the closed position");
+
+//Determines if trajectory is created by DDP/iLQR or just by IK
+#define use_Solver 1
 
 namespace drake {
 namespace examples {
@@ -30,7 +31,6 @@ const char kYaskawaUrdf[] =
 const char kEEUrdf[] =
         "drake/manipulation/models/yaskawa_end_effector_description/"
         "urdf/end_effector_3.urdf";
-
 
     PrimitiveExecutor::PrimitiveExecutor(): plant_(0.0){
 
@@ -233,57 +233,74 @@ const char kEEUrdf[] =
 
         VectorX<double> des_pos(6);
         des_pos << position, orientation;
-
+        drake::log()->info(time);
         //Checks:
         if(is_at_desired_position(des_pos)){ return 1; } //Action already completed
 
-        drake::manipulation::planner::ConstraintRelaxingIk::IkCartesianWaypoint wp;    
-        wp.pose.translation() = position;
-        drake::math::RollPitchYaw<double> rpy(orientation(0), orientation(1), orientation(2));
-        wp.pose.linear() = rpy.ToMatrix3ViaRotationMatrix();
-        wp.constrain_orientation = true;
+        //Form the trajectory, either by using DDP or not
+        #if use_Solver
+            drake::examples::yaskawa_arm::RunDDPLibrary ddp;
 
-        std::vector<manipulation::planner::ConstraintRelaxingIk::IkCartesianWaypoint> waypoints;
-        waypoints.push_back(wp);
+            drake::examples::yaskawa_arm::stateVec_t xinit,xgoal;
+            xinit << 0, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+            xgoal << 1.0,1.0,1.0,1.0,1.0,1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
-        // Create the plan
-        manipulation::planner::ConstraintRelaxingIk ik(yaskawa_urdf_, FLAGS_ee_name, Isometry3<double>::Identity());
-        
-        Eigen::VectorXd iiwa_q(iiwa_status_.num_joints);
-        for (int i = 0; i < iiwa_status_.num_joints; i++) {
-            iiwa_q[i] = iiwa_status_.joint_position_measured[i];
-        }
+            drake::log()->info(xinit.size());
+            drake::log()->info(xgoal.size());
 
-        IKResults ik_res;
-        ik.PlanSequentialTrajectory(waypoints, iiwa_q, &ik_res);
+            DRAKE_DEMAND(xinit.size() == 12);
+            DRAKE_DEMAND(xgoal.size() == 12);
 
-        std::vector<double> times;
-        times.push_back(0);
-        times.push_back(time);
+            ddp.RunUDP(xinit, xgoal);
+        #else
 
+            drake::manipulation::planner::ConstraintRelaxingIk::IkCartesianWaypoint wp;    
+            wp.pose.translation() = position;
+            drake::math::RollPitchYaw<double> rpy(orientation(0), orientation(1), orientation(2));
+            wp.pose.linear() = rpy.ToMatrix3ViaRotationMatrix();
+            wp.constrain_orientation = true;
 
-        drake::log()->info("executing ik result");
-        if (ik_res.info[0] == 1) {
-            drake::log()->info("IK sol size {}", ik_res.q_sol.size());
-            yaskawa_update_ = false;   
+            std::vector<manipulation::planner::ConstraintRelaxingIk::IkCartesianWaypoint> waypoints;
+            waypoints.push_back(wp);
 
-            // Convert the resulting waypoints into the format expected by
-            // ApplyJointVelocityLimits and EncodeKeyFrames.
-            MatrixX<double> q_mat(ik_res.q_sol.front().size(), ik_res.q_sol.size());
-            for (size_t i = 0; i < ik_res.q_sol.size(); ++i) {
-                q_mat.col(i) = ik_res.q_sol[i];
+            // Create the plan
+            manipulation::planner::ConstraintRelaxingIk ik(yaskawa_urdf_, FLAGS_ee_name, Isometry3<double>::Identity());
+            
+            Eigen::VectorXd iiwa_q(iiwa_status_.num_joints);
+            for (int i = 0; i < iiwa_status_.num_joints; i++) {
+                iiwa_q[i] = iiwa_status_.joint_position_measured[i];
             }
 
-            // Ensure that the planned motion would not exceed the joint
-            // velocity limits.  This function will scale the supplied
-            // times if needed.
-            examples::yaskawa_arm::ApplyJointVelocityLimits(q_mat, &times);  
-            robotlocomotion::robot_plan_t plan =
-                examples::yaskawa_arm::EncodeKeyFrames(joint_names_, times, ik_res.info, q_mat);
+            IKResults ik_res;
+            ik.PlanSequentialTrajectory(waypoints, iiwa_q, &ik_res);
 
-            drake::log()->info("publishing");
-            lcm_.publish(FLAGS_lcm_plan_channel, &plan);
-        }
+            std::vector<double> times;
+            times.push_back(0);
+            times.push_back(time);
+
+            drake::log()->info("executing ik result");
+            if (ik_res.info[0] == 1) {
+                drake::log()->info("IK sol size {}", ik_res.q_sol.size());
+                yaskawa_update_ = false;   
+
+                // Convert the resulting waypoints into the format expected by
+                // ApplyJointVelocityLimits and EncodeKeyFrames.
+                MatrixX<double> q_mat(ik_res.q_sol.front().size(), ik_res.q_sol.size());
+                for (size_t i = 0; i < ik_res.q_sol.size(); ++i) {
+                    q_mat.col(i) = ik_res.q_sol[i];
+                }
+
+                // Ensure that the planned motion would not exceed the joint
+                // velocity limits.  This function will scale the supplied
+                // times if needed.
+                examples::yaskawa_arm::ApplyJointVelocityLimits(q_mat, &times);  
+                robotlocomotion::robot_plan_t plan =
+                    examples::yaskawa_arm::EncodeKeyFrames(joint_names_, times, ik_res.info, q_mat);
+
+                drake::log()->info("publishing");
+                lcm_.publish(FLAGS_lcm_plan_channel, &plan);
+            }
+        #endif
 
         drake::log()->info("time start: {}",ee_status_.utime / 1e6);
         // const double final_time = static_cast<double>(ee_status_.utime / 1e6) + time;

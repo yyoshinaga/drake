@@ -1,36 +1,8 @@
-/// @file
-///
-/// kuka_plan_runner is designed to wait for LCM messages contraining
-/// a robot_plan_t message, and then execute the plan on an iiwa arm
-/// (also communicating via LCM using the
-/// lcmt_iiwa_command/lcmt_iiwa_status messages).
-///
-/// When a plan is received, it will immediately begin executing that
-/// plan on the arm (replacing any plan in progress).
-///
-/// If a stop message is received, it will immediately discard the
-/// current plan and wait until a new plan is received.
+#include "drake/DDP/run_ddp_library.h"
 
-#include <iostream>
-#include <memory>
-
-#include "lcm/lcm-cpp.hpp"
-#include "drake/lcmt_iiwa_status.hpp"
-#include "robotlocomotion/robot_plan_t.hpp"
-#include "drake/lcmt_ddp_traj.hpp"
-
-#include "drake/common/drake_assert.h"
-#include "drake/common/find_resource.h"
-#include "drake/common/trajectories/piecewise_polynomial.h"
-#include "drake/examples/yaskawa_arm/yaskawa_common.h"
-#include "drake/lcmt_iiwa_command.hpp"
-#include "drake/lcmt_iiwa_status.hpp"
-#include "drake/multibody/joints/floating_base_types.h"
-#include "drake/multibody/rigid_body_tree.h"
-#include "drake/manipulation/planner/constraint_relaxing_ik.h"
-#include "drake/multibody/parsing/parser.h"
-#include "drake/multibody/plant/multibody_plant.h"
-#include "drake/lcmt_generic_string_msg.hpp"
+namespace drake {
+namespace examples {
+namespace yaskawa_arm {
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -38,39 +10,6 @@ using Eigen::VectorXi;
 using drake::Vector1d;
 using Eigen::Vector2d;
 using Eigen::Vector3d;
-
-/* DDP trajectory generation */
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <vector>
-#include <stdio.h>
-#include <fstream>
-#include <string>
-#include <list>
-
-#include "drake/DDP/config.h"
-// #include "drake/DDP/spline.h"  //I don't think this file is being used
-#include "drake/DDP/iLQR_solver.h"
-// #include "drake/DDP_traj_gen/udpsolver.h"
-#include "drake/DDP/yaskawa_model.h"
-#define UDP_TRAJ_DIR "~/drake/DDP/trajectory/"
-
-using namespace std;
-using namespace Eigen;
-
-#define useILQRSolver 1
-#define useUDPSolver 0
-/* DDP trajectory generation */
-
-static std::list< const char*> gs_fileName;
-static std::list< std::string > gs_fileName_string;
-namespace real_lcm = lcm; //Need this to differentiate from drake LCM
-
-namespace drake {
-namespace examples {
-namespace yaskawa_arm {
-namespace {
 
 const char* const kLcmPlanChannel = "COMMITTED_ROBOT_PLAN";
 const int32_t kNumJoints = 6;
@@ -83,9 +22,9 @@ typedef PPType::PolynomialMatrix PPMatrix;
 using manipulation::planner::ConstraintRelaxingIk;
 using manipulation::yaskawa::kYaskawaArmNumJoints;
 
-class RobotPlanRunner {
-  public:
-  void RunUDP(stateVec_t xinit, stateVec_t xgoal) {
+  
+
+  void RunDDPLibrary::RunUDP(stateVec_t xinit, stateVec_t xgoal) {
     struct timeval tbegin,tend;
     double texec = 0.0;
 
@@ -95,6 +34,7 @@ class RobotPlanRunner {
     double tolGrad = 1e-5;//relaxing default value: 1e-10; - gradient exit criteria
     unsigned int iterMax = 100; //100;
     #if useILQRSolver
+      drake::log()->info("using iLQR solver ");
         ILQRSolver::traj lastTraj;
         //=============================================
         // Build wholebody and pass over to yaskawa
@@ -171,7 +111,7 @@ class RobotPlanRunner {
 
         //============================================
         #if WHOLE_BODY
-          YaskawaModel yaskawaArm(dt, N, xgoal, plant_);
+          YaskawaModel yaskawaArm(dt, N, xgoal, plant_,yaskawa_model_idx);
         #else
           YaskawaModel yaskawaArm(dt, N, xgoal);
         #endif
@@ -194,7 +134,7 @@ class RobotPlanRunner {
     gettimeofday(&tbegin,NULL);
     for(unsigned int i=0;i<Num_run;i++) testSolverYaskawa.solveTrajectory();
     gettimeofday(&tend,NULL);
-
+  drake::log()->info("test solver");
     lastTraj = testSolverYaskawa.getLastSolvedTrajectory();
     #if useUDPSolver
       finalTimeProfile = YaskawaModel.getFinalTimeProfile();
@@ -270,19 +210,19 @@ class RobotPlanRunner {
     }
 
 
-//This is my comment
-/*
-    // saving data file
-    for(unsigned int i=0;i<N;i++){
-      saveVector(joint_state_traj[i], "joint_trajectory");
-      saveVector(torque_traj[i], "joint_torque_command");
-    }
-    saveVector(lastTraj.xList[N], "joint_trajectory");
+    //This is my comment
+    /*
+      // saving data file
+      for(unsigned int i=0;i<N;i++){
+        saveVector(joint_state_traj[i], "joint_trajectory");
+        saveVector(torque_traj[i], "joint_torque_command");
+      }
+      saveVector(lastTraj.xList[N], "joint_trajectory");
 
-    for(unsigned int i=0;i<=N*InterpolationScale;i++){
-      saveVector(joint_state_traj_interp[i], "joint_trajectory_interpolated");
-    }
-*/
+      for(unsigned int i=0;i<=N*InterpolationScale;i++){
+        saveVector(joint_state_traj_interp[i], "joint_trajectory_interpolated");
+      }
+    */
     cout << "-------- DDP Trajectory Generation Finished! --------" << endl;
     // traj_knot_number_ = 0;
 
@@ -295,11 +235,11 @@ class RobotPlanRunner {
     ptr->n_time_steps = NumberofKnotPt*InterpolationScale; 
     ptr->cost = lastTraj.finalCost;
 
-//****************************************************************************************************************
-//****************************************************************************************************************
-// DOES NOT MATTER FOR POSITION CONTROL -- ALSO JUST FOR DEBUGGING TORQUE, 
-// EVERYTHING RELATED TO THIS SHOULD BE HANDLED IN "kuka_arm.cpp"
-//****************************************************************************************************************
+    //****************************************************************************************************************
+    //****************************************************************************************************************
+    // DOES NOT MATTER FOR POSITION CONTROL -- ALSO JUST FOR DEBUGGING TORQUE, 
+    // EVERYTHING RELATED TO THIS SHOULD BE HANDLED IN "kuka_arm.cpp"
+    //****************************************************************************************************************
     // //==========================
     // // const char* kIiwaUrdf = "drake/manipulation/models/iiwa_description/urdf/iiwa7.urdf";
     // const char* const kIiwaUrdf = "drake/manipulation/models/iiwa_description/urdf/iiwa7_no_world_joint.urdf";
@@ -420,8 +360,8 @@ class RobotPlanRunner {
     // cout << "bias subtracted" << endl << gtau << endl;
 
       //============================================
-//****************************************************************************************************************
-//****************************************************************************************************************
+    //****************************************************************************************************************
+    //****************************************************************************************************************
 
 
     for (int32_t i=0; i < ptr->n_time_steps; ++i) {
@@ -457,26 +397,26 @@ class RobotPlanRunner {
     // cout << ddp_traj_.cost << endl;
 
     // //sanity check
-//     for (int32_t i=0; i<ddp_traj_.n_time_steps; ++i) {
-////       cout << ddp_traj_.times_sec[i] << endl;
-//       for (int32_t j=0; j<ddp_traj_.dim_torques; ++j) {
-//         cout << "torq? " << ddp_traj_.torques[i][j] << endl;
-//       }
-//     }
+    //     for (int32_t i=0; i<ddp_traj_.n_time_steps; ++i) {
+    ////       cout << ddp_traj_.times_sec[i] << endl;
+    //       for (int32_t j=0; j<ddp_traj_.dim_torques; ++j) {
+    //         cout << "torq? " << ddp_traj_.torques[i][j] << endl;
+    //       }
+    //     }
 
     lcm_.publish(kLcmPlanChannel, &ddp_traj_);
     cout << "-------- DDP Trajectory Published to LCM! --------" << endl;
-//    for(unsigned int i=0;i<N;i++)
-//    {
-//      cout << "lastTraj.uList[" << i << "]:" << lastTraj.uList[i].transpose() << endl;
-//    }
-//
+    //    for(unsigned int i=0;i<N;i++)
+    //    {
+    //      cout << "lastTraj.uList[" << i << "]:" << lastTraj.uList[i].transpose() << endl;
+    //    }
+    //
     for(unsigned int i=0;i<=N;i++){
       cout << "lastTraj.xList[" << i << "]:" << lastTraj.xList[i].transpose() << endl;
     }
   }
-
-  void saveVector(const Eigen::MatrixXd & _vec, const char * _name){
+/*
+  void RunDDPLibrary::saveVector(const Eigen::MatrixXd & _vec, const char * _name){
       std::string _file_name = "~/drake/DDP/trajectory/"; //UDP_TRAJ_DIR;
       _file_name += _name;
       _file_name += ".csv";
@@ -492,7 +432,7 @@ class RobotPlanRunner {
       save_file.close();
   }
 
-  void saveValue(double _value, const char * _name){
+  void RunDDPLibrary::saveValue(double _value, const char * _name){
       std::string _file_name = UDP_TRAJ_DIR;
       _file_name += _name;
       _file_name += ".csv";
@@ -504,60 +444,15 @@ class RobotPlanRunner {
       save_file.flush();
   }
 
-  void clean_file(const char * _file_name, std::string & _ret_file){
+  void RunDDPLibrary::clean_file(const char * _file_name, std::string & _ret_file){
       std::list<std::string>::iterator iter = std::find(gs_fileName_string.begin(), gs_fileName_string.end(), _file_name);
       if(gs_fileName_string.end() == iter){
           gs_fileName_string.push_back(_file_name);
           remove(_ret_file.c_str());
       }
   }
-
- private:
-  real_lcm::LCM lcm_;
-
-  lcmt_ddp_traj ddp_traj_;
-
-  //UDP parameters
-  stateVecTab_t joint_state_traj;
-  commandVecTab_t torque_traj;
-  stateVecTab_t joint_state_traj_interp;
-  commandVecTab_t torque_traj_interp;
-  // unsigned int traj_knot_number_ = 0;
-};
-
-int do_main() {
-  RobotPlanRunner runner;
-
-  stateVec_t xinit,xgoal;
-#if WHOLE_BODY
-  xinit << 0, 0.6, 0, -1.75, 0, 1.0, 0, 0, 0, 0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0;
-  xgoal << 1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,0.0, 0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0;
-#else
-  xinit << 0, 0.6, 0, -1.75, 0, 1.0, 0, 0.0,0.0,0.0,0.0,0.0,0.0,0.0;
-  xgoal << 1.0,1.0,1.0,1.0,1.0,1.0,1.0, 0.0,0.0,0.0,0.0,0.0,0.0,0.0;
-#endif
-
-//  xinit << 0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0;
-  // xinit << 0, 0.6, 0, -1.75, 0, 1.0, 0, 0, 0, 0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0;
-  // xinit << 0,0.602162,0.00180032,-1.75906,-0.0181392,0.962099,0.0121962;
-//  xinit << 1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0;
-
-  // xgoal << 1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,0.0, 0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0;
-    // xgoal << 0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0;
-    // xgoal << 0,0.602162,0.00180032,-1.75906,-0.0181392,0.962099,0.0121962;
-  //  xgoal << 0.5,0.5,0.5,0,0.5,0,0, 0.0,0.0,0.0,0.0,0.0,0.0,0.0;
-  
-  runner.RunUDP(xinit, xgoal);
-
-  return 0;
-}
-
-}  // namespace
+*/
 }  // namespace yaskawa_arm
 }  // namespace examples
 }  // namespace drake
 
-
-int main() {
-  return drake::examples::yaskawa_arm::do_main();
-}

@@ -56,7 +56,7 @@ class YaskawaModel
 {
 public:
     YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal);
-    YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal, std::unique_ptr<MultibodyPlant<double>>& plant_);
+    YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal, std::unique_ptr<MultibodyPlant<double>>& plant_, drake::multibody::ModelInstanceIndex idx);
     ~YaskawaModel(){};
 private:
     real_lcm::LCM lcm_;
@@ -105,7 +105,7 @@ public:
     //######
     unsigned int globalcnt;
     //######
-    
+    bool arm_updated;
     stateVec_t xgoal;
 private:
     

@@ -220,6 +220,7 @@ drake_cc_library(
         "//lcm",
         "@lcmtypes_bot2_core",
         "@lcmtypes_robotlocomotion",
+        "//DDP:run_ddp_library",
     ],
 )
 

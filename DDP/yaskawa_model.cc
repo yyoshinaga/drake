@@ -1,7 +1,7 @@
 #include "drake/DDP/yaskawa_model.h"
-DEFINE_string(lcm_status_channel, "IIWA_STATUS",
+DEFINE_string(lcm_iiwa_status_channel, "IIWA_STATUS",
               "Channel on which to listen for lcmt_iiwa_status messages.");
-DEFINE_string(ee_name, "ee_mount", "Name of the end effector link");
+// DEFINE_string(ee_name, "ee_mount", "Name of the end effector link");
 
 
 namespace drake {
@@ -18,11 +18,16 @@ const char* const ee_urdf_ =
 // yaskawa_xgoal = final goal in state space (7pos, 7vel)
 YaskawaModel::YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal)
 {
+
+    //Link a subscription function to the channel
+    lcm_.subscribe(FLAGS_lcm_iiwa_status_channel, &YaskawaModel::HandleStatusYaskawa, this);
+
+    arm_updated = false;
     //#####
     globalcnt = 0;
     //#####
-    stateNb = 14;
-    commandNb = 7;
+    stateNb = 12;
+    commandNb = 6;
     dt = yaskawa_dt;
     N = yaskawa_N;
     xgoal = yaskawa_xgoal;
@@ -106,10 +111,6 @@ YaskawaModel::YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec
     finalTimeProfile.time_period4 = 0;
 
     if(initial_phase_flag_ == 1){
-
-        //Link a subscription function to the channel
-        lcm_.subscribe(FLAGS_lcm_status_channel, &YaskawaModel::HandleStatusYaskawa, this);
-
         auto plant_ = std::make_unique<multibody::MultibodyPlant<double>>(0.0);
 
         const math::RigidTransform<double> X_WI = math::RigidTransform<double>::Identity();
@@ -144,13 +145,17 @@ YaskawaModel::YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec
     }
 }
 
-YaskawaModel::YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal, std::unique_ptr<MultibodyPlant<double>>& plant_)
+YaskawaModel::YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec_t& yaskawa_xgoal, std::unique_ptr<MultibodyPlant<double>>& plant_, drake::multibody::ModelInstanceIndex idx)
 {
+    //Link a subscription function to the channel
+    lcm_.subscribe(FLAGS_lcm_iiwa_status_channel, &YaskawaModel::HandleStatusYaskawa, this);
+    arm_updated = false;
+
     //#####
     globalcnt = 0;
     //#####
-    stateNb = 14;
-    commandNb = 7;
+    stateNb = 12;
+    commandNb = 6;
     dt = yaskawa_dt;
     N = yaskawa_N;
     xgoal = yaskawa_xgoal;
@@ -234,8 +239,10 @@ YaskawaModel::YaskawaModel(double& yaskawa_dt, unsigned int& yaskawa_N, stateVec
     finalTimeProfile.time_period4 = 0;
 
     if(initial_phase_flag_ == 1){
-        robot_thread_ = std::move(plant_);        
+        context_ = plant_->CreateDefaultContext();
 
+        robot_thread_ = std::move(plant_);        
+        yaskawa_model_idx = idx;
         initial_phase_flag_ = 0;
     }
 }
@@ -258,6 +265,8 @@ stateVec_t YaskawaModel::yaskawa_arm_dynamics(const stateVec_t& X, const command
         qd_full.setZero();
         q_full.topRows(stateSize/2)=q;
         qd_full.topRows(stateSize/2)=qd;
+
+/*
         // VectorX<double> q_0 = VectorX<double>::Zero(9);
         // VectorX<double> qd_0 = VectorX<double>::Zero(9);
         // VectorX<double> qd_0 = VectorX<double>::Zero(9);
@@ -286,27 +295,30 @@ stateVec_t YaskawaModel::yaskawa_arm_dynamics(const stateVec_t& X, const command
         //    VectorX<double> bias_term_2 = robot_thread_->dynamicsBiasTerm(cache_, f_ext, false);
         //gettimeofday(&tend_period,NULL);
         //finalTimeProfile.time_period4 += ((double)(1000.0*(tend_period.tv_sec-tbegin_period.tv_sec)+((tend_period.tv_usec-tbegin_period.tv_usec)/1000.0)))/1000.0;
-
+*/
 
         //Wait for Yaskawa arm status to be received
-        while(lcm_.handle() >= 0);
+        while(lcm_.handle() >= 0 && !arm_updated);
+        arm_updated = false;
 
+        //Find out if tau should be 6 or a different num
         const Eigen::Ref<const VectorX<double>>& u_instance = tau;
-        EigenPtr<VectorX<double>> u;
-        robot_thread_->SetActuationInArray(yaskawa_model_idx,u_instance,u);
-        //Get plant's accelerations (vdot)
-        // VectorX<double>* vdot;
-        // robot_thread_->CalcGeneralizedAccelerations(*context_, vdot);
-        // vd = *vdot;
+        //drake::log()->info("Tau size: {}",tau.size());
 
-        EigenPtr<MatrixX<double>> M;
-        EigenPtr<VectorX<double>> bias_term;
-        robot_thread_->CalcMassMatrixViaInverseDynamics(*context_,M);
-        robot_thread_->CalcBiasTerm(*context_,bias_term);
-        MatrixX<double> M_ = *M;
-        VectorX<double> bias_term_ = *bias_term;
+        const int wholeBodyActuationSize = robot_thread_->num_velocities();
+
+        Eigen::Matrix<double, Eigen::Dynamic, 1> u(wholeBodyActuationSize);
+        robot_thread_->SetActuationInArray(yaskawa_model_idx,u_instance,&u);
+
+        MatrixX<double> M(wholeBodyActuationSize,wholeBodyActuationSize);
+        Eigen::Matrix<double, Eigen::Dynamic, 1> bias_term(
+            wholeBodyActuationSize, 1);
+
+        robot_thread_->CalcMassMatrixViaInverseDynamics(*context_,&M);
+        robot_thread_->CalcBiasTerm(*context_,&bias_term);
+        MatrixX<double> M_ = M;
+        VectorX<double> bias_term_ = bias_term;
         vd = (M_.inverse()*(tau - bias_term_));
-
 
         Xdot_new << qd, vd;
         
@@ -364,8 +376,9 @@ stateVec_t YaskawaModel::yaskawa_arm_dynamics(const stateVec_t& X, const command
         //    VectorX<double> bias_term_2 = robot_thread_->dynamicsBiasTerm(cache_, f_ext, false);
         //gettimeofday(&tend_period,NULL);
         //finalTimeProfile.time_period4 += ((double)(1000.0*(tend_period.tv_sec-tbegin_period.tv_sec)+((tend_period.tv_usec-tbegin_period.tv_usec)/1000.0)))/1000.0;
-        
-        while(lcm_.handle() >= 0);
+        drake::log()->info("Not Whole body");
+        while(lcm_.handle() >= 0 && !arm_updated);
+        arm_updated = false;
 
         EigenPtr<MatrixX<double>> M;
         EigenPtr<VectorX<double>> bias_term;
@@ -374,13 +387,6 @@ stateVec_t YaskawaModel::yaskawa_arm_dynamics(const stateVec_t& X, const command
         MatrixX<double> M_ = *M;
         VectorX<double> bias_term_ = *bias_term;
         vd = (M_.inverse()*(tau - bias_term_));
-
-        //Wait for Yaskawa arm status to be received
-
-        //Get plant's accelerations (vdot)
-    // VectorX<double>* vdot;
-    // robot_thread_->CalcGeneralizedAccelerations(*context_, vdot);
-    // vd = *vdot;
 
         Xdot_new << qd, vd;
         
@@ -533,8 +539,10 @@ void YaskawaModel::yaskawa_arm_dyn_cst_min_output(const int& , const double& , c
     scalar_t c_mat_to_scalar;
     xList_next.setZero(); // zeroing previous trajectory timestep by timestep
 
-    const int nargout_update1 = 1;
+    const int nargout_update1 = 1;   
+
     for(unsigned int k=0;k<Nc;k++) {
+
         if (isUNan) { 
             // cout << "R: " <<  costFunction->getR() << endl;
             // cout << "Q: " <<  costFunction->getQ() << endl;
@@ -547,11 +555,15 @@ void YaskawaModel::yaskawa_arm_dyn_cst_min_output(const int& , const double& , c
         else {
             // if(debugging_print) TRACE_YASKAWA_ARM("before the update2\n");
             xList_next = update(nargout_update1, xList_curr, uList_curr, AA, BB);
+
             c_mat_to_scalar = 0.5*(xList_curr.transpose() - xgoal.transpose())*costFunction->getQ()*(xList_curr - xgoal);
+
             // if(debugging_print) TRACE_YASKAWA_ARM("after the update2\n");
             c_mat_to_scalar += 0.5*uList_curr.transpose()*costFunction->getR()*uList_curr;
+
             costFunction->getc() += c_mat_to_scalar(0,0);
         }
+
     }
     if(debugging_print) TRACE_YASKAWA_ARM("finish kuka_arm_dyn_cst\n");
 }
@@ -559,7 +571,6 @@ void YaskawaModel::yaskawa_arm_dyn_cst_min_output(const int& , const double& , c
 stateVec_t YaskawaModel::update(const int& nargout, const stateVec_t& X, const commandVec_t& U, stateMat_t& A, stateR_commandC_t& B){
     // 4th-order Runge-Kutta step
     if(debugging_print) TRACE_YASKAWA_ARM("update: 4th-order Runge-Kutta step\n");
-
     gettimeofday(&tbegin_period4,NULL);
 
     // output of kuka arm dynamics is xdot = f(x,u)
@@ -570,17 +581,17 @@ stateVec_t YaskawaModel::update(const int& nargout, const stateVec_t& X, const c
     stateVec_t X_new;
     X_new = X + (dt/6)*(Xdot1 + 2*Xdot2 + 2*Xdot3 + Xdot4);
     // Simple Euler Integration (for debug)
-//    X_new = X + (dt)*Xdot1;
+    //    X_new = X + (dt)*Xdot1;
     
-    if ((globalcnt%4 == 0) && (globalcnt<40)) {
-        // cout << "X " << endl << X << endl;
-        // cout << "Xdot1 " << endl << Xdot1 << endl;
-        // cout << "Xdot2 " << endl << Xdot2 << endl;
-        // cout << "Xdot3 " << endl << Xdot3 << endl;
-        // cout << "Xdot4 " << endl << Xdot4 << endl;
-        // cout << "X_NEW: " << endl << X_new << endl;
-    }
-
+    //Since the if statement didn't have anything inside other than comments, it has been removed
+    // if ((globalcnt%4 == 0) && (globalcnt<40)) {
+    //     // cout << "X " << endl << X << endl;
+    //     // cout << "Xdot1 " << endl << Xdot1 << endl;
+    //     // cout << "Xdot2 " << endl << Xdot2 << endl;
+    //     // cout << "Xdot3 " << endl << Xdot3 << endl;
+    //     // cout << "Xdot4 " << endl << Xdot4 << endl;
+    //     // cout << "X_NEW: " << endl << X_new << endl;
+    // }
     if(debugging_print) TRACE_YASKAWA_ARM("update: X_new\n");
 
     //######3
@@ -642,7 +653,6 @@ stateVec_t YaskawaModel::update(const int& nargout, const stateVec_t& X, const c
         B = B4 * dt/6 + (IdentityMat + A4 * dt/6) * B3 * dt/3 + (IdentityMat + A4 * dt/6)*(IdentityMat + A3 * dt/3)* B2 * dt/3 + (IdentityMat + (dt/6)*A4)*(IdentityMat + (dt/3)*A3)*(IdentityMat + (dt/3)*A2)*(dt/6)*B1;
     }
     if(debugging_print) TRACE_YASKAWA_ARM("update: X_new\n");
-
     gettimeofday(&tend_period4,NULL);
     finalTimeProfile.time_period4 += (static_cast<double>(1000.0*(tend_period4.tv_sec-tbegin_period4.tv_sec)+((tend_period4.tv_usec-tbegin_period4.tv_usec)/1000.0)))/1000.0;
 
@@ -815,24 +825,26 @@ void YaskawaModel::yaskawa_arm_dyn_cst_udp(const int& nargout, const stateVecTab
 
 void YaskawaModel::HandleStatusYaskawa(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status){
     iiwa_status_ = *status;
-
     Eigen::VectorXd iiwa_q(status->num_joints);
+
     for (int i = 0; i < status->num_joints; i++) {
         iiwa_q[i] = status->joint_position_measured[i];
     }
-
+    arm_updated = true;
     status_count_++;    //Increase this count for the if statement below
 
-    if (status_count_ % 100 == 1) {
-        robot_thread_->SetPositions(context_.get(),yaskawa_model_idx, iiwa_q);
+    robot_thread_->SetPositions(context_.get(),yaskawa_model_idx, iiwa_q);
 
-        // ee_pose = robot_thread_->EvalBodyPoseInWorld(
-        //         *context_, robot_thread_->GetBodyByName(FLAGS_ee_name));
-        // const math::RollPitchYaw<double> rpy(ee_pose.rotation());
-        // drake::log()->info("End effector at: {} {}",
-        //                     ee_pose.translation().transpose(),
-        //                     rpy.vector().transpose());
-    }
+    // if (status_count_ % 100 == 1) {
+        
+    //     // ee_pose = robot_thread_->EvalBodyPoseInWorld(
+    //     //         *context_, robot_thread_->GetBodyByName(FLAGS_ee_name));
+    //     // const math::RollPitchYaw<double> rpy(ee_pose.rotation());
+    //     // drake::log()->info("End effector at: {} {}",
+    //     //                     ee_pose.translation().transpose(),
+    //     //                     rpy.vector().transpose());
+    // }
+
 }
 
 

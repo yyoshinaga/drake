@@ -26,16 +26,16 @@
 // #define commandSize 9 
 // #define fullstatecommandSize 27 
 // #else
-#define stateSize 14
-#define commandSize 7
-#define fullstatecommandSize 21
+#define stateSize 12
+#define commandSize 6
+#define fullstatecommandSize 18
 // #endif
 
 #define TimeHorizon 1.5
 #define TimeStep 0.005
 #define NumberofKnotPt TimeHorizon/TimeStep
 #define InterpolationScale 10 //0.01/1e-3
-const int32_t kNumJoints = 7;
+const int32_t kNumJoints = 6;
 #define UDP_TRAJ_DIR "~/drake/DDP/trajectory/"
 const char* const kLcmQueryResultsChannel = "TREE_SEARCH_QUERY_RESULTS";
 

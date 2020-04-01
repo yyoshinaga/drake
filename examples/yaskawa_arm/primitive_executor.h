@@ -22,6 +22,9 @@
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_position_controller.h"
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_lcm.h"
 
+//DDP
+#include "drake/DDP/run_ddp_library.h"
+
 namespace real_lcm = lcm;
 
 namespace drake {
