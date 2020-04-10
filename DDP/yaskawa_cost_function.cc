@@ -6,11 +6,12 @@ namespace yaskawa_arm {
 	
 CostFunctionYaskawa::CostFunctionYaskawa()
 {    
+    // "f" means final
     pos_scale = 1;
-    vel_scale = 0;
+    vel_scale = 10;
     pos_f_scale = 1000;//0.001;
     vel_f_scale = 1000;//10;
-    torqoe_scale = 1;//100;
+    torque_scale = 1;//100;
 
     // initial, final costs (pos ,vel)
     // torque cost
@@ -20,13 +21,13 @@ CostFunctionYaskawa::CostFunctionYaskawa()
                             vel_scale*10, vel_scale*10, vel_scale*10, vel_scale*10, vel_scale*10, vel_scale*10, vel_scale*10, vel_scale*10, vel_scale*10;
         QfDiagElementVec << pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0,
                             vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0;
-        RDiagElementVec << torqoe_scale*0.005, torqoe_scale*0.005, torqoe_scale*0.007, torqoe_scale*0.007, torqoe_scale*0.02, torqoe_scale*0.02, torqoe_scale*0.05, torqoe_scale*0.02, torqoe_scale*0.05;
+        RDiagElementVec << torque_scale*0.005, torque_scale*0.005, torque_scale*0.007, torque_scale*0.007, torque_scale*0.02, torque_scale*0.02, torque_scale*0.05, torque_scale*0.02, torque_scale*0.05;
     #else
         QDiagElementVec << pos_scale*100, pos_scale*100, pos_scale*100, pos_scale*100, pos_scale*100, pos_scale*100, pos_scale*100,  
                             vel_scale*10, vel_scale*10, vel_scale*10, vel_scale*10, vel_scale*10, vel_scale*10, vel_scale*10;
         QfDiagElementVec << pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0, pos_f_scale*1000.0,
                             vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0, vel_f_scale*100.0;
-        RDiagElementVec << torqoe_scale*0.005, torqoe_scale*0.005, torqoe_scale*0.007, torqoe_scale*0.007, torqoe_scale*0.02, torqoe_scale*0.02, torqoe_scale*0.05;
+        RDiagElementVec << torque_scale*0.005, torque_scale*0.005, torque_scale*0.007, torque_scale*0.007, torque_scale*0.02, torque_scale*0.02, torque_scale*0.05;
     #endif
 
     Q = QDiagElementVec.asDiagonal();

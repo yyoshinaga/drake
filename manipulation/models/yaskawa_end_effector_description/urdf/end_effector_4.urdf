@@ -21,26 +21,14 @@
     <!-- LINKS -->
     <!-- virtual link interfacing with ee_mount on robot arm-->
     <link name="ee_base">
-      <visual>
-        <!-- <geometry>
-          <box size="0.1 0.1 0.1"/>
-        </geometry>
-        <origin rpy="0 0 0" xyz="0.055 0 -0.1"/> -->
-
+      <!-- <visual>
         <geometry>
           <mesh filename="../mesh/cbee_gripper_1st-collision.obj" />
         </geometry>
         <origin rpy="0 0 3.14" xyz="0.55 0 -0.2"/>
-      </visual>
+      </visual> -->
     </link>
 
-
-    <!--
-              <geometry>
-          <mesh filename="../mesh/cbee_gripper_1st-collision.obj" />
-        </geometry>
-        <origin rpy="0 0 3.14" xyz="0.55 0 -0.2"/>
-    -->
 
     <!-- links of cylinder base connected with the ee_base -->
     <!-- visual only? DO NOT ERASE THIS!! -->
@@ -137,47 +125,90 @@
       </collision>
     </link>
 
-    <link name="pusher_link">
+    <link name="roller_link_1">
       <inertial>
-        <mass value="1"/>
-        <origin xyz="0 0 0"/>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0.0 0 0" rpy="0 0 0"/>
+        <origin xyz="0.2 0 -0.175" rpy="1.57 0 0"/>
         <geometry>
-          <box size="0.01 0.5 0.25"/>
+          <cylinder radius="0.025" length="0.5"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.0 0 0" rpy="0 0 0"/>
+        <origin xyz="0.2 0 -0.175" rpy="1.57 0 0"/>
         <geometry>
-          <box size="0.1 0.5 0.25"/>
+          <cylinder radius="0.025" length="0.5"/>
         </geometry>
       </collision>
     </link>
 
-    <link name="puller_link">
+    <link name="roller_link_2">
       <inertial>
-        <mass value="1"/>
-        <origin xyz="0 0 0"/>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
-       <visual>
-        <material name="blue"/>
-        <origin xyz="0.3 0 -0.15" rpy="0 0 0"/>
+      <visual>
+        <material name="green"/>
+        <origin xyz="0.3 0 -0.175" rpy="1.57 0 0"/>
         <geometry>
-          <box size="0.95 0.4 0.01"/>
+          <cylinder radius="0.025" length="0.5"/>
         </geometry>
       </visual>
-      <collision>   
-        <origin xyz="0.3 0 -0.15" rpy="0 0 0"/>
+      <collision>
+        <origin xyz="0.3 0 -0.175" rpy="1.57 0 0"/>
         <geometry>
-          <box size="0.95 0.4 0.01"/> <!-- 0.4-->
+          <cylinder radius="0.025" length="0.5"/>
         </geometry>
       </collision>
     </link>
+
+    <link name="roller_link_3">
+      <inertial>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="green"/>
+        <origin xyz="0.4 0 -0.175" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.025" length="0.5"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0.4 0 -0.175" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.025" length="0.5"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="roller_link_4">
+      <inertial>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="green"/>
+        <origin xyz="0.5 0 -0.175" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.025" length="0.5"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0.5 0 -0.175" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.025" length="0.5"/>
+        </geometry>
+      </collision>
+    </link>
+
 
     <link name='right_whisker_offset'>
       <visual name='visual_right_offset'>
@@ -208,7 +239,7 @@
 
     <!-- END LINKS -->
 
-     <joint name="whisker_right_to_base" type="fixed">
+    <joint name="whisker_right_to_base" type="fixed">
       <parent link="ee_base"/>
       <child link="right_whisker_offset"/>
       <origin xyz="0 -0.2 0" rpy="0 0 0"/>
@@ -236,28 +267,29 @@
       <axis xyz="1 0 0"/>
     </joint>
 
-    <joint name="pusher_joint" type="prismatic">
+    <joint name="roller_joint_1" type="revolute">
       <parent link="ee_base"/>
-      <child link="pusher_link"/>
+      <child link="roller_link_1"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
-    <joint name="puller_joint" type="prismatic">
+    <joint name="roller_joint_2" type="revolute">
       <parent link="ee_base"/>
-      <child link="puller_link"/>
+      <child link="roller_link_2"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <dynamics damping="10" friction="20"/>
     </joint>
-    <!-- END JOINTS -->
 
-    <!-- DO NOT ERASE THIS!! -->
-    <!-- virtual joint, connect ee_base to various link in end effector -->
-    <!-- <joint name="conveyor_belt_dof1_joint" type="fixed">
+    <joint name="roller_joint_3" type="revolute">
       <parent link="ee_base"/>
-      <child link="conveyor_belt_dof1_link"/>
+      <child link="roller_link_3"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint> -->
+    </joint>
 
+    <joint name="roller_joint_4" type="revolute">
+      <parent link="ee_base"/>
+      <child link="roller_link_4"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
 
     <!-- END JOINTS -->
 
@@ -268,18 +300,12 @@
       <robotNamespace>/yaskawa_ee</robotNamespace>
     </plugin>
   </gazebo>
-  <!-- Link0 -->
+
   <gazebo reference="ee_base">
     <material>Gazebo/Grey</material>
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
   </gazebo>
-  <!-- Link0 -->
-  <!-- <gazebo reference="conveyor_belt_dof1_link">
-    <material>Gazebo/Grey</material>
-    <mu1>0.2</mu1>
-    <mu2>0.2</mu2>
-  </gazebo>   -->
 
   <gazebo reference="whisker_right_offset">
     <material>Gazebo/Grey</material>
@@ -293,38 +319,25 @@
     <mu2>0.2</mu2>
   </gazebo> 
 
-  <!-- Link0 -->
   <gazebo reference="whisker_right_link">
     <material>Gazebo/Grey</material>
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
   </gazebo>  
-  <!-- Link0 -->
+
   <gazebo reference="whisker_left_link">
     <material>Gazebo/Grey</material>
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
   </gazebo>
-  <!-- Link0 -->
+
   <gazebo reference="ee_tip_0">
     <material>Gazebo/Grey</material>
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
   </gazebo>
 
-<!-- <transmission name="yaskawa_tran_1">
-    <robotNamespace>/yaskawa</robotNamespace>
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="ee_base_joint">
-      <hardwareInterface>PositionJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="yaskawa_motor_1">
-      <hardwareInterface>PositionJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission> -->
 
- 
 
   <transmission name="yaskawa_ee_1">
     <robotNamespace>/yaskawa</robotNamespace>
@@ -350,26 +363,22 @@
     </actuator>
   </transmission>
 
-   <transmission name="pusher_tran">
+   <transmission name="roller_transmission_1">
     <robotNamespace>/yaskawa</robotNamespace>
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="pusher_joint">
+    <joint name="roller_joint_1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <joint name="roller_joint_2">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <joint name="roller_joint_3">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <joint name="roller_joint_4">
       <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="yaskawa_motor_3">
-      <hardwareInterface>PositionJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-
-
-  <transmission name="puller_tran">
-    <robotNamespace>/yaskawa</robotNamespace>
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="puller_joint">
-      <hardwareInterface>PositionJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="yaskawa_motor_4">
       <hardwareInterface>PositionJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>

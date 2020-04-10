@@ -32,7 +32,7 @@
 // #endif
 
 #define TimeHorizon 1.5
-#define TimeStep 0.005
+#define TimeStep 0.5 //0.005
 #define NumberofKnotPt TimeHorizon/TimeStep
 #define InterpolationScale 10 //0.01/1e-3
 const int32_t kNumJoints = 6;

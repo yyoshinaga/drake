@@ -5,7 +5,7 @@ struct lcmt_yaskawa_ee_command
   int64_t utime;  //< The timestamp in microseconds.
 
   boolean whiskers_down;
-  boolean pusher_move;
-  boolean puller_move; 
+  int64_t roller_movement;
+
 
 }

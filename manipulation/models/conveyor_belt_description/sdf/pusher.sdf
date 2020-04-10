@@ -97,7 +97,7 @@
         </material>
       </visual>
 
-      <collision name='surface'>
+      <!-- <collision name='surface'>
       
         <pose frame=''>0 0 0.125 0 0 0</pose>
         <laser_retro>0</laser_retro>
@@ -152,7 +152,7 @@
             </bullet>
           </contact>
         </surface>
-      </collision> 
+      </collision>  -->
     </link> 
 
     <joint name="zeroth_joint" type="prismatic">

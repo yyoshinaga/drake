@@ -82,10 +82,21 @@ drake_cc_library(
 #     ],
 # )
 
+# drake_cc_library(
+#     name = "conveyor_belt_dof1_position_controller",
+#     srcs = ["conveyor_belt_dof1_position_controller.cc"],
+#     hdrs = ["conveyor_belt_dof1_position_controller.h"],
+#     deps = [
+#         "//math:saturate",
+#         "//systems/framework:leaf_system",
+#         "//systems/primitives:discrete_derivative",
+#     ],
+# )
+
 drake_cc_library(
-    name = "conveyor_belt_dof1_position_controller",
-    srcs = ["conveyor_belt_dof1_position_controller.cc"],
-    hdrs = ["conveyor_belt_dof1_position_controller.h"],
+    name = "new_belt_position_controller",
+    srcs = ["new_belt_position_controller.cc"],
+    hdrs = ["new_belt_position_controller.h"],
     deps = [
         "//math:saturate",
         "//systems/framework:leaf_system",

@@ -22,6 +22,7 @@ namespace drake {
 namespace examples {
 namespace yaskawa_arm_runner{
 
+
 using multibody::MultibodyPlant;
 using drake::math::RigidTransform;
 
@@ -79,7 +80,6 @@ const char kEEUrdf[] =
         std::map<int, std::string> position_names;
         const int num_positions = plant_.num_positions(yaskawa_model_idx);
         for (int i = 0; i < 9; ++i) {  //There exists 9? joints on only the arm (including fixed)
-
             const multibody::Joint<double>& joint =
                 plant_.get_joint(multibody::JointIndex(i));
             if (joint.num_positions() == 0) {
@@ -88,13 +88,13 @@ const char kEEUrdf[] =
             DRAKE_DEMAND(joint.num_positions() == 1);
             DRAKE_DEMAND(joint.position_start() < num_positions);
             position_names[joint.position_start()] = joint.name();
-
         }
 
         DRAKE_DEMAND(static_cast<int>(position_names.size()) == num_positions);
         for (int i = 0; i < num_positions; ++i) {
             joint_names_.push_back(position_names[i]);
         }
+
 
         ee_update_ = false;
         yaskawa_update_ = false;
@@ -125,9 +125,10 @@ const char kEEUrdf[] =
             is_puller_back()||
             !is_pickable() ||  
             !is_at_package_location(0.0)){
+
             printer(0,1,0,1,0,1,1,1,0,1,1);
             drake::log()->info("is pusher back? {}",is_pusher_back());
-                        drake::log()->info("is puller back: {}",is_puller_back());
+            drake::log()->info("is puller back: {}",is_puller_back());
 
             return 0; //If any of the checks fail, function returns 0.
         }
@@ -233,46 +234,60 @@ const char kEEUrdf[] =
 
         VectorX<double> des_pos(6);
         des_pos << position, orientation;
-        drake::log()->info(time);
+
         //Checks:
         if(is_at_desired_position(des_pos)){ return 1; } //Action already completed
 
+        //Start creating IK trajectory
+        drake::manipulation::planner::ConstraintRelaxingIk::IkCartesianWaypoint wp;    
+        wp.pose.translation() = position;
+        drake::math::RollPitchYaw<double> rpy(orientation(0), orientation(1), orientation(2));
+        wp.pose.linear() = rpy.ToMatrix3ViaRotationMatrix();
+        wp.constrain_orientation = true;
+
+        std::vector<manipulation::planner::ConstraintRelaxingIk::IkCartesianWaypoint> waypoints;
+        waypoints.push_back(wp);
+
+        // Create the plan
+        manipulation::planner::ConstraintRelaxingIk ik(yaskawa_urdf_, FLAGS_ee_name, Isometry3<double>::Identity());
+        
+        Eigen::VectorXd iiwa_q(iiwa_status_.num_joints);
+        for (int i = 0; i < iiwa_status_.num_joints; i++) {
+            iiwa_q[i] = iiwa_status_.joint_position_measured[i];
+        }
+
+        IKResults ik_res;
+        ik.PlanSequentialTrajectory(waypoints, iiwa_q, &ik_res);
+
+
         //Form the trajectory, either by using DDP or not
         #if use_Solver
-            drake::examples::yaskawa_arm::RunDDPLibrary ddp;
+            drake::examples::yaskawa_arm::RunDDPLibrary ddp;   
 
+            for(size_t i = 0; i < ik_res.q_sol.size(); i++){
+                drake::log()->info(ik_res.q_sol[1][i]);
+            }
+            //6 positions, 6 velocities
             drake::examples::yaskawa_arm::stateVec_t xinit,xgoal;
-            xinit << 0, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
-            xgoal << 1.0,1.0,1.0,1.0,1.0,1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
-
-            drake::log()->info(xinit.size());
-            drake::log()->info(xgoal.size());
+            xinit << iiwa_q, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+            xgoal << ik_res.q_sol[1], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
             DRAKE_DEMAND(xinit.size() == 12);
             DRAKE_DEMAND(xgoal.size() == 12);
 
             ddp.RunUDP(xinit, xgoal);
-        #else
 
-            drake::manipulation::planner::ConstraintRelaxingIk::IkCartesianWaypoint wp;    
-            wp.pose.translation() = position;
-            drake::math::RollPitchYaw<double> rpy(orientation(0), orientation(1), orientation(2));
-            wp.pose.linear() = rpy.ToMatrix3ViaRotationMatrix();
-            wp.constrain_orientation = true;
-
-            std::vector<manipulation::planner::ConstraintRelaxingIk::IkCartesianWaypoint> waypoints;
-            waypoints.push_back(wp);
-
-            // Create the plan
-            manipulation::planner::ConstraintRelaxingIk ik(yaskawa_urdf_, FLAGS_ee_name, Isometry3<double>::Identity());
-            
-            Eigen::VectorXd iiwa_q(iiwa_status_.num_joints);
-            for (int i = 0; i < iiwa_status_.num_joints; i++) {
-                iiwa_q[i] = iiwa_status_.joint_position_measured[i];
+            drake::log()->info("outputting initial angels:");
+            for(int i = 0; i < 6; i++){
+                drake::log()->info(iiwa_q[i]);
             }
 
-            IKResults ik_res;
-            ik.PlanSequentialTrajectory(waypoints, iiwa_q, &ik_res);
+            drake::log()->info("outputting final angels:");
+            for(int i = 0; i < 6; i++){
+                drake::log()->info(ik_res.q_sol[1][i]);
+            }
+
+        #else
 
             std::vector<double> times;
             times.push_back(0);
@@ -326,8 +341,8 @@ const char kEEUrdf[] =
     void PrimitiveExecutor::HandleStatusGripper(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_yaskawa_ee_status* status) {
         ee_status_ = *status;
         ee_update_ = true;
-        drake::log()->info("acutal pusher: {}",ee_status_.actual_pusher_position);
-        drake::log()->info("actual puller: {}",ee_status_.actual_puller_position);
+        // drake::log()->info("acutal pusher: {}",ee_status_.actual_pusher_position);
+        // drake::log()->info("actual puller: {}",ee_status_.actual_puller_position);
 
     }
 
@@ -372,24 +387,24 @@ const char kEEUrdf[] =
 
         const math::RollPitchYaw<double> rpy(ee_pose.rotation());
 
-        // drake::log()->info("\ntranslation-des_pos: \n{} \n{} \n{}\nrotation: \n{}\n{}\n{}",
-        //     ee_pose.translation()[0]-des_pos[0],
-        //     ee_pose.translation()[1]-des_pos[1],
-        //     ee_pose.translation()[2]-des_pos[2],
-        //     rpy.vector()[0]-des_pos[3],
-        //     rpy.vector()[1]-des_pos[4],
-        //     rpy.vector()[2]-des_pos[5]
-        // );
+        drake::log()->info("\ntranslation-des_pos: \n{} \n{} \n{}\nrotation: \n{}\n{}\n{}",
+            ee_pose.translation()[0]-des_pos[0],
+            ee_pose.translation()[1]-des_pos[1],
+            ee_pose.translation()[2]-des_pos[2],
+            rpy.vector()[0]-des_pos[3],
+            rpy.vector()[1]-des_pos[4],
+            rpy.vector()[2]-des_pos[5]
+        );
 
         const double buffer = 0.05; //Temporary value
 
         for(int i = 0; i < 6; i++){
             if(i < 3 && abs(des_pos[i] - ee_pose.translation()[i]) > buffer){
-                // drake::log()->info("failing at: {} {}",i,des_pos[i] - ee_pose.translation()[i]);
+                drake::log()->info("failing at: {} {}",i,des_pos[i] - ee_pose.translation()[i]);
                 return 0;
             }
             else if(i >= 3 && abs(des_pos[i] - rpy.vector()[i-3]) > buffer){
-                // drake::log()->info("failing at: {} {}",i,des_pos[i] - rpy.vector()[i-3]);
+                drake::log()->info("failing at: {} {}",i,des_pos[i] - rpy.vector()[i-3]);
                 return 0;
             }
         }

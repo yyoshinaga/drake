@@ -54,8 +54,7 @@
 using namespace std;
 using namespace Eigen;
 
-#define useILQRSolver 1
-#define useUDPSolver 0
+
 /* DDP trajectory generation */
 
 static std::list< const char*> gs_fileName;

@@ -205,6 +205,7 @@ int do_main(int argc, char* argv[]) {
   // TODO(russt): Publish the camera outputs.
 
   auto diagram = builder.Build();
+  drake::log()->info("finished building diagram");
 
   systems::Simulator<double> simulator(*diagram);
   auto& context = simulator.get_mutable_context();
@@ -213,10 +214,10 @@ int do_main(int argc, char* argv[]) {
 
   // Get the initial Iiwa pose and initialize the iiwa_command to match.
   VectorXd q0 = station->GetIiwaPosition(station_context); //Yaskawa has q0 = size 6
-    // q0 << 0,0,0,0,1,0;
   iiwa_command->set_initial_position(
       &diagram->GetMutableSubsystemContext(*iiwa_command, &context), q0);
-
+  drake::log()->info("Setting default config of yaskawa arm in mock station");
+  
   simulator.set_publish_every_time_step(false);
   simulator.set_target_realtime_rate(FLAGS_target_realtime_rate);
   simulator.AdvanceTo(FLAGS_duration);                              

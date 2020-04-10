@@ -17,9 +17,9 @@ namespace drake {
 namespace manipulation {
 namespace yaskawa_conveyor_belt_dof1 {
 
-constexpr int kEndEffectorNumActuators = 4;
-constexpr int kEndEffectorNumPositions = 4;
-constexpr int kEndEffectorNumVelocities = 4;
+constexpr int kEndEffectorNumActuators = 3;
+constexpr int kEndEffectorNumPositions = 3;
+constexpr int kEndEffectorNumVelocities = 3;
 
 // TODO(russt): These constants are predicated on the idea that we can map
 // one finger's state => gripper state.  We should prefer using
@@ -53,17 +53,17 @@ VectorX<T> GetEndEffectorOpenPosition() {
 template <typename T>
 std::unique_ptr<systems::MatrixGain<T>>
 MakeMultibodyStateToBeltStateSystem() {
-  Eigen::Matrix<double, 6, 8> D;  //wsg_state_measured of size 6, then 4*2 states
+
+  //This converts 12 states (4 whiskers+2*num_of_rollers) to 4 states (2 whisker_sets+2 roller_sets)  
+  Eigen::Matrix<double, 4, 12> D;  //wsg_state_measured of size 4, then 4 whiskers_states + num_of_rollers*2 states
   // clang-format off
-  //THERE MUST BE 6 STATES
+  //THERE MUST BE 4 STATES
   drake::log()->info("MakeMultibodyStateToBeltStateSystem matrix gain");
   
-  D <<  -1, 1, 0, 0, 0, 0, 0, 0,
-        0, 0, -1, 1, 0, 0, 0, 0,
-        0, 0, 0, 0, 1, 0, 0, 0,
-        0, 0, 0, 0, 0, 1, 0, 0,
-        0, 0, 0, 0, 0, 0, 1, 0,
-        0, 0, 0, 0, 0, 0, 0, 1;
+  D <<  -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, -1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+        0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1;
         
   // clang-format on
   return std::make_unique<systems::MatrixGain<T>>(D);
@@ -74,7 +74,7 @@ class MultibodyForceToBeltForceSystem : public systems::VectorSystem<T> {
  public:
   MultibodyForceToBeltForceSystem()
       : systems::VectorSystem<T>(
-            systems::SystemTypeTag<MultibodyForceToBeltForceSystem>{}, 4, 2) {}
+            systems::SystemTypeTag<MultibodyForceToBeltForceSystem>{}, 2, 1) {}
 
   // Scalar-converting copy constructor.  See @ref system_scalar_conversion.
   template <typename U>
@@ -90,12 +90,11 @@ class MultibodyForceToBeltForceSystem : public systems::VectorSystem<T> {
     unused(state);
     // gripper force = abs(-finger0 + finger1).
 
-    drake::log()->info("states from constants:\n {}\n {}\n {}\n {}\n {}\n {}",state[0],state[1],state[2],state[3],state[4],state[5]);
+    drake::log()->info("states from constants:\n {}\n {}\n {}\n {}\n {}\n {}",state[0],state[1],state[2],state[3]);
 
     using std::abs;
     (*output)(0) = abs(input(0) - input(1));
     (*output)(1) = 0;
-    (*output)(2) = 0;
     drake::log()->info("DoCalcVectorOutput in conveyor constants");
     std::cout << (*output).size() << std::endl;
     DRAKE_DEMAND(false);

@@ -11,7 +11,7 @@ using drake::Vector1d;
 using Eigen::Vector2d;
 using Eigen::Vector3d;
 
-const char* const kLcmPlanChannel = "COMMITTED_ROBOT_PLAN";
+const char* const kLcmDDPChannel = "DDP";
 const int32_t kNumJoints = 6;
 
 using trajectories::PiecewisePolynomial;
@@ -21,18 +21,19 @@ typedef PPType::PolynomialMatrix PPMatrix;
 
 using manipulation::planner::ConstraintRelaxingIk;
 using manipulation::yaskawa::kYaskawaArmNumJoints;
-
+#define useILQRSolver 1
+#define useUDPSolver 0
   
 
   void RunDDPLibrary::RunUDP(stateVec_t xinit, stateVec_t xgoal) {
     struct timeval tbegin,tend;
     double texec = 0.0;
-
+    
     double dt = TimeStep;
     unsigned int N = NumberofKnotPt;
-    double tolFun = 1e-5;//1e-5;//relaxing default value: 1e-10; - reduction exit crieria
-    double tolGrad = 1e-5;//relaxing default value: 1e-10; - gradient exit criteria
-    unsigned int iterMax = 100; //100;
+    double tolFun = 1;//1e-5;//relaxing default value: 1e-10; - reduction exit crieria
+    double tolGrad = 1; //1e-5;//relaxing default value: 1e-10; - gradient exit criteria
+    unsigned int iterMax = 20; //100;
     #if useILQRSolver
       drake::log()->info("using iLQR solver ");
         ILQRSolver::traj lastTraj;
@@ -40,7 +41,7 @@ using manipulation::yaskawa::kYaskawaArmNumJoints;
         // Build wholebody and pass over to yaskawa
         const char* const kYaskawaUrdf = "drake/manipulation/models/yaskawa_description/urdf/yaskawa_no_collision.urdf";
         const char* const kEEUrdf = "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector_3.urdf";
- 
+ /*
         // std::string urdf_;
         // RigidBodyTree<double> yaskawaTree_;
         // std::unique_ptr<RigidBodyTree<double>> totalTree_;
@@ -75,7 +76,7 @@ using manipulation::yaskawa::kYaskawaArmNumJoints;
         // totalTree_ = tree_builder->Build();
         // Build wholebody and pass over to kukaArm
         //=============================================
-
+*/
         auto plant_ = std::make_unique<multibody::MultibodyPlant<double>>(0.0);
 
         const math::RigidTransform<double> X_WI = math::RigidTransform<double>::Identity();
@@ -234,12 +235,12 @@ using manipulation::yaskawa::kYaskawaArmNumJoints;
     ptr->dim_states = kNumJoints; //disregard joint velocity
     ptr->n_time_steps = NumberofKnotPt*InterpolationScale; 
     ptr->cost = lastTraj.finalCost;
-
-    //****************************************************************************************************************
-    //****************************************************************************************************************
+/*
+    // ****************************************************************************************************************
+    // ****************************************************************************************************************
     // DOES NOT MATTER FOR POSITION CONTROL -- ALSO JUST FOR DEBUGGING TORQUE, 
     // EVERYTHING RELATED TO THIS SHOULD BE HANDLED IN "kuka_arm.cpp"
-    //****************************************************************************************************************
+    // ****************************************************************************************************************
     // //==========================
     // // const char* kIiwaUrdf = "drake/manipulation/models/iiwa_description/urdf/iiwa7.urdf";
     // const char* const kIiwaUrdf = "drake/manipulation/models/iiwa_description/urdf/iiwa7_no_world_joint.urdf";
@@ -360,9 +361,9 @@ using manipulation::yaskawa::kYaskawaArmNumJoints;
     // cout << "bias subtracted" << endl << gtau << endl;
 
       //============================================
-    //****************************************************************************************************************
-    //****************************************************************************************************************
-
+    // ****************************************************************************************************************
+    // ****************************************************************************************************************
+*/
 
     for (int32_t i=0; i < ptr->n_time_steps; ++i) {
       // need new, cuz dynamic allocation or pointer
@@ -384,37 +385,18 @@ using manipulation::yaskawa::kYaskawaArmNumJoints;
       ptr->states.push_back(*ptr2_st);
     }
 
-    cout << "check1" << endl;
-
     // need this because...?
     ddp_traj_ = *ptr;
 
-    cout << "check2" << endl;
-
-    // cout << ddp_traj_.dim_torques << endl;
-    // cout << ddp_traj_.dim_states << endl;
-    // cout << ddp_traj_.n_time_steps << endl;
-    // cout << ddp_traj_.cost << endl;
-
-    // //sanity check
-    //     for (int32_t i=0; i<ddp_traj_.n_time_steps; ++i) {
-    ////       cout << ddp_traj_.times_sec[i] << endl;
-    //       for (int32_t j=0; j<ddp_traj_.dim_torques; ++j) {
-    //         cout << "torq? " << ddp_traj_.torques[i][j] << endl;
-    //       }
-    //     }
-
-    lcm_.publish(kLcmPlanChannel, &ddp_traj_);
+    lcm_.publish(kLcmDDPChannel, &ddp_traj_);
     cout << "-------- DDP Trajectory Published to LCM! --------" << endl;
-    //    for(unsigned int i=0;i<N;i++)
-    //    {
-    //      cout << "lastTraj.uList[" << i << "]:" << lastTraj.uList[i].transpose() << endl;
-    //    }
-    //
+
     for(unsigned int i=0;i<=N;i++){
       cout << "lastTraj.xList[" << i << "]:" << lastTraj.xList[i].transpose() << endl;
     }
   }
+
+  
 /*
   void RunDDPLibrary::saveVector(const Eigen::MatrixXd & _vec, const char * _name){
       std::string _file_name = "~/drake/DDP/trajectory/"; //UDP_TRAJ_DIR;

@@ -5,10 +5,8 @@ struct lcmt_yaskawa_ee_status
   int64_t utime;  //< The timestamp in microseconds.
 
   double actual_whisker_angle;
-  double actual_pusher_position;
-  double actual_puller_position;
+  double actual_roller_position;
 
   double actual_whisker_speed;
-  double actual_pusher_speed;
-  double actual_puller_speed;
+  double actual_roller_speed;
 }

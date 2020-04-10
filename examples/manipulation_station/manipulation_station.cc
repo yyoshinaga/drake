@@ -32,11 +32,8 @@
 
 #include "drake/examples/multibody/conveyor_belt/conveyor_controller.h"
 #include "drake/examples/multibody/conveyor_belt/conveyor_controller2.h"
-#include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_position_controller.h"
+#include "drake/manipulation/yaskawa_conveyor_belt_dof1/new_belt_position_controller.h"
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_constants.h"
-
-
-
 
 namespace drake {
 namespace examples {
@@ -770,32 +767,33 @@ void ManipulationStation<T>::Finalize(
                     desired_state_from_position_1->get_input_port());
   }
 
+  //End Effector connections
   {
     auto ee_controller = builder.template AddSystem<
         manipulation::yaskawa_conveyor_belt_dof1::EndEffectorPositionController>(
         manipulation::yaskawa_conveyor_belt_dof1::kEndEffectorLcmStatusPeriod, ee_kp_, ee_kd_);
     ee_controller->set_name("ee_controller");
 
-    //Input accelerations to multibody plant - size 4
+    //Input accelerations to multibody plant - size 2
     builder.Connect(ee_controller->get_generalized_acceleration_output_port(),
                     plant_->get_actuation_input_port(wsg_model_.model_instance));
 
-    //States sent from mbp to controller - size 8
+    //States sent from mbp to controller - size 12? (2 whisker + num_of_rollers*2)
     builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
                     ee_controller->get_state_input_port());
 
-    //State interpolator of only position of size 3
+    //State interpolator of only position of size 2?
     builder.ExportInput(ee_controller->get_actuation_input_port(),
                         "ee_actuation");
 
     auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
         manipulation::yaskawa_conveyor_belt_dof1::MakeMultibodyStateToBeltStateSystem<double>());
 
-    //States sent from mbp to wsgState - size 8
+    //States sent from mbp to wsgState - size 12
     builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
                     wsg_mbp_state_to_wsg_state->get_input_port());
 
-    //Should be size 8
+    //Should be size 4
     builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
                          "ee_state_measured");
   }
@@ -962,31 +960,31 @@ void ManipulationStation<T>::SetConveyorPosition(
 }
 
 template <typename T>
-Vector3<T> ManipulationStation<T>::GetWsgPosition(
+Vector2<T> ManipulationStation<T>::GetWsgPosition(
     const systems::Context<T>& station_context) const {
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
-
-  Vector4<T> positions =
+drake::log()->info("get positions size: {}", plant_->GetPositions(plant_context, wsg_model_.model_instance).size());
+  Vector3<T> positions =
       plant_->GetPositions(plant_context, wsg_model_.model_instance);
-  
-  Vector3<T> posm;
-      posm << positions(1) - positions(0), positions(2), positions(3);
+  drake::log()->info("Failing to get wsg position");
+  Vector2<T> posm;
+      posm << positions(1) - positions(0), positions(2);
 
   return posm;
 }
 
 template <typename T>
-Vector3<T> ManipulationStation<T>::GetWsgVelocity(
+Vector2<T> ManipulationStation<T>::GetWsgVelocity(
     const systems::Context<T>& station_context) const {
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
 
-  Vector4<T> velocities =
+  Vector3<T> velocities =
       plant_->GetVelocities(plant_context, wsg_model_.model_instance);
 
-  Vector3<T> vels;
-    vels << (velocities(1) - velocities(0)), velocities(2), velocities(3);
+  Vector2<T> vels;
+    vels << (velocities(1) - velocities(0)), velocities(2);
 
   return vels;
 }
@@ -994,17 +992,17 @@ Vector3<T> ManipulationStation<T>::GetWsgVelocity(
 template <typename T>
 void ManipulationStation<T>::SetWsgPosition(
     const drake::systems::Context<T>& station_context, systems::State<T>* state,
-    const Eigen::Ref<const drake::Vector3<T>>& q) const {
+    const Eigen::Ref<const drake::Vector2<T>>& q) const {
   DRAKE_DEMAND(state != nullptr);
   auto& plant_context = this->GetSubsystemContext(*plant_, station_context);
   auto& plant_state = this->GetMutableSubsystemState(*plant_, state);
 
   // Since plant_->SetPositions has to take in a "const" of "positions" vector, 
   // I had to create a nonConstPos to assign it to the const positions
-  Vector4<T> nonConstPos; 
-  nonConstPos << -q(0) / 2, q(0) / 2, q(1), q(2);
+  Vector3<T> nonConstPos; 
+  nonConstPos << -q(0) / 2, q(0) / 2, q(1);
 
-  const Vector4<T> positions = nonConstPos; 
+  const Vector3<T> positions = nonConstPos; 
   plant_->SetPositions(plant_context, &plant_state, wsg_model_.model_instance,
                        positions);
 
@@ -1019,17 +1017,17 @@ void ManipulationStation<T>::SetWsgPosition(
 template <typename T>
 void ManipulationStation<T>::SetWsgVelocity(
     const drake::systems::Context<T>& station_context, systems::State<T>* state,
-    const Eigen::Ref<const drake::Vector3<T>>& v) const {
+    const Eigen::Ref<const drake::Vector2<T>>& v) const {
   DRAKE_DEMAND(state != nullptr);
   auto& plant_context = this->GetSubsystemContext(*plant_, station_context);
   auto& plant_state = this->GetMutableSubsystemState(*plant_, state);
 
   // Since plant_->SetVelocties has to take in a "const" of "velocities" vector, 
   // I had to create a nonConstVel to assign it to the const velocities
-  Vector4<T> nonConstVel;
-  nonConstVel << -v(0) / 2, v(0) / 2, v(1), v(2);
+  Vector3<T> nonConstVel;
+  nonConstVel << -v(0) / 2, v(0) / 2, v(1);
 
-  const Vector4<T> velocities =  nonConstVel;
+  const Vector3<T> velocities =  nonConstVel;
   plant_->SetVelocities(plant_context, &plant_state, wsg_model_.model_instance,
                         velocities);
 }
@@ -1235,7 +1233,7 @@ template <typename T>
 void ManipulationStation<T>::AddDefaultWsg() {
 
   const std::string sdf_path = FindResourceOrThrow(
-      "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector_3.urdf");
+      "drake/manipulation/models/yaskawa_end_effector_description/urdf/end_effector_4.urdf");
 
   const drake::multibody::Frame<T>& link6 =
       plant_->GetFrameByName("ee_mount", iiwa_model_.model_instance);

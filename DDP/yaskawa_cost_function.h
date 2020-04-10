@@ -31,7 +31,7 @@ protected:
     double vel_scale;
     double pos_f_scale;
     double vel_f_scale;
-    double torqoe_scale;
+    double torque_scale;
     
 	stateVecTab_t cx_new;
 	commandVecTab_t cu_new; 
