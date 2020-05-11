@@ -541,25 +541,30 @@ void YaskawaModel::yaskawa_arm_dyn_cst_min_output(const int& , const double& , c
 
     const int nargout_update1 = 1;   
 
+    //How come Nc = 1 (Nc is the num of col of current state. Defined right above)
     for(unsigned int k=0;k<Nc;k++) {
 
+        //Comes here only on last pass(probably)
         if (isUNan) { 
             // cout << "R: " <<  costFunction->getR() << endl;
             // cout << "Q: " <<  costFunction->getQ() << endl;
             // cout << "QF: " <<  costFunction->getQf() << endl;
             // if(debugging_print) TRACE_YASKAWA_ARM("before the update1\n");
-            c_mat_to_scalar = 0.5*(xList_curr.transpose() - xgoal.transpose()) * costFunction->getQf() * (xList_curr - xgoal);
+
+            //Cost function for Qfinal
+            c_mat_to_scalar = 0.5*(xList_curr.transpose() - xgoal.transpose())*costFunction->getQf()*(xList_curr - xgoal);
             costFunction->getc() += c_mat_to_scalar(0,0);
             // if(debugging_print) TRACE_YASKAWA_ARM("after the update1\n");
         }
-        else {
-            // if(debugging_print) TRACE_YASKAWA_ARM("before the update2\n");
-            xList_next = update(nargout_update1, xList_curr, uList_curr, AA, BB);
+        else {  
+            //Call parareal
+            xList_next = parareal(nargout,dt,xList_curr,uList_curr,isUNan,xList_next,costFunction);
 
-            c_mat_to_scalar = 0.5*(xList_curr.transpose() - xgoal.transpose())*costFunction->getQ()*(xList_curr - xgoal);
 
-            // if(debugging_print) TRACE_YASKAWA_ARM("after the update2\n");
-            c_mat_to_scalar += 0.5*uList_curr.transpose()*costFunction->getR()*uList_curr;
+            //Is this correct?
+            //L(x,u) = 1/2 * (x - xd)ᵀ * Q * (x - xd) + 1/2 * (u - ud)ᵀ * R * (u - ud) + (x - xd)ᵀ * S * (u - ud)
+            c_mat_to_scalar = 0.5*(xList_curr.transpose() - xgoal.transpose()) * costFunction->getQ()*(xList_curr - xgoal);
+            c_mat_to_scalar += 0.5*uList_curr.transpose()*costFunction->getR() * uList_curr;
 
             costFunction->getc() += c_mat_to_scalar(0,0);
         }
@@ -568,6 +573,7 @@ void YaskawaModel::yaskawa_arm_dyn_cst_min_output(const int& , const double& , c
     if(debugging_print) TRACE_YASKAWA_ARM("finish kuka_arm_dyn_cst\n");
 }
 
+//The physics simulation in forward pass
 stateVec_t YaskawaModel::update(const int& nargout, const stateVec_t& X, const commandVec_t& U, stateMat_t& A, stateR_commandC_t& B){
     // 4th-order Runge-Kutta step
     if(debugging_print) TRACE_YASKAWA_ARM("update: 4th-order Runge-Kutta step\n");
@@ -575,9 +581,9 @@ stateVec_t YaskawaModel::update(const int& nargout, const stateVec_t& X, const c
 
     // output of kuka arm dynamics is xdot = f(x,u)
     Xdot1 = yaskawa_arm_dynamics(X, U);
-     Xdot2 = yaskawa_arm_dynamics(X + 0.5*dt*Xdot1, U);
-     Xdot3 = yaskawa_arm_dynamics(X + 0.5*dt*Xdot2, U);
-     Xdot4 = yaskawa_arm_dynamics(X + dt*Xdot3, U);
+    Xdot2 = yaskawa_arm_dynamics(X + 0.5*dt*Xdot1, U);
+    Xdot3 = yaskawa_arm_dynamics(X + 0.5*dt*Xdot2, U);
+    Xdot4 = yaskawa_arm_dynamics(X + dt*Xdot3, U);
     stateVec_t X_new;
     X_new = X + (dt/6)*(Xdot1 + 2*Xdot2 + 2*Xdot3 + Xdot4);
     // Simple Euler Integration (for debug)
