@@ -212,7 +212,7 @@ drake_cc_library(
         "//attic/multibody/parsers",
         "//lcmtypes:iiwa",
         "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_constants",
-        "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_position_controller",
+        "//manipulation/yaskawa_conveyor_belt_dof1:new_belt_position_controller",
         "//manipulation/yaskawa_conveyor_belt_dof1:conveyor_belt_dof1_lcm",
         "//multibody/parsing",
         "//multibody/plant",
@@ -220,7 +220,7 @@ drake_cc_library(
         "//lcm",
         "@lcmtypes_bot2_core",
         "@lcmtypes_robotlocomotion",
-        "//DDP:run_ddp_library",
+        # "//DDP:run_ddp_library",
     ],
 )
 

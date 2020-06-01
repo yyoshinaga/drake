@@ -17,7 +17,7 @@ using Eigen::Vector3d;
 using systems::BasicVector;
 
 const int kNumWhiskers = 2;
-const int kNumRollers = 4;
+const int kNumRollers = 5;
 
 EndEffectorPdController::EndEffectorPdController(double kp_command,
                                              double kd_command,
@@ -36,7 +36,7 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
 //   this->DeclarePeriodicDiscreteUpdateEvent(0.0025, 0.0, &EndEffectorPdController::Update);
 
 
-  // Desired inptu states include:
+  // Desired input states include:
   // 1 set of whisker position,
   // 1 set of whisker velocity,
   desired_whisker_state_input_port_ =
@@ -49,10 +49,10 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
       this->DeclareVectorInputPort("desired_roller_state", BasicVector<double>(1))
           .get_index();
 
-  // Input includes 12 states?:
+  // Input includes 14 states?:
   // pos and vel for right whisker,
   // pos and vel for left whisker,
-  // pos and vel for roller, 
+  // pos and vel for x amount of rollers, 
   state_input_port_ =
       this->DeclareVectorInputPort("state", BasicVector<double>(2*kNumWhiskers + 2*kNumRollers))
           .get_index();
@@ -115,32 +115,75 @@ Vector3d EndEffectorPdController::CalcGeneralizedAcceleration(
   // state[5] = roller velocity
 
   // Use desired velocities from roller_state to create accelerations
-  // desired_belt_states are pusher and puller's velocities
 
   const double kd = 500;
   double roller_acc = 0; 
 
   // If roller is on forwards,
-  if(desired_roller_state[0]){
+  if(desired_roller_state[0] > 0){
     roller_acc = kd*(FLAGS_belt_speed - state[5]);
+    drake::log()->info("Roller is moving forwards... trying to empty out");
   }
   // If roller is on backwards
-  else if(desired_roller_state[1]){
+  else if(desired_roller_state[0] < 0){
     roller_acc = kd*(-FLAGS_belt_speed - state[5]);
+    roller_acc = -1000;
+    drake::log()->info("Roller is moving backwards... trying to retrieve");
   }
   // If roller is off
   else{
-    roller_acc = kd*( -state[5]);
+    roller_acc = kd*(0 - state[5]);
+    drake::log()->info("Roller is not moving");
   }
 
-  //   drake::log()->info("\ndesired_whisker_state: {}\nstate[0]: {} \nstate[1]: {}\nstate[2]: {}\nstate[3]: {}\nstate[4]: {}\nstate[5]: {}\nstate[6]: {}\nstate[7]: {}\ndesired_belt_state[0]: {}\ndesired_belt_state[1]: {}\npusher_acc: {}\npuller_acc: {}", 
-  //   desired_whisker_state[0],state[0],state[1],state[2],state[3],state[4],state[5],state[6],state[7],desired_belt_state[0],desired_belt_state[1],pusher_acc,puller_acc);
+  drake::log()->info("state[0]: {} ", state[0]);
+  drake::log()->info("state[1]: {} ", state[1]);
+  drake::log()->info("state[2]: {} ", state[2]);
+  drake::log()->info("state[3]: {} ", state[3]);
+  drake::log()->info("state[4]: {} ", state[4]);
+  drake::log()->info("state[5]: {} ", state[5]);
+  drake::log()->info("roller_acc: {}", roller_acc);
+  drake::log()->info("finger1_acc: {}", 0.5 * f0_plus_f1 - 0.5 * neg_f0_plus_f1);
+  drake::log()->info("finger2_acc: {}", 0.5 * f0_plus_f1 + 0.5 * neg_f0_plus_f1);
+  drake::log()->info("desired roller state: {}", desired_roller_state[0]);
+
 
   // f₀ = (f₀+f₁)/2 - (-f₀+f₁)/2,
   // f₁ = (f₀+f₁)/2 + (-f₀+f₁)/2.
   return Vector3d(0.5 * f0_plus_f1 - 0.5 * neg_f0_plus_f1,
                   0.5 * f0_plus_f1 + 0.5 * neg_f0_plus_f1,
                   roller_acc);
+
+
+
+  // Temp code for debugging accelerations values
+  // if(false){
+  //   drake::log()->info("bad roller_acc: {}", roller_acc);
+  //   drake::log()->info("bad finger1_acc: {}", f0_plus_f1);
+  //   drake::log()->info("bad finger2_acc: {}", neg_f0_plus_f1);
+ 
+  //   drake::log()->info("Make sure to enable acceleration for end effector to not be zero");
+  // }
+  // double finger1_acc = 0;
+  // double finger2_acc = 0;
+  // double roller = 0;
+
+  // if(state[3] > 0.1 || state[3] < -0.1){
+  //   finger1_acc = -state[0]*0.2-state[3]*1;
+  // }
+  // if(state[4] > 0.1 || state[4] < -0.1){
+  //   finger2_acc = -state[1]*0.2-state[4]*1;
+  // }
+  // if(state[5] > 0.1 || state[5] < -0.1){
+  //   roller = -state[5]*1;
+  // }
+
+  // drake::log()->info("finger1_acc: {}",finger1_acc);
+  // drake::log()->info("finger2_acc: {}",finger2_acc);
+  // drake::log()->info("roller: {}",roller);
+  // return Vector3d(finger1_acc,
+  //                 finger2_acc,
+  //                 roller);
 }
 
 //actuations/acceleration for each component
@@ -191,7 +234,7 @@ void EndEffectorGenerateAngleAndVelocity::CalcAngleOutput(
     }
 }
 
-//Input: boolean on/off for moving roller
+//Input: boolean forward/reverse/off for moving roller
 //Output: Velocity for roller
 void EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput(
     const drake::systems::Context<double>& context,
@@ -199,11 +242,16 @@ void EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput(
 
     const auto& actuation = get_actuation_input_port().Eval(context);
     
-    //If roller is 'on', set velocity to desired velocity
-    if(actuation[1]){
+    drake::log()->info("actuation[0]: {}", actuation[0]);
+    drake::log()->info("actuation[1]: {}", actuation[1]);
+    drake::log()->info("actuation[2]: {}", actuation[2]);
+    drake::log()->info("actuation size: {}", actuation.size());
+
+    // If roller is 'on', set velocity to desired velocity
+    if(actuation[1] > 0){
         output_vector->SetAtIndex(0, FLAGS_belt_speed); 
     }
-    else if(actuation[2]){
+    else if(actuation[1] < 0){
         output_vector->SetAtIndex(0, -FLAGS_belt_speed);
     }
     else{ 

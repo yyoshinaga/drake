@@ -16,7 +16,7 @@ DEFINE_double(whiskers_up_angle, -0.1, "The angle at which the whiskers are in t
 DEFINE_double(whiskers_down_angle, -1.4, "The angle at which the whiskers are in the closed position");
 
 //Determines if trajectory is created by DDP/iLQR or just by IK
-#define use_Solver 1
+#define use_Solver 0
 
 namespace drake {
 namespace examples {
@@ -121,14 +121,10 @@ const char kEEUrdf[] =
         if(!are_whiskers_up() ||  
             is_carrying() || 
             !is_at_belt() || 
-            !is_pusher_back()||
-            is_puller_back()||
             !is_pickable() ||  
             !is_at_package_location(0.0)){
 
-            printer(0,1,0,1,0,1,1,1,0,1,1);
-            drake::log()->info("is pusher back? {}",is_pusher_back());
-            drake::log()->info("is puller back: {}",is_puller_back());
+            printer(0,1,0,1,0,1,0,1,1);
 
             return 0; //If any of the checks fail, function returns 0.
         }
@@ -142,9 +138,8 @@ const char kEEUrdf[] =
                 lcmt_yaskawa_ee_command command{};
                 command.utime = ee_status_.utime;
                 command.whiskers_down = false;
-                command.pusher_move = false;
-                command.puller_move = true;
-                
+                command.roller_movement = -1;   //Move backwards to take in package
+                drake::log()->info("roller moving backwards...");
                 lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
             }
         }
@@ -160,10 +155,8 @@ const char kEEUrdf[] =
         //Checks: 
         if(!are_whiskers_up() || 
            !is_carrying() ||
-           !is_pusher_back() ||
-           is_puller_back() ||
            !is_at_shelf()){
-            printer(0,1,0,1,1,1,1,0,0,0,0);
+            printer(0,1,0,1,1,0,0,0,0);
             return 0; //If any of the checks fail, function returns 0.
         }
 
@@ -176,8 +169,7 @@ const char kEEUrdf[] =
                 lcmt_yaskawa_ee_command command{};
                 command.utime = ee_status_.utime;
                 command.whiskers_down = false;
-                command.pusher_move = true;
-                command.puller_move = true;
+                command.roller_movement = 1;   //Move forwards to push out package
 
                 lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
             }
@@ -341,14 +333,11 @@ const char kEEUrdf[] =
     void PrimitiveExecutor::HandleStatusGripper(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_yaskawa_ee_status* status) {
         ee_status_ = *status;
         ee_update_ = true;
-        // drake::log()->info("acutal pusher: {}",ee_status_.actual_pusher_position);
-        // drake::log()->info("actual puller: {}",ee_status_.actual_puller_position);
-
     }
 
     void PrimitiveExecutor::HandleStatusYaskawa(const real_lcm::ReceiveBuffer*, const std::string&, const lcmt_iiwa_status* status){
         iiwa_status_ = *status;
-        yaskawa_update_ = true;
+        yaskawa_update_ = true;        
 
         Eigen::VectorXd iiwa_q(status->num_joints);
         for (int i = 0; i < status->num_joints; i++) {
@@ -362,7 +351,7 @@ const char kEEUrdf[] =
 
             ee_pose = plant_.EvalBodyPoseInWorld(
                     *context_, plant_.GetBodyByName(FLAGS_ee_name));
-            // const math::RollPitchYaw<double> rpy(ee_pose.rotation());
+            const math::RollPitchYaw<double> rpy(ee_pose.rotation());
             // drake::log()->info("End effector at: {} {}",
             //                     ee_pose.translation().transpose(),
             //                     rpy.vector().transpose());
@@ -430,21 +419,10 @@ const char kEEUrdf[] =
     }
     bool PrimitiveExecutor::is_at_belt(){   
         VectorX<double> atBelt(6);
-        atBelt << 1.65,0.1,0.9,0,0,1.57;        //Approximation for now
+        atBelt << 1.65,0.2,0.9,0,0,1.57;        //Approximation for now
         return is_at_desired_position(atBelt) ? 1 : 0;
     }
-
-    bool PrimitiveExecutor::is_pusher_back(){
-        drake::log()->info("is pusher back? : {}",ee_status_.actual_pusher_position);
-        return ee_status_.actual_pusher_position <= 0.05;
-    }
-    bool PrimitiveExecutor::is_puller_back(){
-        drake::log()->info("is puller back? : {}",ee_status_.actual_puller_position);
-
-        return ee_status_.actual_puller_position <= -0.01;
-    }
     bool PrimitiveExecutor::is_moving(){
- 
         VectorX<double> velocities = plant_.GetVelocities(*context_, yaskawa_model_idx);  
         for(int i = 0; i < velocities.size(); i++){
             if(velocities[i] != 0){
@@ -458,12 +436,12 @@ const char kEEUrdf[] =
     }
     bool PrimitiveExecutor::is_at_package_location(double x){
         VectorX<double> atPkg(6);
-        atPkg << 1.65+x,0.1,0.9,0,0,1.57;
+        atPkg << 1.65+x,0.2,0.9,0,0,1.57;
         return is_at_desired_position(atPkg) ? 1 : 0;
     }
 
     void PrimitiveExecutor::printer(bool desPos, bool whiskUp, bool whiskDwn, bool carry, bool atShlf,  
-                                    bool pshBck, bool pllBck, bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc){
+                                    bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc){
         drake::log()->info("Check printer starts below:");
         VectorX<double> atBelt(6);
         atBelt << 1.65,0.1,0.9,0,0,1.57;
@@ -477,10 +455,6 @@ const char kEEUrdf[] =
             drake::log()->info("    is carrying: {}",is_carrying());
         if(atShlf)
             drake::log()->info("    at shelf: {}",is_at_shelf());
-        if(pshBck)
-            drake::log()->info("    push is back: {}",is_pusher_back());
-        if(pllBck)
-            drake::log()->info("    pull is back: {}",is_puller_back());
         if(atBlt)
             drake::log()->info("    is at belt: {}",is_at_belt());
         if(isMvng)

@@ -52,7 +52,7 @@
      <!-- virtual link, equivlent of TCP (Tool Center Point) -->
     <link name="whisker_right_link">
       <inertial>
-        <mass value="0.1"/>
+        <mass value="0.01"/>
         <origin xyz="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
@@ -89,7 +89,7 @@
 
     <link name="whisker_left_link">
       <inertial>
-        <mass value="0.1"/>
+        <mass value="0.01"/>
         <origin xyz="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
@@ -125,21 +125,70 @@
       </collision>
     </link>
 
+    <link name="roller_base_1">
+      <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <link name="roller_base_2">
+      <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <link name="roller_base_3">
+      <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <link name="roller_base_4">
+      <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual>
+    </link>
+  
+    <link name="roller_base_5">
+      <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual>
+    </link>
+
     <link name="roller_link_1">
       <inertial>
         <mass value="0.01"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0.2 0 -0.175" rpy="1.57 0 0"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
           <cylinder radius="0.025" length="0.5"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.2 0 -0.175" rpy="1.57 0 0"/>
+        <origin xyz="0 0 -0.175" rpy="1.57 0 0"/>
         <geometry>
           <cylinder radius="0.025" length="0.5"/>
         </geometry>
@@ -149,18 +198,17 @@
     <link name="roller_link_2">
       <inertial>
         <mass value="0.01"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0.3 0 -0.175" rpy="1.57 0 0"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
           <cylinder radius="0.025" length="0.5"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.3 0 -0.175" rpy="1.57 0 0"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
           <cylinder radius="0.025" length="0.5"/>
         </geometry>
@@ -170,18 +218,17 @@
     <link name="roller_link_3">
       <inertial>
         <mass value="0.01"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0.4 0 -0.175" rpy="1.57 0 0"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
           <cylinder radius="0.025" length="0.5"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.4 0 -0.175" rpy="1.57 0 0"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
           <cylinder radius="0.025" length="0.5"/>
         </geometry>
@@ -191,24 +238,43 @@
     <link name="roller_link_4">
       <inertial>
         <mass value="0.01"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="red"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <!-- <cylinder radius="0.025" length="0.5"/> -->
+          <box size="0.04 0.04 0.5"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.02" length="0.5"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="roller_link_5">
+      <inertial>
+        <mass value="0.01"/>
         <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0.5 0 -0.175" rpy="1.57 0 0"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
           <cylinder radius="0.025" length="0.5"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.5 0 -0.175" rpy="1.57 0 0"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
           <cylinder radius="0.025" length="0.5"/>
         </geometry>
       </collision>
     </link>
-
 
     <link name='right_whisker_offset'>
       <visual name='visual_right_offset'>
@@ -267,28 +333,71 @@
       <axis xyz="1 0 0"/>
     </joint>
 
-    <joint name="roller_joint_1" type="revolute">
+    <!-- Offset from ee_base to roller joint -->
+    <joint name="ee_base_to_roller_base_1" type="fixed">
       <parent link="ee_base"/>
+      <child link="roller_base_1"/>
+      <origin xyz="0.2 0 -0.175" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="ee_base_to_roller_base_2" type="fixed">
+      <parent link="ee_base"/>
+      <child link="roller_base_2"/>
+      <origin xyz="0.3 0 -0.175" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="ee_base_to_roller_base_3" type="fixed">
+      <parent link="ee_base"/>
+      <child link="roller_base_3"/>
+      <origin xyz="0.4 0 -0.175" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="ee_base_to_roller_base_4" type="fixed">
+      <parent link="ee_base"/>
+      <child link="roller_base_4"/>
+      <origin xyz="0.45 0 -0.175" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="ee_base_to_roller_base_5" type="fixed">
+      <parent link="ee_base"/>
+      <child link="roller_base_5"/>
+      <origin xyz="0.5 0 -0.175" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Roller joints -->
+    <joint name="roller_joint_1" type="revolute">
+      <parent link="roller_base_1"/>
       <child link="roller_link_1"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
     </joint>
 
     <joint name="roller_joint_2" type="revolute">
-      <parent link="ee_base"/>
+      <parent link="roller_base_2"/>
       <child link="roller_link_2"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
     </joint>
 
     <joint name="roller_joint_3" type="revolute">
-      <parent link="ee_base"/>
+      <parent link="roller_base_3"/>
       <child link="roller_link_3"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
     </joint>
 
     <joint name="roller_joint_4" type="revolute">
-      <parent link="ee_base"/>
+      <parent link="roller_base_4"/>
       <child link="roller_link_4"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+
+    <joint name="roller_joint_5" type="revolute">
+      <parent link="roller_base_5"/>
+      <child link="roller_link_5"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
     </joint>
 
     <!-- END JOINTS -->
@@ -313,7 +422,7 @@
     <mu2>0.2</mu2>
   </gazebo> 
 
-  <gazebo reference="whisker_right_offset">
+  <gazebo reference="whisker_left_offset">
     <material>Gazebo/Grey</material>
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
@@ -326,6 +435,66 @@
   </gazebo>  
 
   <gazebo reference="whisker_left_link">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="roller_link_1">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="roller_link_2">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="roller_link_3">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="roller_link_4">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="roller_link_5">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="roller_base_1">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="roller_base_2">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="roller_base_3">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="roller_base_4">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="roller_base_5">
     <material>Gazebo/Grey</material>
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
@@ -376,6 +545,9 @@
       <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <joint name="roller_joint_4">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <joint name="roller_joint_5">
       <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="yaskawa_motor_3">

@@ -309,7 +309,7 @@ double ConveyorController2<T>::FourPolyTraj(const double time, const double x0, 
     if(time > tfinal || time < t0){
         //drake::log()->info("time: {}\ntfinal: {}\nt0: {}",time,tfinal,t0);
         //drake::log()->info("time > tfinal: {}\ntime < t0: {}",time > tfinal, time < t0);
-        DRAKE_DEMAND(false);
+        // DRAKE_DEMAND(false);
     }
     const double t = time-t0;
     const double tf = tfinal-t0;

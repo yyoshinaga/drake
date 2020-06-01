@@ -72,25 +72,24 @@ drake_cc_library(
     ]
 )
 
-drake_cc_library(
-    name = "parareal",
-    srcs = ["parareal.cc"],
-        hdrs = ["parareal.h",
-            "config.h",
-            "yaskawa_model.h",
-            "yaskawa_cost_function.h",],
-    visibility = ["//visibility:public"],
-    deps = [
-        "@eigen",
-        "//common:find_resource",
-        "//multibody/parsing",
-        "//multibody/plant",
-        "//lcm",
-        "//systems/lcm",
-        "//lcmtypes:iiwa",
-
-    ]
-)
+# drake_cc_library(
+#     name = "parareal",
+#     srcs = ["parareal.cc"],
+#         hdrs = ["parareal.h",
+#             "config.h",
+#             "yaskawa_model.h",
+#             "yaskawa_cost_function.h",],
+#     visibility = ["//visibility:public"],
+#     deps = [
+#         "@eigen",
+#         "//common:find_resource",
+#         "//multibody/parsing",
+#         "//multibody/plant",
+#         "//lcm",
+#         "//systems/lcm",
+#         "//lcmtypes:iiwa",
+#     ]
+# )
 
 
 drake_cc_library(

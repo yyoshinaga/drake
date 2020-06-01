@@ -778,7 +778,7 @@ void ManipulationStation<T>::Finalize(
     builder.Connect(ee_controller->get_generalized_acceleration_output_port(),
                     plant_->get_actuation_input_port(wsg_model_.model_instance));
 
-    //States sent from mbp to controller - size 12? (2 whisker + num_of_rollers*2)
+    //States sent from mbp to controller - size 14? (2 whisker + num_of_rollers*2)
     builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
                     ee_controller->get_state_input_port());
 
@@ -789,7 +789,7 @@ void ManipulationStation<T>::Finalize(
     auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
         manipulation::yaskawa_conveyor_belt_dof1::MakeMultibodyStateToBeltStateSystem<double>());
 
-    //States sent from mbp to wsgState - size 12
+    //States sent from mbp to wsgState - size 14
     builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
                     wsg_mbp_state_to_wsg_state->get_input_port());
 
@@ -797,7 +797,7 @@ void ManipulationStation<T>::Finalize(
     builder.ExportOutput(wsg_mbp_state_to_wsg_state->get_output_port(),
                          "ee_state_measured");
   }
-//----------------------------------------------------------------------------------
+  //----------------------------------------------------------------------------------
   builder.ExportOutput(plant_->get_generalized_contact_forces_output_port(
                            iiwa_model_.model_instance),
                        "iiwa_torque_external");
@@ -964,7 +964,7 @@ Vector2<T> ManipulationStation<T>::GetWsgPosition(
     const systems::Context<T>& station_context) const {
   const auto& plant_context =
       this->GetSubsystemContext(*plant_, station_context);
-drake::log()->info("get positions size: {}", plant_->GetPositions(plant_context, wsg_model_.model_instance).size());
+  drake::log()->info("get positions size: {}", plant_->GetPositions(plant_context, wsg_model_.model_instance).size());
   Vector3<T> positions =
       plant_->GetPositions(plant_context, wsg_model_.model_instance);
   drake::log()->info("Failing to get wsg position");
@@ -1201,7 +1201,6 @@ void ManipulationStation<T>::AddDefaultIiwa(
       plant_->GetFrameByName("arm_base", iiwa_instance), X_WI);
   drake::log()->info("AddDefaultIiwa 21");
 }
-
 
 template <typename T>
 void ManipulationStation<T>::AddDefaultConveyor(

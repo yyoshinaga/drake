@@ -35,7 +35,7 @@ using drake::Vector1d;
 using Eigen::Vector2d;
 using Eigen::Vector3d;
 
-#define use_Solver 1
+#define use_Solver 0
 
 namespace drake {
 namespace examples {
@@ -66,14 +66,16 @@ class RobotPlanRunner {
                     &RobotPlanRunner::HandlePlan, this);
     lcm_.subscribe(kLcmStopChannel,
                     &RobotPlanRunner::HandleStop, this);
+    #if use_Solver
     lcm_.subscribe(kLcmDDPChannel,
                     &RobotPlanRunner::HandleDDP, this);
+    #endif
   }
 
   void Run() {
     int cur_plan_number = plan_number_;
     int64_t cur_time_us = -1;
-    // int64_t start_time_us = -1;
+    int64_t start_time_us = -1;
     
     has_active_plan_ = false;
     cur_traj_idx_ = 0;
@@ -147,12 +149,12 @@ class RobotPlanRunner {
         if (plan_) {
           if (plan_number_ != cur_plan_number) {
             drake::log()->info("Starting new plan.");
-            // start_time_us = cur_time_us;
+            start_time_us = cur_time_us;
             cur_plan_number = plan_number_;
           }
 
-          // const double cur_traj_time_s =
-          //     static_cast<double>(cur_time_us - start_time_us) / 1e6;
+          const double cur_traj_time_s =
+              static_cast<double>(cur_time_us - start_time_us) / 1e6;
           const auto desired_next = plan_->value(cur_traj_time_s);
 
           iiwa_command.utime = iiwa_status_.utime;
@@ -170,13 +172,14 @@ class RobotPlanRunner {
  private:
   void HandleStatus(const lcm::ReceiveBuffer*, const std::string&,
                     const lcmt_iiwa_status* status) {
-                      // drake::log()->info("handler being called in plan runner");
+    drake::log()->info("handler being called in plan runner");
     iiwa_status_ = *status;
   }
 
   void HandlePlan(const lcm::ReceiveBuffer*, const std::string&,
                   const robotlocomotion::robot_plan_t* plan) {
     drake::log()->info("New plan received.");
+
     if (iiwa_status_.utime == -1) {
       drake::log()->info("Discarding plan, no status message received yet");
       return;
@@ -232,7 +235,7 @@ class RobotPlanRunner {
 
   void HandleDDP(const lcm::ReceiveBuffer*, const std::string&,
                     const lcmt_ddp_traj* plan) {
-    drake::log()->info("DDP trajectory received");
+    drake::log()->info(" trajectory received");
     ddp_traj_ = *plan;
     has_active_plan_ = true;
     plan_number_++;

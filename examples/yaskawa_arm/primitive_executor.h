@@ -19,11 +19,11 @@
 #include "drake/lcmt_yaskawa_ee_command.hpp"
 #include "drake/lcmt_yaskawa_ee_status.hpp"
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_constants.h"
-#include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_position_controller.h"
+#include "drake/manipulation/yaskawa_conveyor_belt_dof1/new_belt_position_controller.h"
 #include "drake/manipulation/yaskawa_conveyor_belt_dof1/conveyor_belt_dof1_lcm.h"
 
 //DDP
-#include "drake/DDP/run_ddp_library.h"
+//#include "drake/DDP/run_ddp_library.h"
 
 namespace real_lcm = lcm;
 
@@ -105,10 +105,6 @@ private:
     // by the end effector
     bool is_pickable();
 
-    bool is_pusher_back();
-
-    bool is_puller_back();
-
     // This function checks to see if the end effector is positioned correctly at
     // the belt and moved to the correct spot at the belt to pick up the package. 
     // The package could potentially be towards the right side of the belt or the 
@@ -117,7 +113,7 @@ private:
 
     //Prints checker functions
     void printer(bool desPos, bool whiskUp, bool whiskDwn, bool carry, bool atShlf,  
-                bool pshBck, bool pllBck, bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc);
+                 bool atBlt, bool isMvng, bool isPckble, bool atPkgLoc);
 
     multibody::MultibodyPlant<double> plant_;
     std::unique_ptr<systems::Context<double>> context_;

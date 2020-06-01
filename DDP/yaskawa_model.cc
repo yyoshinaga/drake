@@ -1,4 +1,4 @@
-#include "drake/DDP/yaskawa_model.h"
+// #include "drake/DDP/yaskawa_model.h"
 DEFINE_string(lcm_iiwa_status_channel, "IIWA_STATUS",
               "Channel on which to listen for lcmt_iiwa_status messages.");
 // DEFINE_string(ee_name, "ee_mount", "Name of the end effector link");
@@ -558,7 +558,7 @@ void YaskawaModel::yaskawa_arm_dyn_cst_min_output(const int& , const double& , c
         }
         else {  
             //Call parareal
-            xList_next = parareal(nargout,dt,xList_curr,uList_curr,isUNan,xList_next,costFunction);
+            //xList_next = parareal(nargout,dt,xList_curr,uList_curr,isUNan,xList_next,costFunction);
 
 
             //Is this correct?

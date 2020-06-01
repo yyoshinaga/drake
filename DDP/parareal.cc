@@ -21,7 +21,7 @@ Parareal::Parareal(const int& nargout, const double& dt, const stateVec_t& xList
 
 stateVec_t Parareal::DoParareal(){
   //xᵏ⁺¹ₙ₊₁ = C(xᵏ⁺¹ₙ, uₙ, dt) + F(xᵏₙ, uₙ, dt) - C(xᵏₙ, uₙ, dt)
-  return Coarse(xList_curr, uList_curr, dt, k+1, n) + Fine(xList_curr, k, uList_curr, dt) - Coarse(xList_curr, k, uList_curr, dt);
+  return Coarse(xList_curr, uList_curr, dt, k+1, n) + Fine(xList_curr, uList_curr, dt, k,n ) - Coarse(xList_curr, k, uList_curr, dt);
 }
 
 stateVec_t Parareal::Coarse(){

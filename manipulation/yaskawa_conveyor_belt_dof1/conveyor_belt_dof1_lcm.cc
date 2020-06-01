@@ -49,7 +49,7 @@ void EndEffectorCommandSender::CalcCommandOutput(
     const drake::systems::Context<double>& context,
     drake::lcmt_yaskawa_ee_command* output) const {
   lcmt_yaskawa_ee_command& command = *output;
-
+  drake::log()->info("Sending rollmer movement commads: {}",get_position_input_port().Eval(context)[1]);
   command.utime = context.get_time() * 1e6;
   command.whiskers_down = get_position_input_port().Eval(context)[0];
   command.roller_movement = get_position_input_port().Eval(context)[1];
@@ -96,6 +96,8 @@ void EndEffectorStatusSender::OutputStatus(const Context<double>& context,
   // The position and speed reported in this message are between the
   // two fingers rather than the position/speed of a single finger
   // (so effectively doubled).
+
+  drake::log()->info("roller speed: {}",state[3]);
 
   status.actual_whisker_angle = state[0];
   status.actual_roller_position = state[1];

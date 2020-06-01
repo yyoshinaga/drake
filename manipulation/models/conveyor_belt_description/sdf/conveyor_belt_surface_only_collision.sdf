@@ -246,7 +246,7 @@
         <!-- <cast_shadows>1</cast_shadows>
         <transparency>0</transparency> -->
       </visual>
-     <!-- <collision name='surface'>
+     <collision name='surface'>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
         <pose frame=''>0 0 0 0 -0 0</pose>
@@ -300,7 +300,7 @@
             </bullet>
           </contact>
         </surface>
-      </collision> -->
+      </collision>
     </link>
 
     <!-- <frame name='top_center'>
