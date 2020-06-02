@@ -17,7 +17,7 @@ using Eigen::Vector3d;
 using systems::BasicVector;
 
 const int kNumWhiskers = 2;
-const int kNumRollers = 5;
+const int kNumRollers = 7;
 
 EndEffectorPdController::EndEffectorPdController(double kp_command,
                                              double kd_command,
@@ -44,12 +44,12 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
           .get_index();
 
   // Desired input states include:
-  // 1 roller velocity
+  // 7 roller velocity
   desired_roller_state_input_port_ =
-      this->DeclareVectorInputPort("desired_roller_state", BasicVector<double>(1))
+      this->DeclareVectorInputPort("desired_roller_state", BasicVector<double>(kNumRollers))
           .get_index();
 
-  // Input includes 14 states?:
+  // Input includes 18 states?:
   // pos and vel for right whisker,
   // pos and vel for left whisker,
   // pos and vel for x amount of rollers, 
@@ -57,13 +57,13 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
       this->DeclareVectorInputPort("state", BasicVector<double>(2*kNumWhiskers + 2*kNumRollers))
           .get_index();
 
-  // Output vector is size 3
+  // Output vector is size 9
   // actuation for right whisker
   // actuation for left whisker
   // acc for roller
   generalized_acceleration_output_port_ =
       this->DeclareVectorOutputPort(
-            "generalized_acceleration", BasicVector<double>(3),
+            "generalized_acceleration", BasicVector<double>(9),
             &EndEffectorPdController::CalcGeneralizedAccelerationOutput)
           .get_index();    
 
@@ -150,40 +150,11 @@ Vector3d EndEffectorPdController::CalcGeneralizedAcceleration(
 
   // f₀ = (f₀+f₁)/2 - (-f₀+f₁)/2,
   // f₁ = (f₀+f₁)/2 + (-f₀+f₁)/2.
-  return Vector3d(0.5 * f0_plus_f1 - 0.5 * neg_f0_plus_f1,
+  VectorX<double> actuator_efforts(9);
+  actuator_efforts << 0.5 * f0_plus_f1 - 0.5 * neg_f0_plus_f1,
                   0.5 * f0_plus_f1 + 0.5 * neg_f0_plus_f1,
-                  roller_acc);
-
-
-
-  // Temp code for debugging accelerations values
-  // if(false){
-  //   drake::log()->info("bad roller_acc: {}", roller_acc);
-  //   drake::log()->info("bad finger1_acc: {}", f0_plus_f1);
-  //   drake::log()->info("bad finger2_acc: {}", neg_f0_plus_f1);
- 
-  //   drake::log()->info("Make sure to enable acceleration for end effector to not be zero");
-  // }
-  // double finger1_acc = 0;
-  // double finger2_acc = 0;
-  // double roller = 0;
-
-  // if(state[3] > 0.1 || state[3] < -0.1){
-  //   finger1_acc = -state[0]*0.2-state[3]*1;
-  // }
-  // if(state[4] > 0.1 || state[4] < -0.1){
-  //   finger2_acc = -state[1]*0.2-state[4]*1;
-  // }
-  // if(state[5] > 0.1 || state[5] < -0.1){
-  //   roller = -state[5]*1;
-  // }
-
-  // drake::log()->info("finger1_acc: {}",finger1_acc);
-  // drake::log()->info("finger2_acc: {}",finger2_acc);
-  // drake::log()->info("roller: {}",roller);
-  // return Vector3d(finger1_acc,
-  //                 finger2_acc,
-  //                 roller);
+                  roller_acc, roller_acc, roller_acc, roller_acc, roller_acc, roller_acc, roller_acc;
+  return actuator_efforts;
 }
 
 //actuations/acceleration for each component
@@ -209,7 +180,7 @@ EndEffectorGenerateAngleAndVelocity::EndEffectorGenerateAngleAndVelocity(){
   //This is for roller only
   velocity_output_port_ =
       this->DeclareVectorOutputPort(
-            "velocity", BasicVector<double>(1),
+            "velocity", BasicVector<double>(7),
             &EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput)
           .get_index(); 
 
@@ -249,13 +220,22 @@ void EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput(
 
     // If roller is 'on', set velocity to desired velocity
     if(actuation[1] > 0){
-        output_vector->SetAtIndex(0, FLAGS_belt_speed); 
+        // output_vector->SetAtIndex(0, FLAGS_belt_speed); 
+      for(int i = 0; i < 7; i++){
+        output_vector->SetAtIndex(i, FLAGS_belt_speed);
+      }
     }
     else if(actuation[1] < 0){
-        output_vector->SetAtIndex(0, -FLAGS_belt_speed);
+      for(int i = 0; i < 7; i++){
+        output_vector->SetAtIndex(i, -FLAGS_belt_speed);
+      }
     }
     else{ 
-        output_vector->SetAtIndex(0, 0); 
+
+      for(int i = 0; i < 7; i++){
+        output_vector->SetAtIndex(i, 0);
+      }
+        // output_vector->SetAtIndex(0, 0); 
     }
 }
 

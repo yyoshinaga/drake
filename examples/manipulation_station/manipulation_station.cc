@@ -778,7 +778,7 @@ void ManipulationStation<T>::Finalize(
     builder.Connect(ee_controller->get_generalized_acceleration_output_port(),
                     plant_->get_actuation_input_port(wsg_model_.model_instance));
 
-    //States sent from mbp to controller - size 14? (2 whisker + num_of_rollers*2)
+    //States sent from mbp to controller - size 18? (2 whisker + num_of_rollers*2)
     builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
                     ee_controller->get_state_input_port());
 
@@ -789,7 +789,7 @@ void ManipulationStation<T>::Finalize(
     auto wsg_mbp_state_to_wsg_state = builder.template AddSystem(
         manipulation::yaskawa_conveyor_belt_dof1::MakeMultibodyStateToBeltStateSystem<double>());
 
-    //States sent from mbp to wsgState - size 14
+    //States sent from mbp to wsgState - size 18
     builder.Connect(plant_->get_state_output_port(wsg_model_.model_instance),
                     wsg_mbp_state_to_wsg_state->get_input_port());
 

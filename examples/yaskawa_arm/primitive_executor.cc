@@ -118,17 +118,20 @@ const char kEEUrdf[] =
         while(lcm_.handle() >= 0 && !ee_update_);
 
         //Checks: 
-        if(!are_whiskers_up() ||  
-            is_carrying() || 
-            !is_at_belt() || 
-            !is_pickable() ||  
-            !is_at_package_location(0.0)){
 
-            printer(0,1,0,1,0,1,0,1,1);
+        //Temporary hack
+        if(false){
+            if(!are_whiskers_up() ||  
+                is_carrying() || 
+                !is_at_belt() || 
+                !is_pickable() ||  
+                !is_at_package_location(0.0)){
 
-            return 0; //If any of the checks fail, function returns 0.
+                printer(0,1,0,1,0,1,0,1,1);
+
+                return 0; //If any of the checks fail, function returns 0.
+            }
         }
-
         double final_time = static_cast<double>(ee_status_.utime / 1e6) + time;
 
         while(lcm_.handle() >= 0 && (ee_status_.utime / 1e6) < final_time + 1){
