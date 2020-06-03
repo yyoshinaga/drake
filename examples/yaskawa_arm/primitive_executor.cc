@@ -13,7 +13,7 @@ DEFINE_string(lcm_gripper_command_channel, "EE_COMMAND", "Channel on which to se
 DEFINE_string(lcm_package_state_channel, "PACKAGE_STATE", "Channel on which to listen for robot_state_t messages for the object");
 
 DEFINE_double(whiskers_up_angle, -0.1, "The angle at which the whiskers are in the open position");
-DEFINE_double(whiskers_down_angle, -1.4, "The angle at which the whiskers are in the closed position");
+DEFINE_double(whiskers_down_angle, 1.4, " -1.4 The angle at which the whiskers are in the closed position");
 
 //Determines if trajectory is created by DDP/iLQR or just by IK
 #define use_Solver 0
@@ -31,7 +31,7 @@ const char kYaskawaUrdf[] =
         "yaskawa_no_collision.urdf";
 const char kEEUrdf[] =
         "drake/manipulation/models/yaskawa_end_effector_description/"
-        "urdf/end_effector_3.urdf";
+        "urdf/end_effector_4.urdf";
 
     PrimitiveExecutor::PrimitiveExecutor(): plant_(0.0){
 
@@ -137,15 +137,20 @@ const char kEEUrdf[] =
         while(lcm_.handle() >= 0 && (ee_status_.utime / 1e6) < final_time + 1){
             if(ee_update_){
                 ee_update_ = false;
-
+            drake::log()->info("status: {}",ee_status_.actual_whisker_angle);
                 lcmt_yaskawa_ee_command command{};
                 command.utime = ee_status_.utime;
                 command.whiskers_down = false;
                 command.roller_movement = -1;   //Move backwards to take in package
-                drake::log()->info("roller moving backwards...");
                 lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
             }
         }
+
+        lcmt_yaskawa_ee_command command{};
+        command.utime = ee_status_.utime;
+        command.whiskers_down = false;
+        command.roller_movement = 0;   //Stop Conveyor belt
+        lcm_.publish(FLAGS_lcm_gripper_command_channel, &command); 
 
         has_package = true; //Assumes package has been collected
         drake::log()->info("Package received");
@@ -156,12 +161,12 @@ const char kEEUrdf[] =
         while(lcm_.handle() >= 0 && !ee_update_);
 
         //Checks: 
-        if(!are_whiskers_up() || 
-           !is_carrying() ||
-           !is_at_shelf()){
-            printer(0,1,0,1,1,0,0,0,0);
-            return 0; //If any of the checks fail, function returns 0.
-        }
+        // if(!are_whiskers_up() || 
+        //    !is_carrying() ||
+        //    !is_at_shelf()){
+        //     printer(0,1,0,1,1,0,0,0,0);
+        //     return 0; //If any of the checks fail, function returns 0.
+        // }
 
         double final_time = static_cast<double>(ee_status_.utime / 1e6) + time;
 
@@ -177,6 +182,11 @@ const char kEEUrdf[] =
                 lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
             }
         }
+
+        lcmt_yaskawa_ee_command command{};
+        command.utime = ee_status_.utime;
+        command.whiskers_down = false;
+        command.roller_movement = 0;   //Stop Conveyor belt
 
         has_package = false; //Assumes package has been dropped
         return 1;
@@ -211,6 +221,7 @@ const char kEEUrdf[] =
         if(!is_carrying()){ return 0; }         //If any of the checks fail, function returns 0.
 
         while(lcm_.handle() >= 0 && !are_whiskers_down()){  //While whiskers not up, keep running
+            drake::log()->info("are whiskers down? ");
             if(ee_update_){
                 ee_update_ = false;
 
@@ -318,6 +329,9 @@ const char kEEUrdf[] =
         //Don't finish function until the arm finishes its movement
         while(lcm_.handle() >= 0 && !is_at_desired_position(des_pos)){
             // drake::log()->info("final time : {}\n{}",final_time,ee_status_.utime/ 1e6);
+            drake::log()->info("status: {}",ee_status_.actual_whisker_angle);
+
+            
         };
 
         return 1;
@@ -406,11 +420,13 @@ const char kEEUrdf[] =
     }
     bool PrimitiveExecutor::are_whiskers_up(){
         drake::log()->info("whisker angle: {} {}",ee_status_.actual_whisker_angle, FLAGS_whiskers_up_angle);
-        return ee_status_.actual_whisker_angle >= FLAGS_whiskers_up_angle;
+        return ee_status_.actual_whisker_angle > FLAGS_whiskers_up_angle;
     }
     bool PrimitiveExecutor::are_whiskers_down(){
-        drake::log()->info("whisker angle: {} {}",ee_status_.actual_whisker_angle, FLAGS_whiskers_down_angle);
-        return -ee_status_.actual_whisker_angle <= FLAGS_whiskers_down_angle;
+
+        drake::log()->info("roller : {} {} {}",ee_status_.actual_roller_position, ee_status_.actual_whisker_speed,ee_status_.actual_roller_speed);
+        drake::log()->info("whisker angle: {} {} {}", ee_status_.actual_whisker_angle, -FLAGS_whiskers_down_angle, ee_status_.actual_whisker_angle < -FLAGS_whiskers_down_angle);
+        return ee_status_.actual_whisker_angle < -FLAGS_whiskers_down_angle;
     }
     bool PrimitiveExecutor::is_carrying(){
         return has_package;

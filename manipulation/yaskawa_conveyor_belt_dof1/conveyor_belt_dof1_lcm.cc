@@ -14,6 +14,7 @@ namespace yaskawa_conveyor_belt_dof1 {
 
 using systems::BasicVector;
 using systems::Context;
+const int kNumRollers = 7;
 
 EndEffectorCommandReceiver::EndEffectorCommandReceiver() {
 
@@ -59,7 +60,7 @@ void EndEffectorCommandSender::CalcCommandOutput(
 
 EndEffectorStatusReceiver::EndEffectorStatusReceiver()
     : state_output_port_(this->DeclareVectorOutputPort(
-                                 "state", systems::BasicVector<double>(4),
+                                 "state", systems::BasicVector<double>(2+2*kNumRollers),
                                  &EndEffectorStatusReceiver::CopyStateOut)
                              .get_index()) {
   this->DeclareAbstractInputPort("lcmt_yaskawa_ee_status",
@@ -71,16 +72,24 @@ void EndEffectorStatusReceiver::CopyStateOut(
     drake::systems::BasicVector<double>* output) const {
   const auto& status =
       get_status_input_port().Eval<lcmt_yaskawa_ee_status>(context);
-  output->SetAtIndex(0, status.actual_whisker_angle);
-  output->SetAtIndex(1, status.actual_roller_position);
 
-  output->SetAtIndex(2, status.actual_whisker_speed);
-  output->SetAtIndex(3, status.actual_roller_speed);
+  output->SetAtIndex(0, status.actual_whisker_angle);
+
+  DRAKE_DEMAND(false);
+  for(int i = 1; i <= kNumRollers; i++){
+    output->SetAtIndex(i, status.actual_roller_position);
+  }
+
+  output->SetAtIndex(1+kNumRollers, status.actual_whisker_speed);
+  for(int i = kNumRollers+2; i <= 2*kNumRollers+2; i++){
+    output->SetAtIndex(2+kNumRollers+i, status.actual_roller_speed);
+  }
 }
 
 //------------------------------------------------------------------------------------------------------------
 
 EndEffectorStatusSender::EndEffectorStatusSender() {
+  //Whisker angle and speed, roller position and speed (x 7)
   state_input_port_ =
       this->DeclareInputPort(systems::kVectorValued, 4).get_index();
 
@@ -97,11 +106,8 @@ void EndEffectorStatusSender::OutputStatus(const Context<double>& context,
   // two fingers rather than the position/speed of a single finger
   // (so effectively doubled).
 
-  drake::log()->info("roller speed: {}",state[3]);
-
   status.actual_whisker_angle = state[0];
   status.actual_roller_position = state[1];
-
   status.actual_whisker_speed = state[2];
   status.actual_roller_speed = state[3];
 }

@@ -85,7 +85,7 @@ class EndEffectorPdController : public systems::LeafSystem<double> {
   //           systems::DiscreteValues<double>* updates) const;
 
  private:
-  Eigen::Vector3d CalcGeneralizedAcceleration(
+  Eigen::VectorXd CalcGeneralizedAcceleration(
       const systems::Context<double>& context) const;
 
   void CalcGeneralizedAccelerationOutput(

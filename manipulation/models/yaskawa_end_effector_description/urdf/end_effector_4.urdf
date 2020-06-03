@@ -61,7 +61,7 @@
         <geometry>
           <box size="0.08 0.39 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="-0.04125 -0.275 0"/>
+        <origin rpy="1.57 0 0" xyz="-0.04125 0 0.195"/>
       </visual>
 
       <visual name="finger2">
@@ -69,21 +69,21 @@
         <geometry>
           <box size="0.08 0.39 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0.12375 -0.275 0"/>
+        <origin rpy="1.57 0 0" xyz="0.12375 0 0.195"/>
       </visual>
 
       <collision name="finger1">
         <geometry>
           <box size="0.08 0.39 0.003"/>
         </geometry>
-        <origin rpy="1.57 0 0" xyz="-0.04125 -0.275 0"/>
+        <origin rpy="1.57 0 0" xyz="-0.04125 0 0.195"/>
       </collision>
 
       <collision name="finger2">
         <geometry>
           <box size="0.08 0.39 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0.12375 -0.275 0"/>
+        <origin rpy="1.57 0 0" xyz="0.12375 0 0.195"/>
       </collision>
     </link>
 
@@ -99,7 +99,7 @@
         <geometry>
           <box size="0.08 0.39 0.003"/>
         </geometry>
-        <origin rpy="1.57 0 0" xyz="-0.12375 0.275 0"/>
+        <origin rpy="1.57 0 0" xyz="-0.12375 0 0.195"/>
       </visual>
 
       <visual name="finger2">
@@ -107,241 +107,28 @@
         <geometry>
           <box size="0.08 0.39 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0.04125 0.275 0"/>
+        <origin rpy="1.57 0 0" xyz="0.04125 0 0.195"/>
       </visual>
 
       <collision name="finger1">
         <geometry>
           <box size="0.08 0.39 0.003"/>
         </geometry>
-        <origin rpy="1.57 0 0" xyz="-0.12375 0.275 0"/>
+        <origin rpy="1.57 0 0" xyz="-0.12375 0 0.195"/>
       </collision>
 
       <collision name="finger2">
         <geometry>
           <box size="0.08 0.39 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0.04125 0.275 0"/>
+        <origin rpy="1.57 0 0" xyz="0.04125 0 0.195"/>
       </collision>
     </link>
-
-    <link name="roller_base_1">
-      <visual>
-        <material name="blue"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.05 0.05 0.05"/>
-        </geometry>
-      </visual>
-    </link>
-
-    <link name="roller_base_2">
-      <visual>
-        <material name="blue"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.05 0.05 0.05"/>
-        </geometry>
-      </visual>
-    </link>
-
-    <link name="roller_base_3">
-      <visual>
-        <material name="blue"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.05 0.05 0.05"/>
-        </geometry>
-      </visual>
-    </link>
-
-    <link name="roller_base_4">
-      <visual>
-        <material name="blue"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.05 0.05 0.05"/>
-        </geometry>
-      </visual>
-    </link>
-
-    <link name="roller_base_5">
-      <visual>
-        <material name="blue"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.05 0.05 0.05"/>
-        </geometry>
-      </visual>
-    </link>
-
-    <link name="roller_base_6">
-      <visual>
-        <material name="blue"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.05 0.05 0.05"/>
-        </geometry>
-      </visual>
-    </link>   
-
-    <link name="roller_base_7">
-      <visual>
-        <material name="blue"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.05 0.05 0.05"/>
-        </geometry>
-      </visual>
-    </link>
-
-
-    <link name="roller_link_1">
-      <inertial>
-        <mass value="0.01"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
-      </inertial>
-      <visual>
-        <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <link name="roller_link_2">
-      <inertial>
-        <mass value="0.01"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
-      </inertial>
-      <visual>
-        <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <link name="roller_link_3">
-      <inertial>
-        <mass value="0.01"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
-      </inertial>
-      <visual>
-        <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <link name="roller_link_4">
-      <inertial>
-        <mass value="0.01"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
-      </inertial>
-      <visual>
-        <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <link name="roller_link_5">
-      <inertial>
-        <mass value="0.01"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
-      </inertial>
-      <visual>
-        <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <link name="roller_link_6">
-      <inertial>
-        <mass value="0.01"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
-      </inertial>
-      <visual>
-        <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <link name="roller_link_7">
-      <inertial>
-        <mass value="0.01"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
-      </inertial>
-      <visual>
-        <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
-        <geometry>
-          <cylinder radius="0.02" length="0.5"/>
-        </geometry>
-      </collision>
-    </link>
-
 
     <link name='right_whisker_offset'>
       <visual name='visual_right_offset'>
-        <origin xyz="0.4 -0.2 0" rpy="0 0 0" />
         <geometry>
-          <box size="0.1 0.1 0.1"/>
+          <box size="0.01 0.01 0.01"/>
         </geometry>
         <material>
           <diffuse>0 1 1 1.0</diffuse>
@@ -350,16 +137,236 @@
     </link>
 
     <link name='left_whisker_offset'>
-       <visual name='visual_left_offset'>
-        <origin xyz="0.4 0.2 0" rpy="0 0 0" />
+        <visual name='visual_left_offset'>
         <geometry>
-          <box size="0.1 0.1 0.1"/>
+          <box size="0.01 0.01 0.01"/>
         </geometry>
         <material>
           <diffuse>0 1 1 1.0</diffuse>
         </material>
       </visual> 
     </link>
+
+    <link name="roller_base_1">
+      <!-- <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual> -->
+    </link>
+
+    <link name="roller_base_2">
+      <!-- <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual> -->
+    </link>
+
+    <link name="roller_base_3">
+      <!-- <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual> -->
+    </link>
+
+    <link name="roller_base_4">
+      <!-- <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual> -->
+    </link>
+
+    <link name="roller_base_5">
+      <!-- <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual> -->
+    </link>
+
+    <link name="roller_base_6">
+      <!-- <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual> -->
+    </link>   
+
+    <link name="roller_base_7">
+      <!-- <visual>
+        <material name="blue"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 0.05 0.05"/>
+        </geometry>
+      </visual> -->
+    </link>
+
+
+    <link name="roller_link_1">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="green"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+           <!-- <box size="0.04 0.04 0.5"/> -->
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="roller_link_2">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="green"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+           <!-- <box size="0.04 0.04 0.5"/> -->
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="roller_link_3">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="green"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+           <!-- <box size="0.04 0.04 0.5"/> -->
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="roller_link_4">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="red"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <!-- <cylinder radius="0.0225" length="0.5"/> -->
+           <box size="0.04 0.04 0.5"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="roller_link_5">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="green"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+           <!-- <box size="0.04 0.04 0.5"/> -->
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="roller_link_6">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="green"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+           <!-- <box size="0.04 0.04 0.5"/> -->
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="roller_link_7">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      </inertial>
+      <visual>
+        <material name="green"/>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+          <!-- <box size="0.04 0.04 0.5"/> -->
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.57 0 0"/>
+        <geometry>
+          <cylinder radius="0.0225" length="0.5"/>
+        </geometry>
+      </collision>
+    </link>
+
+
+
 
     <!-- frame, equivlent of TCP (Tool Center Point) -->
     <frame link="ee_base" name="ee_tip_0" rpy="0 0 0" xyz="0.54 0 0"/>
@@ -369,28 +376,28 @@
     <joint name="whisker_right_to_base" type="fixed">
       <parent link="ee_base"/>
       <child link="right_whisker_offset"/>
-      <origin xyz="0 -0.2 0" rpy="0 0 0"/>
+      <origin xyz="0.2 -0.275 -0.1" rpy="0 0 0"/>
     </joint>
 
     <joint name="whisker_left_to_base" type="fixed">
       <parent link="ee_base"/>
       <child link="left_whisker_offset"/>
-      <origin xyz="0 0.2 0" rpy="0 0 0"/>
+      <origin xyz="0.2 0.275 -0.1" rpy="0 0 0"/>
     </joint>
 
     <!-- joint whisker right -->
     <joint name="whisker_right_joint" type="revolute">
-      <parent link="ee_base"/>
+      <parent link="right_whisker_offset"/>
       <child link="whisker_right_link"/>
-      <origin xyz="0.35 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <axis xyz="1 0 0"/>
     </joint>
 
     <!-- joint whisker left -->
     <joint name="whisker_left_joint" type="revolute">
-      <parent link="ee_base"/>
+      <parent link="left_whisker_offset"/>
       <child link="whisker_left_link"/>
-      <origin xyz="0.35 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <axis xyz="1 0 0"/>
     </joint>
 
@@ -398,44 +405,46 @@
     <joint name="ee_base_to_roller_base_1" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_1"/>
-      <origin xyz="0.2 0 -0.175" rpy="0 0 0"/>
+      <origin xyz="0.1 0 -0.175" rpy="0 0 0"/>
     </joint>
 
     <joint name="ee_base_to_roller_base_2" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_2"/>
-      <origin xyz="0.25 0 -0.175" rpy="0 0 0"/>
+      <origin xyz="0.15 0 -0.175" rpy="0 0 0"/>
     </joint>
 
     <joint name="ee_base_to_roller_base_3" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_3"/>
-      <origin xyz="0.3 0 -0.175" rpy="0 0 0"/>
-    </joint>
-
-    <joint name="ee_base_to_roller_base_5" type="fixed">
-      <parent link="ee_base"/>
-      <child link="roller_base_5"/>
-      <origin xyz="0.4 0 -0.175" rpy="0 0 0"/>
-    </joint>
-
-    <joint name="ee_base_to_roller_base_6" type="fixed">
-      <parent link="ee_base"/>
-      <child link="roller_base_6"/>
-      <origin xyz="0.45 0 -0.175" rpy="0 0 0"/>
-    </joint>
-
-    <joint name="ee_base_to_roller_base_7" type="fixed">
-      <parent link="ee_base"/>
-      <child link="roller_base_7"/>
-      <origin xyz="0.5 0 -0.175" rpy="0 0 0"/>
+      <origin xyz="0.2 0 -0.175" rpy="0 0 0"/>
     </joint>
 
     <joint name="ee_base_to_roller_base_4" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_4"/>
+      <origin xyz="0.25 0 -0.175" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="ee_base_to_roller_base_5" type="fixed">
+      <parent link="ee_base"/>
+      <child link="roller_base_5"/>
+      <origin xyz="0.3 0 -0.175" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="ee_base_to_roller_base_6" type="fixed">
+      <parent link="ee_base"/>
+      <child link="roller_base_6"/>
       <origin xyz="0.35 0 -0.175" rpy="0 0 0"/>
     </joint>
+
+    <joint name="ee_base_to_roller_base_7" type="fixed">
+      <parent link="ee_base"/>
+      <child link="roller_base_7"/>
+      <origin xyz="0.4 0 -0.175" rpy="0 0 0"/>
+    </joint>
+
+
 
     <!-- Roller joints -->
     <joint name="roller_joint_1" type="revolute">
