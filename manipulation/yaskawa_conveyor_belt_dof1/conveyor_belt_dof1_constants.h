@@ -54,16 +54,16 @@ template <typename T>
 std::unique_ptr<systems::MatrixGain<T>>
 MakeMultibodyStateToBeltStateSystem() {
 
-  //This converts 18 states (4 whiskers+2*num_of_rollers) to 4 states (2 whisker_sets+2 roller_sets)  
-  Eigen::Matrix<double, 4, 18> D;  //wsg_state_measured of size 4, then 4 whiskers_states + num_of_rollers*2 states
+  //This converts 26 states (4 whiskers+2*num_of_rollers) to 4 states (2 whisker_sets+2 roller_sets)  
+  Eigen::Matrix<double, 4, 26> D;  //wsg_state_measured of size 4, then 4 whiskers_states + num_of_rollers*2 states
   // clang-format off
   //THERE MUST BE 4 STATES
   drake::log()->info("MakeMultibodyStateToBeltStateSystem matrix gain");
   
-  D <<  -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+  D <<  -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
         
   // clang-format on
   return std::make_unique<systems::MatrixGain<T>>(D);

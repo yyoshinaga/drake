@@ -1240,8 +1240,8 @@ void ManipulationStation<T>::AddDefaultWsg() {
 
   const drake::multibody::Frame<T>& link6 =
       plant_->GetFrameByName("ee_mount", iiwa_model_.model_instance);
-  const RigidTransform<double> X_6G(RollPitchYaw<double>(0, 0, 0),
-                                    Vector3d(0, 0, 0.114));
+  const RigidTransform<double> X_6G(RollPitchYaw<double>(0, -1.57, 0),
+                                    Vector3d(0, 0, 0));
   auto wsg_instance = internal::AddAndWeldModelFrom(sdf_path, "gripper", link6,
                                                     "ee_base", X_6G, plant_);
   RegisterWsgControllerModel(sdf_path, wsg_instance, link6,

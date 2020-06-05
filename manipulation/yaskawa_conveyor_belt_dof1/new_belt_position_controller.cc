@@ -18,7 +18,7 @@ using Eigen::VectorXd;
 using systems::BasicVector;
 
 const int kNumWhiskers = 2;
-const int kNumRollers = 7;
+const int kNumRollers = 11;
 
 EndEffectorPdController::EndEffectorPdController(double kp_command,
                                              double kd_command,
@@ -37,7 +37,7 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
   // 1 set of whisker position,
   // 1 set of whisker velocity,
   desired_whisker_state_input_port_ =
-      this->DeclareVectorInputPort("desired_whisker_state", BasicVector<double>(2))
+      this->DeclareVectorInputPort("desired_whisker_state", BasicVector<double>(kNumWhiskers))
           .get_index();
 
   // Desired input states include:
@@ -46,7 +46,7 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
       this->DeclareVectorInputPort("desired_roller_state", BasicVector<double>(kNumRollers))
           .get_index();
 
-  // Input includes 18 states?:
+  // Input includes 26 states?:
   // pos and vel for right whisker,
   // pos and vel for left whisker,
   // pos and vel for x amount of rollers, 
@@ -54,13 +54,13 @@ EndEffectorPdController::EndEffectorPdController(double kp_command,
       this->DeclareVectorInputPort("state", BasicVector<double>(2*kNumWhiskers + 2*kNumRollers))
           .get_index();
 
-  // Output vector is size 9
+  // Output vector is size 13
   // actuation for right whisker
   // actuation for left whisker
   // acc for roller
   generalized_acceleration_output_port_ =
       this->DeclareVectorOutputPort(
-            "generalized_acceleration", BasicVector<double>(9),
+            "generalized_acceleration", BasicVector<double>(kNumWhiskers + kNumRollers),
             &EndEffectorPdController::CalcGeneralizedAccelerationOutput)
           .get_index();    
 
@@ -118,10 +118,12 @@ VectorXd EndEffectorPdController::CalcGeneralizedAcceleration(
 
   // f₀ = (f₀+f₁)/2 - (-f₀+f₁)/2,
   // f₁ = (f₀+f₁)/2 + (-f₀+f₁)/2.
-  VectorXd actuator_efforts(9);
+  VectorXd actuator_efforts(kNumWhiskers + kNumRollers);
   actuator_efforts << 0.5 * f0_plus_f1 - 0.5 * neg_f0_plus_f1,
                   0.5 * f0_plus_f1 + 0.5 * neg_f0_plus_f1,
-                  roller_acc, roller_acc, roller_acc, roller_acc, roller_acc, roller_acc, roller_acc;
+                  roller_acc, roller_acc, roller_acc, roller_acc, 
+                  roller_acc, roller_acc, roller_acc, roller_acc, 
+                  roller_acc, roller_acc, roller_acc;
   return actuator_efforts;
 }
 
@@ -148,7 +150,7 @@ EndEffectorGenerateAngleAndVelocity::EndEffectorGenerateAngleAndVelocity(){
   //This is for roller only
   velocity_output_port_ =
       this->DeclareVectorOutputPort(
-            "velocity", BasicVector<double>(7),
+            "velocity", BasicVector<double>(kNumRollers),
             &EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput)
           .get_index(); 
 
@@ -189,18 +191,18 @@ void EndEffectorGenerateAngleAndVelocity::CalcVelocityOutput(
     // If roller is 'on', set velocity to desired velocity
     if(actuation[1] > 0){
         // output_vector->SetAtIndex(0, FLAGS_belt_speed); 
-      for(int i = 0; i < 7; i++){
+      for(int i = 0; i < kNumWhiskers; i++){
         output_vector->SetAtIndex(i, FLAGS_belt_speed);
       }
     }
     else if(actuation[1] < 0){
-      for(int i = 0; i < 7; i++){
+      for(int i = 0; i < kNumWhiskers; i++){
         output_vector->SetAtIndex(i, -FLAGS_belt_speed);
       }
     }
     else{ 
 
-      for(int i = 0; i < 7; i++){
+      for(int i = 0; i < kNumWhiskers; i++){
         output_vector->SetAtIndex(i, 0);
       }
         // output_vector->SetAtIndex(0, 0); 
