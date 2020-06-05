@@ -38,7 +38,8 @@ public:
 
     //Define actions that the arm can take
     int action_GoHome();
-    int action_Collect(const double time);
+    int action_Hault();                     //For ee belt
+    int action_Collect(const double time);  //TODO: Get rid of timed movement. Stopping should occur with a command.
     int action_Release(const double time);
     int action_WhiskersUp();
     int action_WhiskersDown();
@@ -66,7 +67,9 @@ private:
     bool yaskawa_update_;
 
     lcmt_yaskawa_ee_status ee_status_;
-    bool ee_update_;
+
+    //Locks the end-effector into only executing one action at a time.
+    bool ee_update_;    
 
     Eigen::Vector3d object_position_;
     Eigen::Quaterniond object_quaternion_;

@@ -64,9 +64,9 @@ class EndEffectorCommandSender : public systems::LeafSystem<double> {
 
   EndEffectorCommandSender();
 
-  const systems::InputPort<double>& get_position_input_port()
+  const systems::InputPort<double>& get_command_input_port()
   const {
-    return this->get_input_port(position_input_port_);
+    return this->get_input_port(command_input_port_);
   }
 
   const systems::OutputPort<double>& get_command_output_port() const {
@@ -79,9 +79,9 @@ class EndEffectorCommandSender : public systems::LeafSystem<double> {
       lcmt_yaskawa_ee_command* output) const;
 
  private:
-  const systems::InputPortIndex position_input_port_{};
-  const systems::InputPortIndex pusher_position_input_port_{};
-  const systems::InputPortIndex puller_position_input_port_{};
+  const systems::InputPortIndex command_input_port_{};
+  // const systems::InputPortIndex pusher_position_input_port_{};
+  // const systems::InputPortIndex puller_position_input_port_{};
 
 };
 

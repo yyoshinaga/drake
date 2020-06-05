@@ -15,22 +15,22 @@ int main(int , char** ) {
 
     // p_executor.action_GoHome();
 
-    // drake::log()->info("action: goToPoint");
-    // p_executor.action_GoToPoint(Eigen::Vector3d(1.0, -0.2, 0.7), Eigen::Vector3d(0.0, 0.0,1.57),8.0);
-    // p_executor.action_GoToPoint(Eigen::Vector3d(1.65, 0.35, 0.90), Eigen::Vector3d(0.0, 0.0,1.57),3.0);
+    drake::log()->info("action: goToPoint");
+    p_executor.action_GoToPoint(Eigen::Vector3d(1.0, 0.1, 0.7), Eigen::Vector3d(0.0, 0.0,1.57),4.0);
+    p_executor.action_GoToPoint(Eigen::Vector3d(1.65, 0.35, 0.90), Eigen::Vector3d(0.0, 0.0,1.57),3.0);
 
     drake::log()->info("action: Collect");
-    DRAKE_DEMAND(p_executor.action_Collect(2.5) ? true : false);
+    DRAKE_DEMAND(p_executor.action_Collect(3.5) ? true : false);
 
     drake::log()->info("action: WhiskersDown");
     DRAKE_DEMAND(p_executor.action_WhiskersDown());
 
-    // drake::log()->info("action: goToPoint");
-    // p_executor.action_GoToPoint(Eigen::Vector3d(1.0, -0.1, 1.7), Eigen::Vector3d(0.0, 0.0,1.65),5.0);
-    // p_executor.action_GoToPoint(Eigen::Vector3d(0.6, 0.75, 1.73), Eigen::Vector3d(0.0, 0.4,1.65),5.0);
+    drake::log()->info("action: goToPoint");
+    p_executor.action_GoToPoint(Eigen::Vector3d(1.0, 0.2, 1.7), Eigen::Vector3d(0.0, 0.0,1.65),5.0);
+    p_executor.action_GoToPoint(Eigen::Vector3d(0.55, 1.1, 1.63), Eigen::Vector3d(0.0, 0.3,1.65),5.0);
 
-    // drake::log()->info("action: WhiskersUp");
-    // DRAKE_DEMAND(p_executor.action_WhiskersUp());
+    drake::log()->info("action: WhiskersUp");
+    DRAKE_DEMAND(p_executor.action_WhiskersUp());
 
     drake::log()->info("action: Release");
     DRAKE_DEMAND(p_executor.action_Release(2.0) ? true : false);

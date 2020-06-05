@@ -62,8 +62,8 @@ MakeMultibodyStateToBeltStateSystem() {
   
   D <<  -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
-        0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1;
+        0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
         
   // clang-format on
   return std::make_unique<systems::MatrixGain<T>>(D);
@@ -87,6 +87,8 @@ class MultibodyForceToBeltForceSystem : public systems::VectorSystem<T> {
       const Eigen::VectorBlock<const VectorX<T>>& input,
       const Eigen::VectorBlock<const VectorX<T>>& state,
     Eigen::VectorBlock<VectorX<T>>* output) const {
+    DRAKE_DEMAND(false);
+
     unused(state);
     // gripper force = abs(-finger0 + finger1).
 
@@ -97,7 +99,6 @@ class MultibodyForceToBeltForceSystem : public systems::VectorSystem<T> {
     (*output)(1) = 0;
     drake::log()->info("DoCalcVectorOutput in conveyor constants");
     std::cout << (*output).size() << std::endl;
-    DRAKE_DEMAND(false);
 
     //THIS FUNCTION DOES NOT RUN!!!!
   }

@@ -13,10 +13,13 @@ DEFINE_string(lcm_gripper_command_channel, "EE_COMMAND", "Channel on which to se
 DEFINE_string(lcm_package_state_channel, "PACKAGE_STATE", "Channel on which to listen for robot_state_t messages for the object");
 
 DEFINE_double(whiskers_up_angle, -0.1, "The angle at which the whiskers are in the open position");
-DEFINE_double(whiskers_down_angle, 1.4, " -1.4 The angle at which the whiskers are in the closed position");
+DEFINE_double(whiskers_down_angle, 1.5, " -1.4 The angle at which the whiskers are in the closed position");
+
+DEFINE_double(stopping_criteria, 0.001, "The velocity value of the rollers. A value close to 0 is preferred.");
 
 //Determines if trajectory is created by DDP/iLQR or just by IK
 #define use_Solver 0
+#define CHECKER 0
 
 namespace drake {
 namespace examples {
@@ -63,8 +66,8 @@ const char kEEUrdf[] =
         //Weld models
         plant_.WeldFrames(plant_.world_frame(), plant_.GetFrameByName("arm_base", yaskawa_model_idx), X_WI);
         plant_.WeldFrames(ee_frame, plant_.GetFrameByName("ee_base", ee_model_idx), X_6G);
-
         plant_.Finalize();
+
         drake::log()->info("Plant finalized");
 
         //Define context. Use context to get state of models
@@ -95,7 +98,6 @@ const char kEEUrdf[] =
             joint_names_.push_back(position_names[i]);
         }
 
-
         ee_update_ = false;
         yaskawa_update_ = false;
         object_update_ = false;
@@ -107,10 +109,24 @@ const char kEEUrdf[] =
     // TODO: Finish this function
     int PrimitiveExecutor::action_GoHome(){
         // while(lcm_.handle() >= 0 && !ee_update_);
-        // while(lcm_.handle() >= 0 is_at_desired_position()){
+        // while(lcm_.handle() >= 0 is_at_desired_position()){ }
+        return 1;
+    }
 
-        // }
+    //TODO: Get package location status. Once it passes a certain value, action_Hault will execute. 
+    int PrimitiveExecutor::action_Hault(){
+        while(lcm_.handle() >= 0 && !ee_update_);
 
+        if(ee_update_){
+            ee_update_ = false;
+            while(lcm_.handle() >= 0 && ee_status_.actual_roller_speed > FLAGS_stopping_criteria){
+                lcmt_yaskawa_ee_command command{};
+                command.utime = ee_status_.utime;
+                command.whiskers_down = false;
+                command.roller_movement = 0;   //Stop Conveyor belt
+                lcm_.publish(FLAGS_lcm_gripper_command_channel, &command); 
+            }
+        }
         return 1;
     }
 
@@ -118,26 +134,29 @@ const char kEEUrdf[] =
         while(lcm_.handle() >= 0 && !ee_update_);
 
         //Checks: 
-
-        //Temporary hack
-        if(false){
-            if(!are_whiskers_up() ||  
-                is_carrying() || 
-                !is_at_belt() || 
-                !is_pickable() ||  
-                !is_at_package_location(0.0)){
-
-                printer(0,1,0,1,0,1,0,1,1);
-
-                return 0; //If any of the checks fail, function returns 0.
-            }
+        #if CHECKER
+        if(!are_whiskers_up() ||  
+          is_carrying() || 
+          !is_at_belt() || 
+          !is_pickable() ||  
+          !is_at_package_location(0.0)){
+            printer(0,1,0,1,0,1,0,1,1);
+            return 0; //If any of the checks fail, function returns 0.
         }
+        #endif
+
         double final_time = static_cast<double>(ee_status_.utime / 1e6) + time;
 
         while(lcm_.handle() >= 0 && (ee_status_.utime / 1e6) < final_time + 1){
             if(ee_update_){
                 ee_update_ = false;
-            drake::log()->info("status: {}",ee_status_.actual_whisker_angle);
+
+                drake::log()->info("status whisker angle: {}",ee_status_.actual_whisker_angle);
+                drake::log()->info("status roller position: {}",ee_status_.actual_roller_position);
+                drake::log()->info("status whisker speed: {}",ee_status_.actual_whisker_speed);
+                drake::log()->info("status roller speed: {}",ee_status_.actual_roller_speed);
+                drake::log()->info("-----------------");
+
                 lcmt_yaskawa_ee_command command{};
                 command.utime = ee_status_.utime;
                 command.whiskers_down = false;
@@ -145,12 +164,6 @@ const char kEEUrdf[] =
                 lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
             }
         }
-
-        lcmt_yaskawa_ee_command command{};
-        command.utime = ee_status_.utime;
-        command.whiskers_down = false;
-        command.roller_movement = 0;   //Stop Conveyor belt
-        lcm_.publish(FLAGS_lcm_gripper_command_channel, &command); 
 
         has_package = true; //Assumes package has been collected
         drake::log()->info("Package received");
@@ -160,13 +173,14 @@ const char kEEUrdf[] =
     int PrimitiveExecutor::action_Release(const double time){
         while(lcm_.handle() >= 0 && !ee_update_);
 
-        //Checks: 
-        // if(!are_whiskers_up() || 
-        //    !is_carrying() ||
-        //    !is_at_shelf()){
-        //     printer(0,1,0,1,1,0,0,0,0);
-        //     return 0; //If any of the checks fail, function returns 0.
-        // }
+        #if CHECKER
+        if(!are_whiskers_up() || 
+           !is_carrying() ||
+           !is_at_shelf()){
+            printer(0,1,0,1,1,0,0,0,0);
+            return 0; //If any of the checks fail, function returns 0.
+        }
+        #endif
 
         double final_time = static_cast<double>(ee_status_.utime / 1e6) + time;
 
@@ -181,12 +195,7 @@ const char kEEUrdf[] =
 
                 lcm_.publish(FLAGS_lcm_gripper_command_channel, &command);  
             }
-        }
-
-        lcmt_yaskawa_ee_command command{};
-        command.utime = ee_status_.utime;
-        command.whiskers_down = false;
-        command.roller_movement = 0;   //Stop Conveyor belt
+        } 
 
         has_package = false; //Assumes package has been dropped
         return 1;
@@ -195,9 +204,11 @@ const char kEEUrdf[] =
     int PrimitiveExecutor::action_WhiskersUp(){
         while(lcm_.handle() >= 0 && !ee_update_);
 
-        //Checks: 
+        //Checks:
+        #if CHECKER 
         if(are_whiskers_up()){ return 1; }  //Action already completed
         if(is_moving()){ return 0; }        //If any of the checks fail, function returns 0.
+        #endif
 
         while(lcm_.handle() >= 0 && !are_whiskers_up()){    //While whiskers not up, keep running
             if(ee_update_){
@@ -216,9 +227,11 @@ const char kEEUrdf[] =
     int PrimitiveExecutor::action_WhiskersDown(){
         while(lcm_.handle() >= 0 && !ee_update_);
 
-        //Checks: 
+        //Checks:
+        #if CHECKER 
         if(are_whiskers_down()){ return 1; }    //Action already completed
         if(!is_carrying()){ return 0; }         //If any of the checks fail, function returns 0.
+        #endif
 
         while(lcm_.handle() >= 0 && !are_whiskers_down()){  //While whiskers not up, keep running
             drake::log()->info("are whiskers down? ");
@@ -242,7 +255,9 @@ const char kEEUrdf[] =
         des_pos << position, orientation;
 
         //Checks:
+        #if CHECKER 
         if(is_at_desired_position(des_pos)){ return 1; } //Action already completed
+        #endif
 
         //Start creating IK trajectory
         drake::manipulation::planner::ConstraintRelaxingIk::IkCartesianWaypoint wp;    
@@ -424,9 +439,20 @@ const char kEEUrdf[] =
     }
     bool PrimitiveExecutor::are_whiskers_down(){
 
-        drake::log()->info("roller : {} {} {}",ee_status_.actual_roller_position, ee_status_.actual_whisker_speed,ee_status_.actual_roller_speed);
-        drake::log()->info("whisker angle: {} {} {}", ee_status_.actual_whisker_angle, -FLAGS_whiskers_down_angle, ee_status_.actual_whisker_angle < -FLAGS_whiskers_down_angle);
-        return ee_status_.actual_whisker_angle < -FLAGS_whiskers_down_angle;
+
+        //Ideas: Use context instead of ee_status_?
+
+        //Roller position = maybe whisker speed 
+        //whisker speed = roller position
+        //roller speed = ?? double roller position??? 
+        drake::log()->info("whisker angle: {} {} {}", ee_status_.actual_whisker_angle, FLAGS_whiskers_down_angle, ee_status_.actual_whisker_angle > FLAGS_whiskers_down_angle);
+
+        drake::log()->info("roller pos: {}", ee_status_.actual_roller_position);
+
+        drake::log()->info("whisker speed: {}",ee_status_.actual_whisker_speed);
+        drake::log()->info("roller speed: {}" ,ee_status_.actual_roller_speed);
+        
+        return ee_status_.actual_whisker_angle > FLAGS_whiskers_down_angle;
     }
     bool PrimitiveExecutor::is_carrying(){
         return has_package;

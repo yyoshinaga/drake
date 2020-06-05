@@ -18,17 +18,75 @@
       <color rgba="1.0 1.0 1.0 1.0"/>
     </material>
 
+
     <!-- LINKS -->
     <!-- virtual link interfacing with ee_mount on robot arm-->
     <link name="ee_base">
-      <!-- <visual>
+      <visual>
         <geometry>
-          <mesh filename="../mesh/cbee_gripper_1st-collision.obj" />
+          <!-- <mesh filename="../mesh/cbee_gripper_1st-collision.obj" /> -->
+          <box size="0.01 0.01 0.01"/>
         </geometry>
-        <origin rpy="0 0 3.14" xyz="0.55 0 -0.2"/>
-      </visual> -->
+        <!-- <origin rpy="0 0 3.14" xyz="0.55 0 -0.2"/> -->
+      </visual>
     </link>
 
+    <link name="cover_back">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
+      </inertial>
+      <visual>
+        <material name="white"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.35 0.05"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.01 0.35 0.05"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="cover_left">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
+      </inertial>
+      <visual>
+        <material name="white"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.35 0.05"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.01 0.35 0.05"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="cover_right">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
+      </inertial>
+      <visual>
+        <material name="white"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.35 0.05"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.01 0.35 0.05"/>
+        </geometry>
+      </collision>
+    </link>
 
     <!-- links of cylinder base connected with the ee_base -->
     <!-- visual only? DO NOT ERASE THIS!! -->
@@ -221,20 +279,17 @@
     <link name="roller_link_1">
       <inertial>
         <mass value="0.001"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
-           <!-- <box size="0.04 0.04 0.5"/> -->
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </collision>
     </link>
@@ -242,20 +297,18 @@
     <link name="roller_link_2">
       <inertial>
         <mass value="0.001"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
+          <cylinder radius="0.0175" length="0.43"/>
            <!-- <box size="0.04 0.04 0.5"/> -->
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </collision>
     </link>
@@ -263,20 +316,18 @@
     <link name="roller_link_3">
       <inertial>
         <mass value="0.001"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
+          <cylinder radius="0.0175" length="0.43"/>
            <!-- <box size="0.04 0.04 0.5"/> -->
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </collision>
     </link>
@@ -284,20 +335,18 @@
     <link name="roller_link_4">
       <inertial>
         <mass value="0.001"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
       </inertial>
       <visual>
         <material name="red"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <!-- <cylinder radius="0.0225" length="0.5"/> -->
-           <box size="0.04 0.04 0.5"/>
+          <!-- <cylinder radius="0.0175" length="0.43"/> -->
+          <box size="0.035 0.035 0.43"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </collision>
     </link>
@@ -305,20 +354,17 @@
     <link name="roller_link_5">
       <inertial>
         <mass value="0.001"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
-           <!-- <box size="0.04 0.04 0.5"/> -->
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </collision>
     </link>
@@ -326,20 +372,17 @@
     <link name="roller_link_6">
       <inertial>
         <mass value="0.001"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
-           <!-- <box size="0.04 0.04 0.5"/> -->
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </collision>
     </link>
@@ -347,31 +390,45 @@
     <link name="roller_link_7">
       <inertial>
         <mass value="0.001"/>
-        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
       </inertial>
       <visual>
         <material name="green"/>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
-          <!-- <box size="0.04 0.04 0.5"/> -->
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder radius="0.0225" length="0.5"/>
+          <cylinder radius="0.0175" length="0.43"/>
         </geometry>
       </collision>
     </link>
-
-
-
 
     <!-- frame, equivlent of TCP (Tool Center Point) -->
     <frame link="ee_base" name="ee_tip_0" rpy="0 0 0" xyz="0.54 0 0"/>
 
     <!-- END LINKS -->
+
+
+    <!-- JOINTS -->
+    <joint name="cover_back_to_base" type="fixed">
+      <parent link="ee_base"/>
+      <child link="cover_back"/>
+      <origin xyz="0.075 0 -0.125" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="cover_left_to_base" type="fixed">
+      <parent link="ee_base"/>
+      <child link="cover_left"/>
+      <origin xyz="0.25 0.2 -0.125" rpy="0 0 1.57"/>
+    </joint>
+
+    <joint name="cover_right_to_base" type="fixed">
+      <parent link="ee_base"/>
+      <child link="cover_right"/>
+      <origin xyz="0.25 -0.2 -0.125" rpy="0 0 1.57"/>
+    </joint>
 
     <joint name="whisker_right_to_base" type="fixed">
       <parent link="ee_base"/>
@@ -405,43 +462,43 @@
     <joint name="ee_base_to_roller_base_1" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_1"/>
-      <origin xyz="0.1 0 -0.175" rpy="0 0 0"/>
+      <origin xyz="0.1 0 -0.175" rpy="1.57 0 0"/>
     </joint>
 
     <joint name="ee_base_to_roller_base_2" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_2"/>
-      <origin xyz="0.15 0 -0.175" rpy="0 0 0"/>
+      <origin xyz="0.15 0 -0.175" rpy="1.57 0 0"/>
     </joint>
 
     <joint name="ee_base_to_roller_base_3" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_3"/>
-      <origin xyz="0.2 0 -0.175" rpy="0 0 0"/>
+      <origin xyz="0.2 0 -0.175" rpy="1.57 0 0"/>
     </joint>
 
     <joint name="ee_base_to_roller_base_4" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_4"/>
-      <origin xyz="0.25 0 -0.175" rpy="0 0 0"/>
+      <origin xyz="0.25 0 -0.175" rpy="1.57 0 0"/>
     </joint>
 
     <joint name="ee_base_to_roller_base_5" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_5"/>
-      <origin xyz="0.3 0 -0.175" rpy="0 0 0"/>
+      <origin xyz="0.3 0 -0.175" rpy="1.57 0 0"/>
     </joint>
 
     <joint name="ee_base_to_roller_base_6" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_6"/>
-      <origin xyz="0.35 0 -0.175" rpy="0 0 0"/>
+      <origin xyz="0.35 0 -0.175" rpy="1.57 0 0"/>
     </joint>
 
     <joint name="ee_base_to_roller_base_7" type="fixed">
       <parent link="ee_base"/>
       <child link="roller_base_7"/>
-      <origin xyz="0.4 0 -0.175" rpy="0 0 0"/>
+      <origin xyz="0.4 0 -0.175" rpy="1.57 0 0"/>
     </joint>
 
 
@@ -451,49 +508,49 @@
       <parent link="roller_base_1"/>
       <child link="roller_link_1"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
+      <axis xyz="1 0 0"/>
     </joint>
 
     <joint name="roller_joint_2" type="revolute">
       <parent link="roller_base_2"/>
       <child link="roller_link_2"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
+      <axis xyz="1 0 0"/>
     </joint>
 
     <joint name="roller_joint_3" type="revolute">
       <parent link="roller_base_3"/>
       <child link="roller_link_3"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
+      <axis xyz="1 0 0"/>
     </joint>
 
     <joint name="roller_joint_4" type="revolute">
       <parent link="roller_base_4"/>
       <child link="roller_link_4"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
+      <axis xyz="1 0 0"/>
     </joint>
 
     <joint name="roller_joint_5" type="revolute">
       <parent link="roller_base_5"/>
       <child link="roller_link_5"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
+      <axis xyz="1 0 0"/>
     </joint>
 
     <joint name="roller_joint_6" type="revolute">
       <parent link="roller_base_6"/>
       <child link="roller_link_6"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
+      <axis xyz="1 0 0"/>
     </joint>   
 
     <joint name="roller_joint_7" type="revolute">
       <parent link="roller_base_7"/>
       <child link="roller_link_7"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
+      <axis xyz="1 0 0"/>
     </joint>
 
 
@@ -508,6 +565,12 @@
   </gazebo>
 
   <gazebo reference="ee_base">
+    <material>Gazebo/Grey</material>
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+
+  <gazebo reference="cover">
     <material>Gazebo/Grey</material>
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>

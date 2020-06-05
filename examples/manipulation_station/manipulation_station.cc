@@ -971,6 +971,9 @@ Vector2<T> ManipulationStation<T>::GetWsgPosition(
   Vector2<T> posm;
       posm << positions(1) - positions(0), positions(2);
 
+  drake::log()->info("posm!!: {} {} ", positions(0), positions(1), positions(2));
+
+
   return posm;
 }
 
@@ -985,6 +988,7 @@ Vector2<T> ManipulationStation<T>::GetWsgVelocity(
 
   Vector2<T> vels;
     vels << (velocities(1) - velocities(0)), velocities(2);
+  drake::log()->info("nonConstVel!!: {} {} ", velocities(0), velocities(1), velocities(2));
 
   return vels;
 }
