@@ -121,7 +121,7 @@
         <geometry>
           <box size="0.08 0.37 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="-0.04125 0 0.195"/>
+        <origin rpy="1.57 0 0" xyz="-0.2 0 0.195"/>
       </visual>
 
       <visual name="finger2">
@@ -129,22 +129,38 @@
         <geometry>
           <box size="0.08 0.37 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0.12375 0 0.195"/>
+        <origin rpy="1.57 0 0" xyz="-0.04 0 0.195"/>
+      </visual>
+
+      <visual name="finger3">
+        <material name="red"/>
+        <geometry>
+          <box size="0.08 0.37 0.003"/> 
+        </geometry>
+        <origin rpy="1.57 0 0" xyz="0.12 0 0.195"/>
       </visual>
 
       <collision name="finger1">
         <geometry>
           <box size="0.08 0.37 0.003"/>
         </geometry>
-        <origin rpy="1.57 0 0" xyz="-0.04125 0 0.195"/>
+        <origin rpy="1.57 0 0" xyz="-0.2 0 0.195"/>
       </collision>
 
       <collision name="finger2">
         <geometry>
           <box size="0.08 0.37 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0.12375 0 0.195"/>
+        <origin rpy="1.57 0 0" xyz="-0.04 0 0.195"/>
       </collision>
+
+      <collision name="finger3">
+        <geometry>
+          <box size="0.08 0.37 0.003"/> 
+        </geometry>
+        <origin rpy="1.57 0 0" xyz="0.12 0 0.195"/>
+      </collision>
+
     </link>
 
     <link name="whisker_left_link">
@@ -157,31 +173,46 @@
       <visual name="finger1">
         <material name="red"/>
         <geometry>
-          <box size="0.08 0.39 0.003"/>
+          <box size="0.08 0.37 0.003"/>
         </geometry>
-        <origin rpy="1.57 0 0" xyz="-0.12375 0 0.195"/>
+        <origin rpy="1.57 0 0" xyz="-0.12 0 0.195"/>
       </visual>
 
       <visual name="finger2">
         <material name="red"/>
         <geometry>
-          <box size="0.08 0.39 0.003"/> 
+          <box size="0.08 0.37 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0.04125 0 0.195"/>
+        <origin rpy="1.57 0 0" xyz="0.04 0 0.195"/>
+      </visual>
+
+      <visual name="finger3">
+        <material name="red"/>
+        <geometry>
+          <box size="0.08 0.37 0.003"/> 
+        </geometry>
+        <origin rpy="1.57 0 0" xyz="0.2 0 0.195"/>
       </visual>
 
       <collision name="finger1">
         <geometry>
-          <box size="0.08 0.39 0.003"/>
+          <box size="0.08 0.37 0.003"/>
         </geometry>
-        <origin rpy="1.57 0 0" xyz="-0.12375 0 0.195"/>
+        <origin rpy="1.57 0 0" xyz="-0.12 0 0.195"/>
       </collision>
 
       <collision name="finger2">
         <geometry>
-          <box size="0.08 0.39 0.003"/> 
+          <box size="0.08 0.37 0.003"/> 
         </geometry>
-        <origin rpy="1.57 0 0" xyz="0.04125 0 0.195"/>
+        <origin rpy="1.57 0 0" xyz="0.04 0 0.195"/>
+      </collision>
+
+      <collision name="finger3">
+        <geometry>
+          <box size="0.08 0.37 0.003"/> 
+        </geometry>
+        <origin rpy="1.57 0 0" xyz="0.2 0 0.195"/>
       </collision>
     </link>
 

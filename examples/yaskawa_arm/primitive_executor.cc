@@ -417,15 +417,30 @@ const char kEEUrdf[] =
             rpy.vector()[2]-des_pos[5]
         );
 
+        drake::log()->info("The real values: \n{}\n{}\n{}\n{}\n{}\n{}",
+            ee_pose.translation()[0],
+            ee_pose.translation()[1],
+            ee_pose.translation()[2],
+            rpy.vector()[0],
+            rpy.vector()[1],
+            rpy.vector()[2]
+        );
+
         const double buffer = 0.05; //Temporary value
+
+        Eigen::Quaterniond q_curr(ee_pose.rotation());
+
+        Matrix3<double> rpy_rotmat_curr = rpy.ToMatrix3ViaRotationMatrix();
+        Matrix3<double> rpy_rotmat_des;
+        rpy_rotmat_des
 
         for(int i = 0; i < 6; i++){
             if(i < 3 && abs(des_pos[i] - ee_pose.translation()[i]) > buffer){
-                drake::log()->info("failing at: {} {}",i,des_pos[i] - ee_pose.translation()[i]);
+                drake::log()->info("failing at: {} \ndes_pos: {} \nee_pos: {}",i,des_pos[i], ee_pose.translation()[i]);
                 return 0;
             }
             else if(i >= 3 && abs(des_pos[i] - rpy.vector()[i-3]) > buffer){
-                drake::log()->info("failing at: {} {}",i,des_pos[i] - rpy.vector()[i-3]);
+                drake::log()->info("failing at: {} \ndes_pos: {} \nee_pos: {}",i,des_pos[i], rpy.vector()[i-3]);
                 return 0;
             }
         }

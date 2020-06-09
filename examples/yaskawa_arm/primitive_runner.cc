@@ -16,8 +16,10 @@ int main(int , char** ) {
     // p_executor.action_GoHome();
 
     drake::log()->info("action: goToPoint");
-    p_executor.action_GoToPoint(Eigen::Vector3d(1.0, 0.1, 0.7), Eigen::Vector3d(0.0, 1.5,1),4.0);
-    p_executor.action_GoToPoint(Eigen::Vector3d(1.55, 0.15, 0.90), Eigen::Vector3d(0.0, 1.57,1.57),3.0);
+    // p_executor.action_GoToPoint(Eigen::Vector3d(1.0, 0.1, 0.7), Eigen::Vector3d(0.0, -1.5,1),4.0);
+    // p_executor.action_GoToPoint(Eigen::Vector3d(1.6, 0.1, 0.9), Eigen::Vector3d(-2.4, -1.57, 0),3.0);
+        p_executor.action_GoToPoint(Eigen::Vector3d(1.6, 0.1, 0.9), Eigen::Vector3d(0, 1.57, 1.57),3.0);
+
 
     drake::log()->info("action: Collect");
     DRAKE_DEMAND(p_executor.action_Collect(3.5) ? true : false);
